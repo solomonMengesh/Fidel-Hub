@@ -16,4 +16,4 @@ Fidel-Hub is an interactive, scalable, and accessible online education system de
 ## Installation
 1. Clone the repository:
    ```sh
- 
+ https://github.com/solomonMengesh/Fidel-Hub
