@@ -25,7 +25,7 @@ const Footer = () => {
               Fidel<span className="text-fidel-500">Hub</span>
             </Link>
             <p className="mt-4 text-muted-foreground text-sm">
-              A modern, interactive learning platform designed to enhance the education experience for students, instructors, and administrators.
+              A modern, interactive learning platform designed to enhance the education experience for students.
             </p>
             <div className="mt-6 flex space-x-4">
               <a href="#" className="text-muted-foreground hover:text-fidel-500 transition-colors duration-200">
