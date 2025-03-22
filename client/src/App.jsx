@@ -1,10 +1,14 @@
 import React from "react";
-
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Login from "./pages/Login";
+ 
 const App = () => {
   return (
-    <div>
-      <h1 className="bold text-5xl text-center">Fidel hub</h1>
-    </div>
+    <Router>
+      <Routes>
+         <Route path="/login" element={<Login />} />
+      </Routes>
+    </Router>
   );
 };
 
