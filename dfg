@@ -1,0 +1,99 @@
+[33mcommit 53055e7a6e36c4c94351fda1e0ac2fd6debafa6c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m
+Author: Solomon <smengesha838@gmail.com>
+Date:   Sat Mar 22 03:45:07 2025 -0900
+
+    Update footer description to focus on student experience
+
+[33mcommit 561faad364629ffa9a4295d612d8ba8dc52cba0c[m
+Author: Solomon <smengesha838@gmail.com>
+Date:   Sat Mar 22 03:42:03 2025 -0900
+
+    Update course details, footer address, and improve signup page layout
+
+[33mcommit 21f005b6bf9219541a23931cbb280b03ce328c0f[m
+Author: Solomon <smengesha838@gmail.com>
+Date:   Sat Mar 22 03:12:10 2025 -0900
+
+    Update footer to include course categories and enhance button styles
+
+[33mcommit 31ce7806d01ee5699efe73305a03d0516f2f6e0c[m
+Author: Solomon <smengesha838@gmail.com>
+Date:   Sat Mar 22 02:58:05 2025 -0900
+
+    Add homepage with hero section and course card component; implement animated button
+
+[33mcommit 43719b00b6203b18ebc71da060462a5076f37b1e[m
+Author: Solomon <smengesha838@gmail.com>
+Date:   Sat Mar 22 02:18:12 2025 -0900
+
+    Add signup page with form validation and role selection; update routing
+
+[33mcommit ce9890703c35b7cd065d703cd850e7c83b30c048[m
+Author: Solomon <smengesha838@gmail.com>
+Date:   Sat Mar 22 02:11:32 2025 -0900
+
+    Add signup page, theme toggle component, and utility functions; update routing and styles
+
+[33mcommit dca7df42d01494cde039e2a03f6b7f32e4bc75db[m
+Merge: 541f7f3 bdf01a8
+Author: Solomon <smengesha838@gmail.com>
+Date:   Sat Mar 22 02:11:15 2025 -0900
+
+    Merge branch 'dev' of https://github.com/solomonMengesh/Fidel-Hub
+
+[33mcommit bdf01a88ac82ae36b2dbab9bc1da5ef3fcb165dd[m[33m ([m[1;31morigin/dev[m[33m)[m
+Merge: 4650e5b 307e0db
+Author: Solomon mengesha <163938423+solomonMengesh@users.noreply.github.com>
+Date:   Thu Mar 13 23:58:25 2025 -0900
+
+    Merge pull request #3 from solomonMengesh/feat/nav-bar
+    
+    Add Tailwind CSS and PostCSS configuration with initial styles
+
+[33mcommit 541f7f3b6a92a77eaf566b56b8e9accf02d7c8ad[m
+Merge: bc5afa6 4650e5b
+Author: Ermias-Azanaw <111278554+Ermias-Azanaw@users.noreply.github.com>
+Date:   Fri Mar 14 11:49:38 2025 +0300
+
+    Merge pull request #2 from solomonMengesh/dev
+    
+    Dev
+
+[33mcommit 307e0db25cc8fbe5735349e02a474274b2bf3905[m
+Author: Ermias <ermiasazanaw13@gmail.com>
+Date:   Fri Mar 14 11:47:33 2025 +0300
+
+    Add Tailwind CSS and PostCSS configuration with initial styles
+
+[33mcommit 4650e5b2807ef91d0344b1882d57d2cc2908abc1[m
+Author: Ermias <ermiasazanaw13@gmail.com>
+Date:   Fri Mar 14 11:32:42 2025 +0300
+
+    Initialize React project with Vite setup, ESLint configuration, and basic components
+
+[33mcommit f77ebdf16d8f663267b33f8401c3294d1f0d7fb2[m
+Merge: bc5afa6 6a17fa8
+Author: Ermias-Azanaw <111278554+Ermias-Azanaw@users.noreply.github.com>
+Date:   Fri Mar 14 11:27:10 2025 +0300
+
+    Merge pull request #1 from solomonMengesh/feat/nav-bar
+    
+    Update README.md to include branch information and format improvements
+
+[33mcommit 6a17fa8dab00f7b4dc3f4ee624760e13c52eb36e[m
+Author: Ermias <ermiasazanaw13@gmail.com>
+Date:   Fri Mar 14 11:25:30 2025 +0300
+
+    Update README.md to include branch information and format improvements
+
+[33mcommit bc5afa6f1e3bacddce2dd048aa57045a23c38bfd[m
+Author: Solomon <smengesha838@gmail.com>
+Date:   Thu Mar 13 05:07:53 2025 -0900
+
+    Add repository URL to installation instructions in README.md
+
+[33mcommit d2deb48b8f185c871539d507dcb4f684eb84b956[m
+Author: Solomon <smengesha838@gmail.com>
+Date:   Wed Mar 12 06:10:54 2025 -0900
+
+    Add initial README.md with project overview and installation instructions
