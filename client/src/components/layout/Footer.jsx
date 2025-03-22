@@ -2,6 +2,16 @@ import { Link } from "react-router-dom";
 import { Facebook, Twitter, Instagram, Linkedin, Github } from "lucide-react";
 
 const Footer = () => {
+
+  const categories = [
+    'Development',
+    'Business',
+    'Finance',
+    'Design',
+    'Marketing',
+    'Photography',
+    'Music'
+  ];
   return (
     <footer className="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-12 px-6 md:px-8">
       <div className="max-w-7xl mx-auto">
@@ -63,30 +73,21 @@ const Footer = () => {
           </div>
           
           <div>
-            <h3 className="text-base font-semibold mb-4">Student Services</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/dormitory" className="text-muted-foreground hover:text-fidel-500 transition-colors duration-200 text-sm">
-                  Dormitory Placement
-                </Link>
-              </li>
-              <li>
-                <Link to="/service-requests" className="text-muted-foreground hover:text-fidel-500 transition-colors duration-200 text-sm">
-                  Service Requests
-                </Link>
-              </li>
-              <li>
-                <Link to="/transcript" className="text-muted-foreground hover:text-fidel-500 transition-colors duration-200 text-sm">
-                  Transcript Transfers
-                </Link>
-              </li>
-              <li>
-                <Link to="/admissions" className="text-muted-foreground hover:text-fidel-500 transition-colors duration-200 text-sm">
-                  Admission Applications
-                </Link>
-              </li>
-            </ul>
-          </div>
+              <h4 className="font-medium text-lg mb-4">Categories</h4>
+              <ul className="space-y-2">
+                {categories.map((item) => (
+                  <li key={item}>
+                    <Link 
+                      to={`/courses?category=${item.toLowerCase()}`} 
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {item}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
           
           <div>
             <h3 className="text-base font-semibold mb-4">Contact Us</h3>

@@ -53,10 +53,10 @@ const Index = () => {
               viewport={{ once: true }}
               className="flex flex-col sm:flex-row items-center justify-center gap-4"
             >
-              <AnimatedButton to="/signup" size="lg" className="bg-white text-fidel-600 hover:bg-slate-100">
+              <AnimatedButton to="/signup" size="lg" variant="outline"  className="bg-white text-fidel-600 hover:bg-slate-100">
                 Get Started Now
               </AnimatedButton>
-              <AnimatedButton to="/courses" size="lg" variant="outline" className="border-white/30 text-white hover:bg-fidel-600/50">
+              <AnimatedButton to="/courses" size="lg" variant="outline" className="border-white/30 text-white hover:bg-fidel-600/50 hover:text-black ">
                 Explore Courses
               </AnimatedButton>
             </motion.div>
