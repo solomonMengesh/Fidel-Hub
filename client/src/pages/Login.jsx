@@ -135,7 +135,7 @@ const Login = () => {
               </div>
             </form>
 
-            <div className="mt-6">
+            {/* <div className="mt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
@@ -153,7 +153,7 @@ const Login = () => {
                   Microsoft
                 </button>
               </div>
-            </div>
+            </div> */}
           </motion.div>
 
           <motion.p

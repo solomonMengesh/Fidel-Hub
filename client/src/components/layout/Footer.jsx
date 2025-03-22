@@ -92,10 +92,11 @@ const Footer = () => {
           <div>
             <h3 className="text-base font-semibold mb-4">Contact Us</h3>
             <address className="not-italic text-sm text-muted-foreground">
-              <p>123 Education Street</p>
-              <p>Learning City, 12345</p>
-              <p className="mt-2">Email: info@fidelhub.edu</p>
-              <p>Phone: (123) 456-7890</p>
+            <p>123 Kombolcha Street</p>
+            <p>Kombolcha, Ethiopia</p>
+            <p class="mt-2">Email: info@fidelhub.edu</p>
+            <p>Phone: +251 33 123 4567</p>
+
             </address>
           </div>
         </div>

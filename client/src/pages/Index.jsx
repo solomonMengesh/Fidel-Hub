@@ -106,7 +106,7 @@ const Index = () => {
                     <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 mr-4"></div>
                     <div>
                       <h4 className="font-semibold text-slate-900 dark:text-white">
-                        {i === 1 ? "Alex Thompson" : i === 2 ? "Maria Rodriguez" : "David Chen"}
+                        {i === 1 ? "Abebe Z" : i === 2 ? "Kebede M" : "Alemitu T"}
                       </h4>
                       <p className="text-sm text-muted-foreground">
                         {i === 1 ? "Computer Science Student" : i === 2 ? "Business Administration" : "Psychology Major"}

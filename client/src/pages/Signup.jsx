@@ -47,19 +47,21 @@ const Signup = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
-      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <div className="flex-1 flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         {/* Background decorations */}
         <div className="absolute -top-40 -left-40 w-80 h-80 bg-fidel-100 dark:bg-fidel-950/20 rounded-full blur-3xl opacity-60 dark:opacity-30 -z-10"></div>
         <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-slate-100 dark:bg-slate-800/20 rounded-full blur-3xl opacity-60 dark:opacity-30 -z-10"></div>
+  
         
         <div className="w-full max-w-md space-y-8">
+ 
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="text-center"
           >
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Create an account</h2>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mt-5" >Create an account</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Join Fidel Hub and start your learning journey today
             </p>
@@ -214,7 +216,7 @@ const Signup = () => {
               </div>
             </form>
             
-            <div className="mt-6">
+            {/* <div className="mt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
@@ -238,7 +240,7 @@ const Signup = () => {
                   Microsoft
                 </button>
               </div>
-            </div>
+            </div> */}
           </motion.div>
           
           <motion.p 
