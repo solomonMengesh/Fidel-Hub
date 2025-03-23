@@ -18,7 +18,7 @@ const allCourses = [
     students: 12436,
     duration: "10 hours",
     lessons: 24,
-    price: "$49.99",
+    price: "2,799 ETB", // $49.99 * 56
     category: "Computer Science",
     featured: true,
   },
@@ -31,7 +31,7 @@ const allCourses = [
     students: 8752,
     duration: "15 hours",
     lessons: 32,
-    price: "$59.99",
+    price: "3,359 ETB", // $59.99 * 56
     category: "Programming",
   },
   {
@@ -43,7 +43,7 @@ const allCourses = [
     students: 10328,
     duration: "8 hours",
     lessons: 18,
-    price: "$39.99",
+    price: "2,239 ETB", // $39.99 * 56
     category: "Business",
   },
   {
@@ -55,7 +55,7 @@ const allCourses = [
     students: 15642,
     duration: "12 hours",
     lessons: 28,
-    price: "$44.99",
+    price: "2,519 ETB", // $44.99 * 56
     category: "Psychology",
     featured: true,
   },
@@ -68,7 +68,7 @@ const allCourses = [
     students: 7895,
     duration: "9 hours",
     lessons: 22,
-    price: "$49.99",
+    price: "2,799 ETB", // $49.99 * 56
     category: "Finance",
   },
   {
@@ -80,7 +80,7 @@ const allCourses = [
     students: 9452,
     duration: "11 hours",
     lessons: 26,
-    price: "$54.99",
+    price: "3,079 ETB", // $54.99 * 56
     category: "Design",
   },
   {
@@ -92,7 +92,7 @@ const allCourses = [
     students: 11782,
     duration: "14 hours",
     lessons: 30,
-    price: "$59.99",
+    price: "3,359 ETB", // $59.99 * 56
     category: "Programming",
     featured: true,
   },
@@ -105,7 +105,7 @@ const allCourses = [
     students: 6423,
     duration: "8 hours",
     lessons: 20,
-    price: "$34.99",
+    price: "1,959 ETB", // $34.99 * 56
     category: "Languages",
   },
   {
@@ -117,7 +117,7 @@ const allCourses = [
     students: 8245,
     duration: "16 hours",
     lessons: 35,
-    price: "$64.99",
+    price: "3,639 ETB", // $64.99 * 56
     category: "Computer Science",
   },
   {
@@ -129,7 +129,7 @@ const allCourses = [
     students: 7352,
     duration: "12 hours",
     lessons: 24,
-    price: "$49.99",
+    price: "2,799 ETB", // $49.99 * 56
     category: "Design",
   },
   {
@@ -141,7 +141,7 @@ const allCourses = [
     students: 5823,
     duration: "10 hours",
     lessons: 22,
-    price: "$54.99",
+    price: "3,079 ETB", // $54.99 * 56
     category: "Computer Science",
   },
   {
@@ -153,7 +153,7 @@ const allCourses = [
     students: 9136,
     duration: "8 hours",
     lessons: 18,
-    price: "$39.99",
+    price: "2,239 ETB", // $39.99 * 56
     category: "Personal Development",
   },
 ];
