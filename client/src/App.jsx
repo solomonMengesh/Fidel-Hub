@@ -5,6 +5,7 @@ import Signup from "./pages/Signup";
 import Index from "./pages/Index";
 import Courses from "./pages/Courses";
 import CourseDetails from "./pages/CourseDetails";
+import Dashboard from "./pages/Dashboard";
 const App = () => {
   return (
     <Router>
@@ -14,6 +15,7 @@ const App = () => {
          <Route path="/" element={<Index />} />
          <Route path="/courses" element={<Courses />} />
          <Route path="/courses/:courseId" element={<CourseDetails />} />
+          <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </Router>
   );
