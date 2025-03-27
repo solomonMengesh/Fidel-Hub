@@ -11,56 +11,208 @@ import {
   Clock,
   Search,
   Bell,
-  FileText,
   CheckCircle,
-  Circle,
-  ChevronRight,
   Star,
   Award,
-  CreditCard
+  CreditCard,
+  ChevronRight,
+  ChevronLeft
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-// import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-// import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import CourseBuilder from "@/components/instructor/CourseBuilder";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-// Import instructor components
-import CourseBuilder from "../components/instructor/CourseBuilder";
-// import PaymentSettings from "@/components/instructor/PaymentSettings";
-// import StudentMetrics from "@/components/instructor/StudentMetrics";
-// import CertificateGenerator from "@/components/instructor/CertificateGenerator";
+// StudentManagement component
+const StudentManagement = () => {
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCourse, setFilterCourse] = useState("all");
+  
+  const students = [
+    { id: 1, name: "Alex Johnson", email: "alex@example.com", course: "Introduction to React", progress: 65, lastActive: "2 days ago" },
+    { id: 2, name: "Emma Wilson", email: "emma@example.com", course: "Advanced JavaScript", progress: 78, lastActive: "1 day ago" },
+    { id: 3, name: "Michael Brown", email: "michael@example.com", course: "Introduction to React", progress: 42, lastActive: "1 week ago" },
+  ];
 
+  const courses = [
+    { id: 1, title: "Introduction to React" },
+    { id: 2, title: "Advanced JavaScript" },
+    { id: 3, title: "UX Design Fundamentals" },
+  ];
+
+  const filteredStudents = students.filter(student => {
+    const matchesSearch = 
+      student.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      student.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCourse = filterCourse === "all" || student.course === filterCourse;
+    return matchesSearch && matchesCourse;
+  });
+
+  const handleViewStudent = (student) => {
+    setSelectedStudent(student);
+    toast.info(`Viewing details for ${student.name}`);
+  };
+
+  const handleBackToList = () => {
+    setSelectedStudent(null);
+  };
+
+  return (
+    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
+      {selectedStudent ? (
+        <div>
+          <Button variant="ghost" size="sm" className="mb-4" onClick={handleBackToList}>
+            <ChevronLeft size={16} className="mr-1" />
+            Back to student list
+          </Button>
+          
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="md:col-span-1 space-y-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex flex-col items-center">
+                    <div className="h-24 w-24 rounded-full bg-slate-200 dark:bg-slate-700 mb-4 flex items-center justify-center text-3xl font-semibold text-slate-600 dark:text-slate-300">
+                      {selectedStudent.name.charAt(0)}
+                    </div>
+                    <h3 className="text-xl font-semibold">{selectedStudent.name}</h3>
+                    <p className="text-muted-foreground">{selectedStudent.email}</p>
+                    <div className="mt-4 text-sm text-center">
+                      <p>Enrolled in: <span className="font-medium">{selectedStudent.course}</span></p>
+                      <p className="flex items-center justify-center mt-2">
+                        <Clock size={14} className="mr-1 text-muted-foreground" />
+                        Last active {selectedStudent.lastActive}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="md:col-span-2">
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Student Progress</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center">
+                      <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-fidel-500 rounded-full" 
+                          style={{ width: `${selectedStudent.progress}%` }}
+                        ></div>
+                      </div>
+                      <span className="ml-2 text-sm font-medium">{selectedStudent.progress}%</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+              <Input 
+                className="pl-9 w-full md:w-64" 
+                placeholder="Search students..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Select value={filterCourse} onValueChange={setFilterCourse}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by course" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Courses</SelectItem>
+                  {courses.map(course => (
+                    <SelectItem key={course.id} value={course.title}>
+                      {course.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="rounded-md border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Course</TableHead>
+                  <TableHead>Progress</TableHead>
+                  <TableHead>Last Active</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredStudents.map((student) => (
+                  <TableRow key={student.id}>
+                    <TableCell className="font-medium">{student.name}</TableCell>
+                    <TableCell>{student.email}</TableCell>
+                    <TableCell>{student.course}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <div className="w-24 h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-fidel-500 rounded-full" 
+                            style={{ width: `${student.progress}%` }}
+                          ></div>
+                        </div>
+                        <span className="ml-2 text-xs text-muted-foreground">{student.progress}%</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{student.lastActive}</TableCell>
+                    <TableCell>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleViewStudent(student)}
+                      >
+                        View Details
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+// Main InstructorDashboard component
 const InstructorDashboard = () => {
-//   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("dashboard"); 
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [mainTab, setMainTab] = useState("overview");
   
-  // Mock data for courses
   const courses = [
     { id: 1, title: "Introduction to React", students: 125, progress: 75, lastUpdated: "2 days ago" },
     { id: 2, title: "Advanced JavaScript", students: 98, progress: 60, lastUpdated: "1 week ago" },
     { id: 3, title: "UX Design Principles", students: 67, progress: 90, lastUpdated: "3 days ago" },
   ];
   
-  // Mock data for upcoming sessions
-  const sessions = [
-    { id: 1, title: "React Hooks Deep Dive", date: "Today", time: "3:00 PM", students: 18 },
-    { id: 2, title: "JavaScript Promises", date: "Tomorrow", time: "2:30 PM", students: 24 },
-    { id: 3, title: "Design Thinking Workshop", date: "May 15", time: "10:00 AM", students: 12 },
-  ];
-  
-  // Mock data for student assignments
-  const assignments = [
-    { id: 1, name: "Sarah Williams", course: "Introduction to React", status: "Submitted", dueDate: "May 10" },
-    { id: 2, name: "Michael Brown", course: "Advanced JavaScript", status: "Late", dueDate: "May 8" },
-    { id: 3, name: "Emma Wilson", course: "UX Design Principles", status: "Graded", dueDate: "May 5" },
-    { id: 4, name: "James Moore", course: "Introduction to React", status: "Submitted", dueDate: "May 12" },
-  ];
-  
-  // Mock data for statistics
   const stats = [
     { title: "Total Students", value: "310", icon: Users, change: "+12" },
     { title: "Active Courses", value: "8", icon: BookOpen, change: "+1" },
@@ -118,16 +270,6 @@ const InstructorDashboard = () => {
             Create New Course
           </button>
         </div>
-        
-        {/* <div className="absolute bottom-5 left-5">
-          <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-slate-700"></div>
-            <div>
-              <div className="text-sm font-medium">{user?.fullName || "Instructor"}</div>
-              <div className="text-xs text-muted-foreground">{user?.role}</div>
-            </div>
-          </div>
-        </div> */}
       </div>
       
       {/* Main content */}
@@ -151,7 +293,7 @@ const InstructorDashboard = () => {
             </div>
             
             <div className="relative">
-              <Bell size={20} className="text-slate-600 dark:text-slate-400 cursor-pointer" />
+              <Bell size={20} className="text-slate-600 dark:text-slate-400" />
               <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 flex items-center justify-center text-[10px] text-white">3</span>
             </div>
             
@@ -180,68 +322,153 @@ const InstructorDashboard = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.1 }}
-                      className="bg-white dark:bg-slate-900 p-6 rounded-lg shadow-md flex items-center space-x-4"
+                      className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm"
                     >
-                      <div className="text-slate-400">
-                        <stat.icon size={24} />
-                      </div>
-                      <div>
-                        <div className="text-xl font-semibold">{stat.value}</div>
-                        <div className="text-sm text-slate-500">{stat.title}</div>
-                        <div className={`text-xs ${stat.change.startsWith("+") ? "text-green-500" : "text-red-500"}`}>
-                          {stat.change}
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                          <h3 className="text-2xl font-bold mt-1">{stat.value}</h3>
+                          <p className="text-xs text-green-500 mt-1">{stat.change} this month</p>
+                        </div>
+                        <div className="p-3 rounded-lg bg-fidel-50 dark:bg-slate-800">
+                          <stat.icon size={20} className="text-fidel-500 dark:text-fidel-400" />
                         </div>
                       </div>
                     </motion.div>
                   ))}
                 </div>
                 
-                <h2 className="text-lg font-semibold mb-4">Courses Overview</h2>
-                {/* <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Course</TableHead>
-                      <TableHead>Students</TableHead>
-                      <TableHead>Progress</TableHead>
-                      <TableHead>Last Updated</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {courses.map((course) => (
-                      <TableRow key={course.id}>
-                        <TableCell>{course.title}</TableCell>
-                        <TableCell>{course.students}</TableCell>
-                        <TableCell>{course.progress}%</TableCell>
-                        <TableCell>{course.lastUpdated}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table> */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-semibold">Your Courses</h3>
+                      <Button variant="ghost" size="sm" onClick={() => setActiveTab("courses")}>View All Courses</Button>
+                    </div>
+                    
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Course</TableHead>
+                            <TableHead>Students</TableHead>
+                            <TableHead>Progress</TableHead>
+                            <TableHead>Last Updated</TableHead>
+                            <TableHead></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {courses.map((course) => (
+                            <TableRow key={course.id}>
+                              <TableCell className="font-medium">{course.title}</TableCell>
+                              <TableCell>{course.students}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center">
+                                  <div className="w-24 h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                    <div 
+                                      className="h-full bg-fidel-500 rounded-full" 
+                                      style={{ width: `${course.progress}%` }}
+                                    ></div>
+                                  </div>
+                                  <span className="ml-2 text-sm text-muted-foreground">{course.progress}%</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>{course.lastUpdated}</TableCell>
+                              <TableCell>
+                                <Button variant="ghost" size="sm" className="p-0">
+                                  <ChevronRight size={16} />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             </TabsContent>
-
-            {/* <TabsContent value="analytics">
-              <StudentMetrics />
-            </TabsContent> */}
           </Tabs>
         )}
-        
-        {/* Course Builder */}
-        {activeTab === "courses" && mainTab === "create" && (
-          <CourseBuilder />
+
+        {/* Courses Content */}
+        {activeTab === "courses" && (
+          <Tabs defaultValue="list" value={mainTab} onValueChange={setMainTab}>
+            <TabsList className="mb-6">
+              <TabsTrigger value="list">My Courses</TabsTrigger>
+              <TabsTrigger value="create">Create Course</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="list">
+              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-semibold">All Your Courses</h3>
+                  <Button onClick={() => setMainTab("create")}>
+                    <Plus size={16} className="mr-2" />
+                    Create New Course
+                  </Button>
+                </div>
+                
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Course</TableHead>
+                        <TableHead>Students</TableHead>
+                        <TableHead>Progress</TableHead>
+                        <TableHead>Last Updated</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {courses.map((course) => (
+                        <TableRow key={course.id}>
+                          <TableCell className="font-medium">{course.title}</TableCell>
+                          <TableCell>{course.students}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <div className="w-24 h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-fidel-500 rounded-full" 
+                                  style={{ width: `${course.progress}%` }}
+                                ></div>
+                              </div>
+                              <span className="ml-2 text-sm text-muted-foreground">{course.progress}%</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{course.lastUpdated}</TableCell>
+                          <TableCell>
+                            <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs">
+                              Published
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button variant="ghost" size="sm">Edit</Button>
+                              <Button variant="ghost" size="sm">View</Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="create">
+              <CourseBuilder 
+                onSave={() => {
+                  toast.success("Course saved successfully");
+                  setMainTab("list");
+                }}
+              />
+            </TabsContent>
+          </Tabs>
         )}
 
-        {/* Payment Settings */}
-        {activeTab === "payments" && <PaymentSettings />}
-        
-        {/* Certificates */}
-        {activeTab === "certificates" && <CertificateGenerator />}
-        
-        {/* Calendar */}
-        {activeTab === "calendar" && <div>Calendar Content</div>}
-        
-        {/* Settings */}
-        {activeTab === "settings" && <div>Account Settings</div>}
+        {/* Students Content */}
+        {activeTab === "students" && <StudentManagement />}
       </div>
     </div>
   );

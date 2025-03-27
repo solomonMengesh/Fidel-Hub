@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import MultipleChoiceQuiz from "../instructor/MultipleChoiceQuiz "; // Assuming the quiz component is the same
+import MultipleChoiceQuiz from "../instructor/MultipleChoiceQuiz "; 
 import { Checkbox } from "../ui/Checkbox ";
 // Removed unused imports
 import { Label } from "@/components/ui/label";
