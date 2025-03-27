@@ -6,6 +6,7 @@ import Index from "./pages/Index";
 import Courses from "./pages/Courses";
 import CourseDetails from "./pages/CourseDetails";
 import Dashboard from "./pages/Dashboard";
+import InstructorDashboard from "./pages/InstructorDashboard";
 const App = () => {
   return (
     <Router>
@@ -16,6 +17,7 @@ const App = () => {
          <Route path="/courses" element={<Courses />} />
          <Route path="/courses/:courseId" element={<CourseDetails />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/instructor-dashboard" element={<InstructorDashboard />} />
       </Routes>
     </Router>
   );
