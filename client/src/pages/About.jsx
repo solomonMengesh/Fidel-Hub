@@ -2,7 +2,7 @@ import React from "react";
 
 const About = () => {
   return (
-    <div className="m-24 p-24">
+    <div className="m-24 ">
       <h1>About Us</h1>
       <p>
         Welcome to Fidel Hub! We are dedicated to providing the best services to
