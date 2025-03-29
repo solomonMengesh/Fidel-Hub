@@ -20,6 +20,7 @@ import PaymentManagement from "@/components/admin/PaymentManagement";
 // import LanguageToggle from "../components/ui/LanguageToggle";
 // import { useLanguage } from "@/contexts/LanguageContext";
 import PlatformSettings from "../components/admin/PlatformSettings";
+import UserManagement from "../components/admin/UserManagement";
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
    
