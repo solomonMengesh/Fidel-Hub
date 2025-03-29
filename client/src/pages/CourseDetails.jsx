@@ -19,8 +19,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 
 const CourseDetails = () => {
@@ -125,7 +123,6 @@ const CourseDetails = () => {
 
   return (
     <div className="min-h-screen flex flex-col dark:bg-slate-950">
-      <Navbar />
 
       {/* Course Header */}
       <div className="bg-fidel-600 text-white py-12">
@@ -433,7 +430,7 @@ const CourseDetails = () => {
       </div>
 
       <div className="mt-auto">
-        <Footer />
+        {/* <Footer /> */}
       </div>
 
       <div className="fixed bottom-6 right-6 z-50">

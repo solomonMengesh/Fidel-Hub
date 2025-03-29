@@ -1,7 +1,5 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import Hero from "@/components/home/Hero";
 import PopularCourses from "@/components/home/PopularCourses";
 import ThemeToggle from "@/components/ui/ThemeToggle";
@@ -14,7 +12,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+
       
       <main className="flex-1">
         <Hero />
@@ -120,7 +118,7 @@ const Index = () => {
         </section>
       </main>
       
-      <Footer />
+     
       
       <div className="fixed bottom-6 right-6 z-50">
         <ThemeToggle />

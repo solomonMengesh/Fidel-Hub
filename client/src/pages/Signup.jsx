@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff, User, Mail, Lock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import Navbar from "@/components/layout/Navbar";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { cn } from "@/lib/utils";
 
@@ -45,7 +44,6 @@ const Signup = () => {
   
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
       
       <div className="flex-1 flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         {/* Background decorations */}

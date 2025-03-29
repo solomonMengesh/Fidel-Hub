@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { Search, Filter, ArrowUp, ArrowDown } from "lucide-react";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import CourseCard from "@/components/home/CourseCard";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { motion } from "framer-motion";
@@ -223,7 +221,6 @@ const Courses = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
 
       <main className="flex-1 pt-24 pb-20">
         <div className="max-w-7xl mx-auto px-6 md:px-8">
@@ -413,7 +410,6 @@ const Courses = () => {
         </div>
       </main>
 
-      <Footer />
 
       <div className="fixed bottom-6 right-6 z-50">
         <ThemeToggle />
