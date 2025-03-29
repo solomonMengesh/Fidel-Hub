@@ -1,29 +1,29 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { 
-  Users, 
-  BookOpen, 
-  Layers, 
-  Award, 
-  PieChart, 
-  Settings, 
-  Sliders, 
-  Shield
+import {
+  Users,
+  BookOpen,
+  Layers,
+  Award,
+  PieChart,
+  Settings,
+  Sliders,
+  Shield,
+  Menu,
+  X,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ui/ThemeToggle";
-// import { Input } from "@/components/ui/input";
 import CourseModeration from "@/components/admin/CourseModeration";
 import PlatformAnalytics from "@/components/admin/PlatformAnalytics";
 import PaymentManagement from "@/components/admin/PaymentManagement";
-// import LanguageToggle from "../components/ui/LanguageToggle";
-// import { useLanguage } from "@/contexts/LanguageContext";
 import PlatformSettings from "../components/admin/PlatformSettings";
 import UserManagement from "../components/admin/UserManagement";
+
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
-   
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   // Navigation items
   const navItems = [
     { id: "overview", label: "Overview", icon: Layers },
@@ -36,18 +36,45 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen flex dark:bg-slate-950">
+      {/* Mobile sidebar backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-20 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-5 hidden md:block">
-        <div className="flex items-center space-x-2 mb-8">
-          <div className="h-8 w-8 rounded-full bg-fidel-500"></div>
-          <div className="font-semibold text-lg">Fidel Hub</div>
+      <motion.div
+        className={`fixed md:relative z-30 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-5 h-screen md:h-auto flex-shrink-0`}
+        initial={{ x: -300 }}
+        animate={{
+          x: sidebarOpen ? 0 : -300,
+        }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        style={{ x: 0 }} // Reset for desktop
+      >
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex items-center space-x-2">
+            <div className="h-8 w-8 rounded-full bg-fidel-500"></div>
+            <div className="font-semibold text-lg">Fidel Hub</div>
+          </div>
+          <button
+            className="md:hidden p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X size={20} />
+          </button>
         </div>
-        
+
         <nav className="space-y-1">
           {navItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                setActiveTab(item.id);
+                setSidebarOpen(false);
+              }}
               className={`flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium ${
                 activeTab === item.id
                   ? "bg-fidel-50 text-fidel-600 dark:bg-slate-800 dark:text-fidel-400"
@@ -59,25 +86,34 @@ const AdminDashboard = () => {
             </button>
           ))}
         </nav>
-        
-        <div className="absolute bottom-5 left-5">
+
+        <div className="absolute bottom-5 left-5 right-5">
           <div className="flex items-center space-x-2">
             <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-slate-700"></div>
             <div>
               <div className="text-sm font-medium">Admin User</div>
-              <div className="text-xs text-muted-foreground">admin@fidelhub.com</div>
+              <div className="text-xs text-muted-foreground">
+                admin@fidelhub.com
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      
+      </motion.div>
+
       {/* Main content */}
       <div className="flex-1 flex flex-col p-5 overflow-auto">
         <header className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          
+          <div className="flex items-center space-x-4">
+            <button
+              className="md:hidden p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu size={20} />
+            </button>
+            <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+          </div>
+
           <div className="flex items-center space-x-3">
-            {/* <LanguageToggle /> */}
             <ThemeToggle />
             <Button variant="outline" size="sm">
               <Sliders size={16} className="mr-2" />
@@ -85,7 +121,7 @@ const AdminDashboard = () => {
             </Button>
           </div>
         </header>
-        
+
         {/* Page content based on active tab */}
         {activeTab === "overview" && (
           <motion.div
@@ -96,21 +132,27 @@ const AdminDashboard = () => {
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 mb-6">
               <div className="flex items-start space-x-4">
                 <div className="p-3 rounded-lg bg-fidel-50 dark:bg-slate-800">
-                  <Shield size={24} className="text-fidel-500 dark:text-fidel-400" />
+                  <Shield
+                    size={24}
+                    className="text-fidel-500 dark:text-fidel-400"
+                  />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold">Welcome to the Admin Panel</h2>
+                  <h2 className="text-lg font-semibold">
+                    Welcome to the Admin Panel
+                  </h2>
                   <p className="text-muted-foreground mt-1">
-                    From here, you can manage users, moderate courses, view platform analytics, and control payment systems.
+                    From here, you can manage users, moderate courses, view
+                    platform analytics, and control payment systems.
                   </p>
                 </div>
               </div>
             </div>
-            
+
             <PlatformAnalytics />
           </motion.div>
         )}
-        
+
         {activeTab === "users" && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -120,7 +162,7 @@ const AdminDashboard = () => {
             <UserManagement />
           </motion.div>
         )}
-        
+
         {activeTab === "courses" && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -130,7 +172,7 @@ const AdminDashboard = () => {
             <CourseModeration />
           </motion.div>
         )}
-        
+
         {activeTab === "analytics" && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -140,7 +182,7 @@ const AdminDashboard = () => {
             <PlatformAnalytics />
           </motion.div>
         )}
-        
+
         {activeTab === "payments" && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -150,7 +192,7 @@ const AdminDashboard = () => {
             <PaymentManagement />
           </motion.div>
         )}
-        
+
         {activeTab === "settings" && (
           <motion.div
             initial={{ opacity: 0 }}
