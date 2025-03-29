@@ -7,6 +7,8 @@ import Courses from "./pages/Courses";
 import CourseDetails from "./pages/CourseDetails";
 import Dashboard from "./pages/Dashboard";
 import InstructorDashboard from "./pages/InstructorDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import Profile from "./pages/Profile";
 const App = () => {
   return (
     <Router>
@@ -18,6 +20,8 @@ const App = () => {
          <Route path="/courses/:courseId" element={<CourseDetails />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/instructor-dashboard" element={<InstructorDashboard />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/profile" element={<Profile />} />
       </Routes>
     </Router>
   );

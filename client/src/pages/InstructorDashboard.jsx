@@ -25,6 +25,7 @@ import ThemeToggle from "@/components/ui/ThemeToggle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import CourseBuilder from "@/components/instructor/CourseBuilder";
+import InstructorStudentChat from "@/components/chat/InstructorStudentChat";
 import {
   Select,
   SelectContent,
@@ -206,7 +207,7 @@ const StudentManagement = () => {
 const InstructorDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [mainTab, setMainTab] = useState("overview");
-  
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const courses = [
     { id: 1, title: "Introduction to React", students: 125, progress: 75, lastUpdated: "2 days ago" },
     { id: 2, title: "Advanced JavaScript", students: 98, progress: 60, lastUpdated: "1 week ago" },
@@ -231,7 +232,8 @@ const InstructorDashboard = () => {
       {/* Sidebar */}
       <div className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-5 hidden md:block">
         <div className="flex items-center space-x-2 mb-8">
-          <div className="h-8 w-8 rounded-full bg-fidel-500"></div>
+          {/* <div className="h-8 w-8 rounded-full bg-fidel-500"></div> */}
+          <span className="bg-fidel-500 text-white h-7 w-7 rounded flex items-center justify-center mr-2 shadow">F</span>
           <div className="font-semibold text-lg">Fidel Hub</div>
         </div>
         
@@ -274,32 +276,51 @@ const InstructorDashboard = () => {
       
       {/* Main content */}
       <div className="flex-1 flex flex-col p-5 overflow-auto">
-        <header className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">
+        <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 md:px-6">
+                  <div className="flex items-center">
+                    {!isSidebarOpen && (
+                      <button 
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="mr-4 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                      >
+                        <Menu size={20} />
+                      </button>
+                    )}
+                     <h1 className="text-2xl font-bold">
             {activeTab === "dashboard" && "Instructor Dashboard"}
             {activeTab === "courses" && "My Courses"}
             {activeTab === "students" && "Student Management"}
-            {activeTab === "messages" && "Messages"}
+{activeTab === "messages" && (
+  <InstructorStudentChat onBack={() => setActiveTab(null)} />
+)}
             {activeTab === "certificates" && "Certificates"}
             {activeTab === "payments" && "Payments & Earnings"}
             {activeTab === "calendar" && "Schedule"}
             {activeTab === "settings" && "Account Settings"}
           </h1>
-          
-          <div className="flex items-center space-x-3">
-            <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9 w-full md:w-64" placeholder="Search..." />
-            </div>
-            
-            <div className="relative">
-              <Bell size={20} className="text-slate-600 dark:text-slate-400" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 flex items-center justify-center text-[10px] text-white">3</span>
-            </div>
-            
-            <ThemeToggle />
-          </div>
-        </header>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <div className="relative">
+                      <button className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200">
+                        <Bell size={20} />
+                        <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <button className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200">
+                        <MessageSquare size={20} />
+                        <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-fidel-500"></span>
+                      </button>
+                    </div>
+                    <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2"></div>
+                    <ThemeToggle />
+                    <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2"></div>
+                    <button className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200">
+                      <Settings size={20} />
+                    </button>
+                  </div>
+                </header>
 
         {/* Dashboard Content */}
         {activeTab === "dashboard" && (
