@@ -9,9 +9,8 @@ import {
   Settings,
   Sliders,
   Shield,
-  Menu,
-  X,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import CourseModeration from "@/components/admin/CourseModeration";
@@ -22,7 +21,7 @@ import UserManagement from "../components/admin/UserManagement";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Navigation items
   const navItems = [
@@ -34,47 +33,32 @@ const AdminDashboard = () => {
     { id: "settings", label: "Platform Settings", icon: Settings },
   ];
 
+  const handleNavItemClick = (id) => {
+    setActiveTab(id);
+    // Close sidebar in mobile view
+    if (window.innerWidth < 768) {
+      setIsSidebarOpen(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex dark:bg-slate-950">
-      {/* Mobile sidebar backdrop */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-20 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
       {/* Sidebar */}
-      <motion.div
-        className={`fixed md:relative z-30 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-5 h-screen md:h-auto flex-shrink-0`}
-        initial={{ x: -300 }}
-        animate={{
-          x: sidebarOpen ? 0 : -300,
-        }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        style={{ x: 0 }} // Reset for desktop
+      <div
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-5 transform transition-transform duration-300 ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0 md:relative md:block`}
       >
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-full bg-fidel-500"></div>
-            <div className="font-semibold text-lg">Fidel Hub</div>
-          </div>
-          <button
-            className="md:hidden p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <X size={20} />
-          </button>
+        <div className="flex items-center space-x-2 mb-8">
+          <div className="h-8 w-8 rounded-full bg-fidel-500"></div>
+          <div className="font-semibold text-lg">Fidel Hub</div>
         </div>
 
         <nav className="space-y-1">
           {navItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => {
-                setActiveTab(item.id);
-                setSidebarOpen(false);
-              }}
+              onClick={() => handleNavItemClick(item.id)}
               className={`flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium ${
                 activeTab === item.id
                   ? "bg-fidel-50 text-fidel-600 dark:bg-slate-800 dark:text-fidel-400"
@@ -87,7 +71,7 @@ const AdminDashboard = () => {
           ))}
         </nav>
 
-        <div className="absolute bottom-5 left-5 right-5">
+        <div className="absolute bottom-5 left-5">
           <div className="flex items-center space-x-2">
             <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-slate-700"></div>
             <div>
@@ -98,20 +82,20 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
+
+      {/* Sidebar toggle button */}
+      <button
+        className="fixed top-5 left-5 z-50 md:hidden p-2 rounded-full bg-fidel-500 text-white"
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+      >
+        <Layers size={20} />
+      </button>
 
       {/* Main content */}
       <div className="flex-1 flex flex-col p-5 overflow-auto">
         <header className="flex justify-between items-center mb-6">
-          <div className="flex items-center space-x-4">
-            <button
-              className="md:hidden p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <Menu size={20} />
-            </button>
-            <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          </div>
+          <h1 className="text-2xl font-bold pl-10">Admin Dashboard</h1>
 
           <div className="flex items-center space-x-3">
             <ThemeToggle />
