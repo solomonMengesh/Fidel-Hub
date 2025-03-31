@@ -19,7 +19,7 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const isMobile = useIsMobile();
-  
+
   // Mock user authentication state (replace with your actual logic)
   const [user, setUser] = useState(null);
 
@@ -54,13 +54,13 @@ const Navbar = () => {
 
     switch (user.role) {
       case "student":
-        return "/dashboard";
+        return "/student-dashboard";
       case "instructor":
-        return "/instructor";
+        return "/instructor-dashboard";
       case "admin":
-        return "/admin";
+        return "/admin-dashboard";
       default:
-        return "/dashboard";
+        return "/student-dashboard";
     }
   };
 
@@ -95,7 +95,9 @@ const Navbar = () => {
           to="/"
           className="text-2xl font-display font-bold text-fidel-900 dark:text-white flex items-center"
         >
-          <span className="bg-fidel-500 text-white h-8 w-8 rounded-lg flex items-center justify-center mr-2 shadow-lg">F</span>
+          <span className="bg-fidel-500 text-white h-8 w-8 rounded-lg flex items-center justify-center mr-2 shadow-lg">
+            F
+          </span>
           Fidel<span className="text-fidel-500">Hub</span>
         </Link>
 
@@ -121,7 +123,11 @@ const Navbar = () => {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-9 w-9 rounded-full" size="icon">
+                <Button
+                  variant="ghost"
+                  className="relative h-9 w-9 rounded-full"
+                  size="icon"
+                >
                   <Avatar className="h-9 w-9">
                     <AvatarFallback className="bg-fidel-100 text-fidel-700 dark:bg-fidel-900 dark:text-fidel-300">
                       {getUserInitials()}
@@ -132,19 +138,29 @@ const Navbar = () => {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.fullName}</p>
-                    <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                    <p className="text-sm font-medium leading-none">
+                      {user.fullName}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to={getDashboardLink()} className="cursor-pointer w-full flex items-center">
+                  <Link
+                    to={getDashboardLink()}
+                    className="cursor-pointer w-full flex items-center"
+                  >
                     <User className="mr-2 h-4 w-4" />
                     <span>Dashboard</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout} className="cursor-pointer text-red-500 focus:text-red-500">
+                <DropdownMenuItem
+                  onClick={logout}
+                  className="cursor-pointer text-red-500 focus:text-red-500"
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
@@ -153,7 +169,9 @@ const Navbar = () => {
           ) : (
             <>
               <Link to="/login">
-                <Button variant="ghost" size="sm">Log in</Button>
+                <Button variant="ghost" size="sm">
+                  Log in
+                </Button>
               </Link>
               <Link to="/signup">
                 <Button
@@ -204,7 +222,9 @@ const Navbar = () => {
               {user ? (
                 <>
                   <Link to={getDashboardLink()} className="w-full">
-                    <Button variant="outline" className="w-full">Dashboard</Button>
+                    <Button variant="outline" className="w-full">
+                      Dashboard
+                    </Button>
                   </Link>
                   <Button
                     onClick={logout}
@@ -216,10 +236,14 @@ const Navbar = () => {
               ) : (
                 <>
                   <Link to="/login" className="w-full">
-                    <Button variant="outline" className="w-full">Log in</Button>
+                    <Button variant="outline" className="w-full">
+                      Log in
+                    </Button>
                   </Link>
                   <Link to="/signup" className="w-full">
-                    <Button className="w-full bg-fidel-500 hover:bg-fidel-600 text-white">Sign up</Button>
+                    <Button className="w-full bg-fidel-500 hover:bg-fidel-600 text-white">
+                      Sign up
+                    </Button>
                   </Link>
                 </>
               )}

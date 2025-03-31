@@ -10,7 +10,6 @@ import {
   Sliders,
   Shield,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import CourseModeration from "@/components/admin/CourseModeration";
@@ -23,7 +22,6 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Navigation items
   const navItems = [
     { id: "overview", label: "Overview", icon: Layers },
     { id: "users", label: "User Management", icon: Users },
@@ -35,19 +33,18 @@ const AdminDashboard = () => {
 
   const handleNavItemClick = (id) => {
     setActiveTab(id);
-    // Close sidebar in mobile view
     if (window.innerWidth < 768) {
       setIsSidebarOpen(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex dark:bg-slate-950">
+    <div className="flex h-[100vh] dark:bg-slate-950">
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-5 transform transition-transform duration-300 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 h-[100vh] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-5 transition-transform duration-300 ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 md:relative md:block`}
+        } md:translate-x-0 md:relative md:block overflow-hidden`}
       >
         <div className="flex items-center space-x-2 mb-8">
           <div className="h-8 w-8 rounded-full bg-fidel-500"></div>
@@ -93,16 +90,12 @@ const AdminDashboard = () => {
       </button>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col p-5 overflow-auto">
+      <div className="flex-1 flex flex-col p-5 overflow-auto h-[100vh]">
         <header className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold pl-10">Admin Dashboard</h1>
 
           <div className="flex items-center space-x-3">
             <ThemeToggle />
-            <Button variant="outline" size="sm">
-              <Sliders size={16} className="mr-2" />
-              Customize
-            </Button>
           </div>
         </header>
 
@@ -126,13 +119,12 @@ const AdminDashboard = () => {
                     Welcome to the Admin Panel
                   </h2>
                   <p className="text-muted-foreground mt-1">
-                    From here, you can manage users, moderate courses, view
-                    platform analytics, and control payment systems.
+                    Manage users, moderate courses, view analytics, and control
+                    payments here.
                   </p>
                 </div>
               </div>
             </div>
-
             <PlatformAnalytics />
           </motion.div>
         )}
