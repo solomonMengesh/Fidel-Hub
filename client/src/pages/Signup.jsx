@@ -1,262 +1,281 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Eye, EyeOff, User, Mail, Lock, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import ThemeToggle from "@/components/ui/ThemeToggle";
-import { cn } from "@/lib/utils";
+import { useState, useRef } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { Mail, User, Phone, Upload, BookOpen, Lock, FileText } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 const Signup = () => {
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState("student");
   const [isLoading, setIsLoading] = useState(false);
-  
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const [cvFile, setCvFile] = useState(null);
+  const fileInputRef = useRef(null);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const formSchema = z.object({
+    name: z.string().min(3, 'Name is required and must be at least 3 characters long.'),
+    email: z.string().email('Please enter a valid email address.'),
+    phone: z.string().min(10, 'Phone number must be at least 10 digits.').optional(),
+    role: z.enum(['student', 'instructor']),
+    expertise: z.string().optional().refine(val => {
+      return val !== undefined && val !== '' || formValues.role !== 'instructor';
+    }, 'Expertise is required for instructors.'),
+    password: z.string().min(8, 'Password must be at least 8 characters long.'),
+    confirmPassword: z.string()
+  }).refine(data => data.password === data.confirmPassword, {
+    message: 'Passwords must match.',
+    path: ['confirmPassword']
+  }).refine(data => {
+    if (data.role === 'instructor') {
+      return cvFile !== null;
+    }
+    return true;
+  }, {
+    message: 'CV is required for instructors.',
+    path: ['cv']
+  });
+
+  const [formValues, setFormValues] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    role: 'student',
+    expertise: '',
+    password: '',
+    confirmPassword: ''
+  });
+
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: formValues
+  });
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        toast({
+          title: 'Invalid File Type',
+          description: 'Only PDF files are allowed.',
+          variant: "destructive"
+        });
+        return;
+      }
+      setCvFile(file);
+    }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Basic validation
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match");
-      return;
-    }
-
+  const onSubmit = async (values) => {
     setIsLoading(true);
 
-    // Simulate a signup API call
-    setTimeout(() => {
-      alert("Account created successfully");
+    try {
+      const formData = new FormData();
+      formData.append('name', values.name);
+      formData.append('email', values.email);
+      if (values.phone) formData.append('phone', values.phone);
+      formData.append('role', values.role);
+      if (values.role === 'instructor') {
+        formData.append('expertise', values.expertise || '');
+        if (cvFile) formData.append('cv', cvFile);
+      }
+      formData.append('password', values.password);
+
+      toast({
+        title: 'Registration Successful',
+        description: values.role === 'instructor' 
+          ? 'Your account is under review for instructor approval.' 
+          : 'Welcome to Fidel-Hub!',
+      });
+      
+      navigate('/dashboard');
+    } catch (error) {
+      toast({
+        title: 'Registration Failed',
+        description: 'An error occurred while creating your account.',
+        variant: "destructive"
+      });
+    } finally {
       setIsLoading(false);
-      // Redirect to login page or handle further actions here
-    }, 2000);
+    }
   };
-  
+
+  const handleRoleChange = (value) => {
+    form.setValue('role', value);
+    setFormValues({ ...formValues, role: value });
+    if (value === 'student') {
+      form.setValue('expertise', '');
+      setFormValues({ ...formValues, role: value, expertise: '' });
+      setCvFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   return (
-    <div className="min-h-screen flex flex-col">
-      
-      <div className="flex-1 flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        {/* Background decorations */}
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-fidel-100 dark:bg-fidel-950/20 rounded-full blur-3xl opacity-60 dark:opacity-30 -z-10"></div>
-        <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-slate-100 dark:bg-slate-800/20 rounded-full blur-3xl opacity-60 dark:opacity-30 -z-10"></div>
-  
-        
-        <div className="w-full max-w-md space-y-8">
- 
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center"
-          >
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mt-5" >Create an account</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Join Fidel Hub and start your learning journey today
-            </p>
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="glass-card p-6 md:p-8 shadow-lg"
-          >
-            <div className="mb-6">
-              <div className="flex justify-center space-x-4 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                {["student", "instructor"].map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => setRole(r)}
-                    className={cn(
-                      "flex-1 px-4 py-2 rounded-md text-sm font-medium capitalize transition-all duration-200",
-                      role === r
-                        ? "bg-white dark:bg-slate-900 text-fidel-600 shadow-sm"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                    )}
-                    type="button"
-                    disabled={isLoading}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label htmlFor="fullName" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <Input
-                    id="fullName"
-                    name="fullName"
-                    type="text"
-                    value={formData.fullName}
-                    onChange={handleChange}
-                    required
-                    className="glass-input pl-10"
-                    placeholder="John Doe"
-                    disabled={isLoading}
-                  />
-                  <User size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                </div>
-              </div>
-              
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Email address
-                </label>
-                <div className="relative">
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    className="glass-input pl-10"
-                    placeholder="your.email@example.com"
-                    disabled={isLoading}
-                  />
-                  <Mail size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                </div>
-              </div>
-              
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Password
-                </label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                    className="glass-input pl-10 pr-10"
-                    placeholder="••••••••"
-                    disabled={isLoading}
-                  />
-                  <Lock size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-slate-900 dark:hover:text-white"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    disabled={isLoading}
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
-              
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    required
-                    className="glass-input pl-10"
-                    placeholder="••••••••"
-                    disabled={isLoading}
-                  />
-                  <Lock size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                </div>
-              </div>
-              
-              <div className="flex items-center">
-                <input
-                  id="terms"
-                  name="terms"
-                  type="checkbox"
-                  required
-                  className="h-4 w-4 rounded border-gray-300 text-fidel-600 focus:ring-fidel-500"
-                  disabled={isLoading}
-                />
-                <label htmlFor="terms" className="ml-2 block text-sm text-slate-700 dark:text-slate-300">
-                  I agree to the <Link to="/terms" className="text-fidel-600 hover:text-fidel-500 font-medium">Terms of Service</Link> and <Link to="/privacy" className="text-fidel-600 hover:text-fidel-500 font-medium">Privacy Policy</Link>
-                </label>
-              </div>
-              
-              <div>
-                <Button 
-                  type="submit" 
-                  className="w-full bg-fidel-500 hover:bg-fidel-600 text-white"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 size={16} className="mr-2 animate-spin" />
-                      Creating account...
-                    </>
-                  ) : (
-                    "Create Account"
-                  )}
-                </Button>
-              </div>
-            </form>
-            
-            {/* <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white dark:bg-slate-900 text-muted-foreground">Or sign up with</span>
-                </div>
-              </div>
-              
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                <button 
-                  className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors duration-200"
-                  disabled={isLoading}
-                >
-                  Google
-                </button>
-                <button 
-                  className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors duration-200"
-                  disabled={isLoading}
-                >
-                  Microsoft
-                </button>
-              </div>
-            </div> */}
-          </motion.div>
-          
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-center text-sm text-muted-foreground"
-          >
-            Already have an account?{" "}
-            <Link to="/login" className="text-fidel-600 hover:text-fidel-500 font-medium">
-              Sign in
-            </Link>
-          </motion.p>
-        </div>
+    <div className="flex min-h-screen flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gray-50">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        {/* <Link to="/">
+          <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
+            Fidel-Hub
+          </h2>
+        </Link> */}
+        <h2 className="mt-6 text-center text-2xl font-bold tracking-tight text-gray-900">
+          Create an Account
+        </h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Or{' '}
+          <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+            log in to an existing account
+          </Link>
+        </p>
       </div>
-      
-      <div className="fixed bottom-6 right-6 z-50">
-        <ThemeToggle />
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div>
+              <label className="flex items-center">
+                <User className="h-4 w-4 mr-2" />
+                Full Name
+              </label>
+              <input 
+                {...form.register('name')}
+                placeholder="Enter your full name"
+                onChange={(e) => setFormValues({ ...formValues, name: e.target.value })}
+                className="input"
+              />
+            </div>
+
+            <div>
+              <label className="flex items-center">
+                <Mail className="h-4 w-4 mr-2" />
+                Email
+              </label>
+              <input 
+                {...form.register('email')}
+                type="email"
+                placeholder="Enter your email"
+                onChange={(e) => setFormValues({ ...formValues, email: e.target.value })}
+                className="input"
+              />
+            </div>
+
+            <div>
+              <label className="flex items-center">
+                <Phone className="h-4 w-4 mr-2" />
+                Phone (Optional)
+              </label>
+              <input 
+                {...form.register('phone')}
+                type="tel"
+                placeholder="Enter your phone number"
+                onChange={(e) => setFormValues({ ...formValues, phone: e.target.value })}
+                className="input"
+              />
+            </div>
+
+            <div>
+              <label>Join As</label>
+              <Select
+                value={form.watch('role')}
+                onValueChange={(value) => handleRoleChange(value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select your role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="instructor">Instructor</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {form.watch('role') === 'instructor' && (
+              <>
+                <div>
+                  <label className="flex items-center">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Expertise
+                  </label>
+                  <Textarea 
+                    {...form.register('expertise')}
+                    placeholder="Enter your area of expertise"
+                    onChange={(e) => setFormValues({ ...formValues, expertise: e.target.value })}
+                    className="textarea"
+                  />
+                </div>
+
+                <div>
+                  <label className="flex items-center">
+                    <FileText className="h-4 w-4 mr-2" />
+                    CV
+                  </label>
+                  <div className="flex items-center justify-center w-full">
+                    <label
+                      htmlFor="cv-upload"
+                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+                    >
+                      <Upload className="w-8 h-8 mb-4 text-gray-500" />
+                      <p className="mb-2 text-sm text-gray-500">
+                        {cvFile ? cvFile.name : 'Upload your CV'}
+                      </p>
+                      <p className="text-xs text-gray-500">Only PDF files are allowed.</p>
+                    </label>
+                    <input
+                      id="cv-upload"
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf"
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div>
+              <label className="flex items-center">
+                <Lock className="h-4 w-4 mr-2" />
+                Password
+              </label>
+              <input 
+                {...form.register('password')}
+                type="password"
+                placeholder="Enter your password"
+                onChange={(e) => setFormValues({ ...formValues, password: e.target.value })}
+                className="input"
+              />
+            </div>
+
+            <div>
+              <label className="flex items-center">
+                <Lock className="h-4 w-4 mr-2" />
+                Confirm Password
+              </label>
+              <input 
+                {...form.register('confirmPassword')}
+                type="password"
+                placeholder="Confirm your password"
+                onChange={(e) => setFormValues({ ...formValues, confirmPassword: e.target.value })}
+                className="input"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Loading...' : 'Create Account'}
+            </Button>
+          </form>
+        </div>
       </div>
     </div>
   );
