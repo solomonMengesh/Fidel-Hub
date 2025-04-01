@@ -1,9 +1,10 @@
 import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
+import upload from '../middleware/uploadMiddleware.js'; // Import your multer upload middleware
 
 // Register a new user
 export const registerUser = async (req, res) => {
-  const { name, email, phone, role, expertise, password, confirmPassword, cv } = req.body;
+  const { name, email, phone, role, expertise, password, confirmPassword } = req.body;
 
   // Validation checks
   if (password !== confirmPassword) {
@@ -19,7 +20,7 @@ export const registerUser = async (req, res) => {
       if (!expertise) {
         return res.status(400).json({ message: 'Expertise is required for instructors' });
       }
-      if (!cv) {
+      if (!req.file) {
         return res.status(400).json({ message: 'CV is required for instructors' });
       }
     }
@@ -31,7 +32,7 @@ export const registerUser = async (req, res) => {
       phone,
       role,
       expertise: role === 'instructor' ? expertise : null, // Add expertise only if role is instructor
-      cv: role === 'instructor' ? cv : null, // Store CV if role is instructor
+      cv: role === 'instructor' ? req.file.path : null, // Store the file path of CV if role is instructor
       password, // Password will be hashed by the schema pre-save hook
     });
 

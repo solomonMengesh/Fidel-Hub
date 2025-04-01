@@ -1,20 +1,18 @@
-import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+// uploadMiddleware.js
+import multer from 'multer';
+import path from 'path';
 
-const protect = async (req, res, next) => {
-  let token = req.headers.authorization;
+// File storage configuration
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/'); // Path to store the uploaded files
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname)); // Add timestamp to make filenames unique
+  },
+});
 
-  if (token && token.startsWith('Bearer')) {
-    try {
-      const decoded = jwt.verify(token.split(' ')[1], process.env.JWT_SECRET);
-      req.user = await User.findById(decoded.id).select('-password');
-      next();
-    } catch (error) {
-      res.status(401).json({ message: 'Not authorized, invalid token' });
-    }
-  } else {
-    res.status(401).json({ message: 'Not authorized, no token' });
-  }
-};
+// Initialize multer with the storage configuration
+const upload = multer({ storage });
 
-export default protect;
+export default upload;
