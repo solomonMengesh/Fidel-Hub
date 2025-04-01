@@ -55,12 +55,15 @@ const Login = () => {
           switch (error.response.status) {
             case 401:
               errorMessage = "Invalid email or password";
+              toast.error("Invalid email or password");
               break;
             case 403:
               errorMessage = "Account not verified. Please check your email.";
+              toast.error("Account not verified. Please check your email.");
               break;
             case 404:
               errorMessage = "User not found";
+              toast.error("User not found");
               break;
             default:
               errorMessage = error.response.data.message || errorMessage;
@@ -68,9 +71,9 @@ const Login = () => {
         }
       }
       console.log("Login Failed:", errorMessage);
-      toast.error("Login failed", { 
-        description: error instanceof Error ? error.message : "An unknown error occurred"
-      });
+      // toast.error("Login failed", { 
+      //   description: error instanceof Error ? error.message : "An unknown error occurred"
+      // });
       
       
     } finally {

@@ -61,7 +61,7 @@ export const loginUser = async (req, res) => {
     console.log("Password match:", isMatch);
 
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
     if (user.role === "instructor" && !user.isApproved) {
@@ -79,4 +79,3 @@ export const loginUser = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
