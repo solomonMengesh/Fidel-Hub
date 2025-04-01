@@ -13,6 +13,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Profile from "./pages/Profile";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import PendingApproval from "./components/instructor/PendingApproval";
+
 
 const MainLayout = ({ children }) => (
   <>
@@ -43,6 +45,8 @@ const App = () => {
             </MainLayout>
           }
         />
+        d
+
         <Route
           path="/courses/:courseId"
           element={
@@ -83,6 +87,14 @@ const App = () => {
             </MainLayout>
           }
         /> */}
+        <Route
+          path="/pending-approval"
+          element={
+            <MainLayout>
+              <PendingApproval />
+            </MainLayout>
+          }
+        />
         <Route
           path="/login"
           element={
