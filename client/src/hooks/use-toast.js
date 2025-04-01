@@ -1,8 +1,14 @@
 import * as React from "react";
 
-// Constants
 const TOAST_LIMIT = 1;
 const TOAST_REMOVE_DELAY = 1000000;
+
+const actionTypes = {
+  ADD_TOAST: "ADD_TOAST",
+  UPDATE_TOAST: "UPDATE_TOAST",
+  DISMISS_TOAST: "DISMISS_TOAST",
+  REMOVE_TOAST: "REMOVE_TOAST",
+};
 
 let count = 0;
 
@@ -11,15 +17,6 @@ function genId() {
   return count.toString();
 }
 
-// Action Types
-const actionTypes = {
-  ADD_TOAST: "ADD_TOAST",
-  UPDATE_TOAST: "UPDATE_TOAST",
-  DISMISS_TOAST: "DISMISS_TOAST",
-  REMOVE_TOAST: "REMOVE_TOAST",
-};
-
-// Reducer
 const toastTimeouts = new Map();
 
 const addToRemoveQueue = (toastId) => {
@@ -38,7 +35,7 @@ const addToRemoveQueue = (toastId) => {
   toastTimeouts.set(toastId, timeout);
 };
 
-const reducer = (state, action) => {
+export const reducer = (state, action) => {
   switch (action.type) {
     case "ADD_TOAST":
       return {
@@ -77,7 +74,6 @@ const reducer = (state, action) => {
         ),
       };
     }
-
     case "REMOVE_TOAST":
       if (action.toastId === undefined) {
         return {
@@ -92,8 +88,8 @@ const reducer = (state, action) => {
   }
 };
 
-// State
 const listeners = [];
+
 let memoryState = { toasts: [] };
 
 function dispatch(action) {
@@ -111,7 +107,6 @@ function toast({ ...props }) {
       type: "UPDATE_TOAST",
       toast: { ...props, id },
     });
-
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id });
 
   dispatch({

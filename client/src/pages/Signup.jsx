@@ -1,281 +1,480 @@
-import { useState, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { Mail, User, Phone, Upload, BookOpen, Lock, FileText } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useState, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import axios from "axios";
+import {
+  Mail,
+  User,
+  Phone,
+  Upload,
+  BookOpen,
+  Lock,
+  Eye,
+  EyeOff,
+  Loader2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "../hooks/use-toast";
+import ThemeToggle from "@/components/ui/ThemeToggle";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+// Form validation schema
+const formSchema = z
+  .object({
+    name: z.string().min(3, "Name must be at least 3 characters long"),
+    email: z.string().email("Please enter a valid email address"),
+    phone: z.string().min(10, "Phone number must be at least 10 digits").optional(),
+    role: z.enum(["student", "instructor"]),
+    expertise: z.string().optional(),
+    password: z.string().min(8, "Password must be at least 8 characters long"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords must match",
+    path: ["confirmPassword"],
+  })
+  .refine(
+    (data) => {
+      if (data.role === "instructor") {
+        return data.expertise && data.expertise.trim() !== "";
+      }
+      return true;
+    },
+    {
+      message: "Expertise is required for instructors",
+      path: ["expertise"],
+    }
+  );
 
 const Signup = () => {
-  const [isLoading, setIsLoading] = useState(false);
+  // State management
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [cvFile, setCvFile] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
-  const navigate = useNavigate();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const formSchema = z.object({
-    name: z.string().min(3, 'Name is required and must be at least 3 characters long.'),
-    email: z.string().email('Please enter a valid email address.'),
-    phone: z.string().min(10, 'Phone number must be at least 10 digits.').optional(),
-    role: z.enum(['student', 'instructor']),
-    expertise: z.string().optional().refine(val => {
-      return val !== undefined && val !== '' || formValues.role !== 'instructor';
-    }, 'Expertise is required for instructors.'),
-    password: z.string().min(8, 'Password must be at least 8 characters long.'),
-    confirmPassword: z.string()
-  }).refine(data => data.password === data.confirmPassword, {
-    message: 'Passwords must match.',
-    path: ['confirmPassword']
-  }).refine(data => {
-    if (data.role === 'instructor') {
-      return cvFile !== null;
-    }
-    return true;
-  }, {
-    message: 'CV is required for instructors.',
-    path: ['cv']
-  });
-
-  const [formValues, setFormValues] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    role: 'student',
-    expertise: '',
-    password: '',
-    confirmPassword: ''
-  });
-
+  // Form handling
   const form = useForm({
     resolver: zodResolver(formSchema),
-    defaultValues: formValues
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      role: "student",
+      expertise: "",
+      password: "",
+      confirmPassword: "",
+    },
   });
 
+  // Handle file upload
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.type !== 'application/pdf') {
+      // Validate file type
+      if (file.type !== "application/pdf") {
         toast({
-          title: 'Invalid File Type',
-          description: 'Only PDF files are allowed.',
-          variant: "destructive"
+          title: "Invalid File Type",
+          description: "Only PDF files are allowed",
+          variant: "destructive",
         });
         return;
       }
+      
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File Too Large",
+          description: "CV must be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       setCvFile(file);
     }
   };
 
-  const onSubmit = async (values) => {
-    setIsLoading(true);
-
-    try {
-      const formData = new FormData();
-      formData.append('name', values.name);
-      formData.append('email', values.email);
-      if (values.phone) formData.append('phone', values.phone);
-      formData.append('role', values.role);
-      if (values.role === 'instructor') {
-        formData.append('expertise', values.expertise || '');
-        if (cvFile) formData.append('cv', cvFile);
+  // Handle role change
+  const handleRoleChange = (value) => {
+    form.setValue("role", value);
+    if (value === "student") {
+      form.setValue("expertise", "");
+      setCvFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
       }
-      formData.append('password', values.password);
-
-      toast({
-        title: 'Registration Successful',
-        description: values.role === 'instructor' 
-          ? 'Your account is under review for instructor approval.' 
-          : 'Welcome to Fidel-Hub!',
-      });
-      
-      navigate('/dashboard');
-    } catch (error) {
-      toast({
-        title: 'Registration Failed',
-        description: 'An error occurred while creating your account.',
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const handleRoleChange = (value) => {
-    form.setValue('role', value);
-    setFormValues({ ...formValues, role: value });
-    if (value === 'student') {
-      form.setValue('expertise', '');
-      setFormValues({ ...formValues, role: value, expertise: '' });
+  // Form submission
+  const onSubmit = async (values) => {
+    setIsSubmitting(true);
+    
+    try {
+      const formData = new FormData();
+      
+      // Append all form values
+      formData.append("name", values.name);
+      formData.append("email", values.email);
+      if (values.phone) formData.append("phone", values.phone);
+      formData.append("role", values.role);
+      formData.append("password", values.password);
+      formData.append("confirmPassword", values.confirmPassword);
+  
+      // Append instructor-specific fields
+      if (values.role === "instructor") {
+        formData.append("expertise", values.expertise);
+        if (cvFile) formData.append("cv", cvFile);
+      }
+  
+      // Debug: Log FormData contents
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
+  
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/api/auth/register`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+  
+      // SUCCESS HANDLING
+      toast({
+        title: "Registration successful!",
+        description: values.role === "instructor" 
+          ? "Your instructor account is under review. We'll notify you once approved."
+          : "Welcome to our platform! You can now login and start learning.",
+        duration: 5000, // Show for 5 seconds
+      });
+  
+      // Reset form after successful submission
+      form.reset();
       setCvFile(null);
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
+  
+      // Redirect to login page after 3 seconds
+      setTimeout(() => {
+        navigate("/login");
+      }, 3000);
+  
+    } catch (error) {
+      // ENHANCED ERROR HANDLING
+      let errorMessage = "An error occurred during registration";
+      
+      if (error.response) {
+        // Backend returned an error response
+        if (error.response.data?.message === "Passwords do not match") {
+          errorMessage = "Passwords do not match";
+        } else if (error.response.data?.message === "User already exists") {
+          errorMessage = "User already exists";
+        } else {
+          errorMessage = error.response.data?.message || errorMessage;
+        }
+      } else if (error.message) {
+        // Axios or other client-side error
+        errorMessage = error.message;
+      }
+  
+      // FAILURE HANDLING
+      toast({
+        title: "Registration failed!",
+        description: errorMessage,
+        variant: "destructive",
+        duration: 5000,
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gray-50">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        {/* <Link to="/">
-          <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
-            Fidel-Hub
-          </h2>
-        </Link> */}
-        <h2 className="mt-6 text-center text-2xl font-bold tracking-tight text-gray-900">
-          Create an Account
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Or{' '}
-          <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
-            log in to an existing account
-          </Link>
-        </p>
+    <div className="min-h-screen flex flex-col">
+      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        {/* Background decorations */}
+        <div className="absolute -top-40 -left-40 w-80 h-80 bg-fidel-100 dark:bg-fidel-950/20 rounded-full blur-3xl opacity-60 dark:opacity-30 -z-10"></div>
+        <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-slate-100 dark:bg-slate-800/20 rounded-full blur-3xl opacity-60 dark:opacity-30 -z-10"></div>
+
+        <div className="w-full max-w-md space-y-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-center"
+          >
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mt-5">
+              Create an account
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Join us to start your learning journey
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="glass-card p-6 md:p-8 shadow-lg"
+          >
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {/* Name Field */}
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <Input
+                    id="name"
+                    type="text"
+                    {...form.register("name")}
+                    className="glass-input pl-10"
+                    placeholder="John Doe"
+                  />
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
+                </div>
+                {form.formState.errors.name && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {form.formState.errors.name.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Email Field */}
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Input
+                    id="email"
+                    type="email"
+                    {...form.register("email")}
+                    className="glass-input pl-10"
+                    placeholder="your.email@example.com"
+                  />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
+                </div>
+                {form.formState.errors.email && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {form.formState.errors.email.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Phone Field */}
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Phone Number (Optional)
+                </label>
+                <div className="relative">
+                  <Input
+                    id="phone"
+                    type="tel"
+                    {...form.register("phone")}
+                    className="glass-input pl-10"
+                    placeholder="+1 (123) 456-7890"
+                  />
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
+                </div>
+              </div>
+
+              {/* Role Selection */}
+              <div>
+                <label htmlFor="role" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Join As
+                </label>
+                <Select
+                  value={form.watch("role")}
+                  onValueChange={(value) => handleRoleChange(value)}
+                >
+                  <SelectTrigger className="glass-input">
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                    <SelectItem value="student">Student</SelectItem>
+                    <SelectItem value="instructor">Instructor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Instructor-specific fields */}
+              {form.watch("role") === "instructor" && (
+                <>
+                  {/* Expertise Field */}
+                  <div>
+                    <label htmlFor="expertise" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Expertise
+                    </label>
+                    <div className="relative">
+                      <Textarea
+                        id="expertise"
+                        {...form.register("expertise")}
+                        className="glass-input pl-10"
+                        placeholder="Your areas of expertise"
+                      />
+                      <BookOpen className="absolute left-3 top-3 text-muted-foreground" size={18} />
+                    </div>
+                    {form.formState.errors.expertise && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {form.formState.errors.expertise.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* CV Upload Field */}
+                  <div>
+                    <label htmlFor="cv" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      CV (PDF only, max 5MB)
+                    </label>
+                    <div className="relative">
+                      <label
+                        htmlFor="cv-upload"
+                        className="flex flex-col items-center justify-center w-full glass-input p-4 border-2 border-dashed rounded-lg cursor-pointer hover:border-fidel-500 transition-colors"
+                      >
+                        <div className="flex items-center">
+                          <Upload className="w-5 h-5 mr-2 text-muted-foreground" />
+                          <span className="text-sm">
+                            {cvFile ? cvFile.name : "Click to upload your CV"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Only PDF files are allowed
+                        </p>
+                      </label>
+                      <input
+                        id="cv-upload"
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".pdf"
+                        className="hidden"
+                        onChange={handleFileChange}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Password Field */}
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Password
+                </label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    {...form.register("password")}
+                    className="glass-input pl-10 pr-10"
+                    placeholder="••••••••"
+                  />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-slate-900 dark:hover:text-white"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                {form.formState.errors.password && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {form.formState.errors.password.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Confirm Password Field */}
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    {...form.register("confirmPassword")}
+                    className="glass-input pl-10 pr-10"
+                    placeholder="••••••••"
+                  />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-slate-900 dark:hover:text-white"
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                {form.formState.errors.confirmPassword && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {form.formState.errors.confirmPassword.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Submit Button */}
+              <div className="pt-2">
+                <Button
+                  type="submit"
+                  className="w-full bg-fidel-500 hover:bg-fidel-600 text-white"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center">
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating account...
+                    </span>
+                  ) : (
+                    "Create Account"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </motion.div>
+
+          {/* Login Link */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-center text-sm text-muted-foreground"
+          >
+            Already have an account?{" "}
+            <Link
+              to="/login"
+              className="text-fidel-600 hover:text-fidel-500 font-medium"
+            >
+              Sign in
+            </Link>
+          </motion.p>
+        </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div>
-              <label className="flex items-center">
-                <User className="h-4 w-4 mr-2" />
-                Full Name
-              </label>
-              <input 
-                {...form.register('name')}
-                placeholder="Enter your full name"
-                onChange={(e) => setFormValues({ ...formValues, name: e.target.value })}
-                className="input"
-              />
-            </div>
-
-            <div>
-              <label className="flex items-center">
-                <Mail className="h-4 w-4 mr-2" />
-                Email
-              </label>
-              <input 
-                {...form.register('email')}
-                type="email"
-                placeholder="Enter your email"
-                onChange={(e) => setFormValues({ ...formValues, email: e.target.value })}
-                className="input"
-              />
-            </div>
-
-            <div>
-              <label className="flex items-center">
-                <Phone className="h-4 w-4 mr-2" />
-                Phone (Optional)
-              </label>
-              <input 
-                {...form.register('phone')}
-                type="tel"
-                placeholder="Enter your phone number"
-                onChange={(e) => setFormValues({ ...formValues, phone: e.target.value })}
-                className="input"
-              />
-            </div>
-
-            <div>
-              <label>Join As</label>
-              <Select
-                value={form.watch('role')}
-                onValueChange={(value) => handleRoleChange(value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="instructor">Instructor</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {form.watch('role') === 'instructor' && (
-              <>
-                <div>
-                  <label className="flex items-center">
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    Expertise
-                  </label>
-                  <Textarea 
-                    {...form.register('expertise')}
-                    placeholder="Enter your area of expertise"
-                    onChange={(e) => setFormValues({ ...formValues, expertise: e.target.value })}
-                    className="textarea"
-                  />
-                </div>
-
-                <div>
-                  <label className="flex items-center">
-                    <FileText className="h-4 w-4 mr-2" />
-                    CV
-                  </label>
-                  <div className="flex items-center justify-center w-full">
-                    <label
-                      htmlFor="cv-upload"
-                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
-                    >
-                      <Upload className="w-8 h-8 mb-4 text-gray-500" />
-                      <p className="mb-2 text-sm text-gray-500">
-                        {cvFile ? cvFile.name : 'Upload your CV'}
-                      </p>
-                      <p className="text-xs text-gray-500">Only PDF files are allowed.</p>
-                    </label>
-                    <input
-                      id="cv-upload"
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".pdf"
-                      className="hidden"
-                      onChange={handleFileChange}
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-
-            <div>
-              <label className="flex items-center">
-                <Lock className="h-4 w-4 mr-2" />
-                Password
-              </label>
-              <input 
-                {...form.register('password')}
-                type="password"
-                placeholder="Enter your password"
-                onChange={(e) => setFormValues({ ...formValues, password: e.target.value })}
-                className="input"
-              />
-            </div>
-
-            <div>
-              <label className="flex items-center">
-                <Lock className="h-4 w-4 mr-2" />
-                Confirm Password
-              </label>
-              <input 
-                {...form.register('confirmPassword')}
-                type="password"
-                placeholder="Confirm your password"
-                onChange={(e) => setFormValues({ ...formValues, confirmPassword: e.target.value })}
-                className="input"
-              />
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Loading...' : 'Create Account'}
-            </Button>
-          </form>
-        </div>
+      {/* Theme Toggle */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <ThemeToggle />
       </div>
     </div>
   );
