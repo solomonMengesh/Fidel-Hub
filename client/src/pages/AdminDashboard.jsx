@@ -17,6 +17,7 @@ import PlatformAnalytics from "@/components/admin/PlatformAnalytics";
 import PaymentManagement from "@/components/admin/PaymentManagement";
 import PlatformSettings from "../components/admin/PlatformSettings";
 import UserManagement from "../components/admin/UserManagement";
+import Logo from "../components/layout/Logo";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -47,8 +48,9 @@ const AdminDashboard = () => {
         } md:translate-x-0 md:relative md:block overflow-hidden`}
       >
         <div className="flex items-center space-x-2 mb-8">
-          <div className="h-8 w-8 rounded-full bg-fidel-500"></div>
-          <div className="font-semibold text-lg">Fidel Hub</div>
+          {/* <div className="h-8 w-8 rounded-full bg-fidel-500"></div>
+          <div className="font-semibold text-lg">Fidel Hub</div> */}
+          <Logo />
         </div>
 
         <nav className="space-y-1">
