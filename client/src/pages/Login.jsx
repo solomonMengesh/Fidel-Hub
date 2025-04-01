@@ -1,21 +1,81 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ThemeToggle from "@/components/ui/ThemeToggle";
-import { cn } from "@/lib/utils";
-
+// import { useToast } from "@/hooks/use-toast";
+import axios from "axios";
+import { toast } from "sonner";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  // const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log({ email, password });
-    // Authentication logic would go here
+    setIsLoading(true);
+
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`,
+        {
+          email,
+          password
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true // For cookies if using them
+        }
+      );
+
+      // Successful login
+      toast.success("Login Successful! Redirecting to your dashboard...");
+
+      // Store the token if using JWT
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+      }
+
+      // Redirect based on user role or to dashboard
+      const redirectPath = response.data.redirectTo || "/dashboard";
+      navigate(redirectPath);
+
+    } catch (error) {
+      let errorMessage = "Login failed. Please try again.";
+
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          switch (error.response.status) {
+            case 401:
+              errorMessage = "Invalid email or password";
+              break;
+            case 403:
+              errorMessage = "Account not verified. Please check your email.";
+              break;
+            case 404:
+              errorMessage = "User not found";
+              break;
+            default:
+              errorMessage = error.response.data.message || errorMessage;
+          }
+        }
+      }
+      console.log("Login Failed:", errorMessage);
+      toast.error("Login failed", { 
+        description: error instanceof Error ? error.message : "An unknown error occurred"
+      });
+      
+      
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -106,8 +166,20 @@ const Login = () => {
               </div>
 
               <div>
-                <Button type="submit" className="w-full bg-fidel-500 hover:bg-fidel-600 text-white">
-                  Sign in
+                <Button 
+                  type="submit" 
+                  className="w-full bg-fidel-500 hover:bg-fidel-600 text-white"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Signing in...
+                    </span>
+                  ) : "Sign in"}
                 </Button>
               </div>
             </form>
