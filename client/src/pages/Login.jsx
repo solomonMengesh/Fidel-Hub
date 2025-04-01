@@ -11,17 +11,15 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState("student");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log({ email, password, role });
+    console.log({ email, password });
     // Authentication logic would go here
   };
 
   return (
     <div className="min-h-screen flex flex-col">
-
       <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         {/* Background decorations */}
         <div className="absolute -top-40 -left-40 w-80 h-80 bg-fidel-100 dark:bg-fidel-950/20 rounded-full blur-3xl opacity-60 dark:opacity-30 -z-10"></div>
@@ -46,25 +44,6 @@ const Login = () => {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="glass-card p-6 md:p-8 shadow-lg"
           >
-            <div className="mb-6">
-              <div className="flex justify-center space-x-4 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                {["student", "instructor", "admin"].map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => setRole(r)}
-                    className={cn(
-                      "flex-1 px-4 py-2 rounded-md text-sm font-medium capitalize transition-all duration-200",
-                      role === r
-                        ? "bg-white dark:bg-slate-900 text-fidel-600 shadow-sm"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                    )}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -133,38 +112,18 @@ const Login = () => {
               </div>
             </form>
 
-            {/* <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white dark:bg-slate-900 text-muted-foreground">Or continue with</span>
-                </div>
-              </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                <button className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors duration-200">
-                  Google
-                </button>
-                <button className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors duration-200">
-                  Microsoft
-                </button>
-              </div>
-            </div> */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="mt-6 text-center text-sm text-muted-foreground"
+            >
+              Don't have an account?{" "}
+              <Link to="/signup" className="text-fidel-600 hover:text-fidel-500 font-medium">
+                Sign up for free
+              </Link>
+            </motion.p>
           </motion.div>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-center text-sm text-muted-foreground"
-          >
-            Don't have an account?{" "}
-            <Link to="/signup" className="text-fidel-600 hover:text-fidel-500 font-medium">
-              Sign up for free
-            </Link>
-          </motion.p>
         </div>
       </div>
 

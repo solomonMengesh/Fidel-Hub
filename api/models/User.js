@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema({
   },
   password: { type: String, required: true },
   cv: { type: String }, // Store the path to the CV if the user is an instructor
+  isApproved: { type: Boolean, default: function() { return this.role !== 'instructor'; } },
 }, { timestamps: true });
 
 // Password hashing middleware
