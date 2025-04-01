@@ -34,19 +34,32 @@ const Login = () => {
           withCredentials: true // For cookies if using them
         }
       );
-
+    
       // Successful login
       toast.success("Login Successful! Redirecting to your dashboard...");
-
+    
       // Store the token if using JWT
       if (response.data.token) {
         localStorage.setItem("token", response.data.token);
       }
-
-      // Redirect based on user role or to dashboard
-      const redirectPath = response.data.redirectTo || "/dashboard";
+    
+      // Get the user role from the response
+      const userRole = response.data.user?.role;
+    
+      // Redirect based on the user role
+      let redirectPath = "/"; // Default path in case the role is unknown
+    
+      if (userRole === "instructor") {
+        redirectPath = "/instructor-dashboard";
+      } else if (userRole === "student") {
+        redirectPath = "/student-dashboard";
+      } else if (userRole === "admin") {
+        redirectPath = "/admin-dashboard";
+      }
+    
+      // Redirect to the appropriate dashboard
       navigate(redirectPath);
-
+    
     } catch (error) {
       let errorMessage = "Login failed. Please try again.";
 
