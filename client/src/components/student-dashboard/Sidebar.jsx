@@ -8,6 +8,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Logo from "../layout/Logo";
 
 export const Sidebar = ({
   isSidebarOpen,
@@ -32,22 +33,7 @@ export const Sidebar = ({
     >
       {/* Sidebar Header */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 dark:border-slate-800">
-        <Link
-          to="/"
-          className="text-xl font-bold text-slate-900 dark:text-white flex items-center"
-        >
-          <span className="bg-fidel-500 text-white h-7 w-7 rounded flex items-center justify-center mr-2 shadow">
-            F
-          </span>
-          Fidel<span className="text-fidel-500">Hub</span>
-        </Link>
-        {/* Close Button for Mobile */}
-        <button
-          onClick={() => setIsSidebarOpen(false)}
-          className="text-slate-500 dark:text-slate-400 md:hidden hover:text-slate-700 dark:hover:text-slate-300"
-        >
-          <X size={18} />
-        </button>
+       <Logo />
       </div>
 
       {/* Sidebar Navigation */}
