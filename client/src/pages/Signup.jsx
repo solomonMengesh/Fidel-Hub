@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Mail,
@@ -33,8 +33,10 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [cvFile, setCvFile] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const formSchema = z
     .object({
@@ -109,7 +111,11 @@ const Signup = () => {
   };
 
   const onSubmit = async (values) => {
+    setIsSubmitting(true);
     try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       const formData = new FormData();
       formData.append("name", values.name);
       formData.append("email", values.email);
@@ -128,12 +134,31 @@ const Signup = () => {
             ? "Your account is under review for instructor approval."
             : "Welcome to our platform!",
       });
+
+      // Navigate based on role
+      if (values.role === "instructor") {
+        navigate("/pending-approval", {
+          state: {
+            email: values.email,
+            name: values.name,
+          },
+        });
+      } else {
+        navigate("/login", {
+          state: {
+            email: values.email,
+            newlyRegistered: true,
+          },
+        });
+      }
     } catch (error) {
       toast({
         title: "Registration Failed",
         description: "An error occurred while creating your account.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -184,7 +209,7 @@ const Signup = () => {
                   htmlFor="name"
                   className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
                 >
-                  Full Name 
+                  Full Name
                 </label>
                 <div className="relative">
                   <Input
@@ -424,8 +449,9 @@ const Signup = () => {
                 <Button
                   type="submit"
                   className="w-full bg-fidel-500 hover:bg-fidel-600 text-white"
+                  disabled={isSubmitting}
                 >
-                  Create Account
+                  {isSubmitting ? "Creating account..." : "Create Account"}
                 </Button>
               </div>
             </form>
