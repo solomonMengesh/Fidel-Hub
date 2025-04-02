@@ -72,10 +72,48 @@ export const loginUser = async (req, res) => {
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
     console.log("JWT Token generated:", token);
 
-    res.json({ token, user });
+    // ✅ Set the token as an HTTP-only cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // Only secure in production
+      sameSite: "strict", // Prevent CSRF attacks
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    res.status(200).json({ message: "Login successful", user });
 
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// User logout
+export const logoutUser = (req, res) => {
+  try {
+    // Invalidate JWT token (client-side action needed as well)
+    res.clearCookie("token"); // Optionally clear cookie if using it to store the token
+    res.status(200).json({ message: "Logout successful" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+
+// In your authController.js
+
+export const getMe = async (req, res) => {
+  try {
+    console.log("Decoded User:", req.user); // Check if req.user contains the expected user ID
+
+    // If you are storing the user ID in the JWT token, you can get it from req.user
+    const user = await User.findById(req.user.id); // Find the user by ID from the decoded JWT
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(user); // Return the user data as the response
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };

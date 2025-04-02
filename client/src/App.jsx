@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import Login from "./pages/Login";
@@ -27,7 +27,7 @@ const MainLayout = ({ children }) => (
 
 const App = () => {
   return (
-    <Router>
+    <>
       <Routes>
         {/* Routes that include Navbar and Footer */}
         <Route path="/" element={<MainLayout><Index /></MainLayout>} />
@@ -45,11 +45,9 @@ const App = () => {
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/users/:userId" element={<UserDetails />} />
-
-   
       </Routes>
       <Toaster />
-    </Router>
+    </>
   );
 };
 

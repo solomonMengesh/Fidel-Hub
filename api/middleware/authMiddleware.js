@@ -35,3 +35,29 @@ export const adminAuth = async (req, res, next) => {
     res.status(401).json({ message: 'Unauthorized. Invalid token.' });
   }
 };
+
+ 
+export const protect = (req, res, next) => {
+  let token;
+
+  // Get token from cookies or Authorization header
+  if (req.cookies && req.cookies.token) {
+    token = req.cookies.token; // If using cookies
+  } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1]; // If using Bearer token in Authorization header
+  }
+
+  if (!token) {
+    return res.status(401).json({ message: "Not authorized, no token" });
+  }
+
+  try {
+    // Decode the JWT token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded; // Attach user info to the request object
+    next(); // Move to the next middleware/route handler
+  } catch (error) {
+    return res.status(401).json({ message: "Not authorized, token failed" });
+  }
+}
+
