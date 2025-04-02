@@ -35,6 +35,17 @@ const PlatformSettings = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isAvatarLoading, setIsAvatarLoading] = useState(false);
 
+  // Get first letter of user's name for fallback avatar
+  const getInitials = (name) => {
+    if (!name) return "";
+    const names = name.split(" ");
+    let initials = names[0].substring(0, 1).toUpperCase();
+    if (names.length > 1) {
+      initials += names[names.length - 1].substring(0, 1).toUpperCase();
+    }
+    return initials;
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -57,7 +68,6 @@ const PlatformSettings = () => {
 
     setIsAvatarLoading(true);
 
-    // Simulate upload process
     const reader = new FileReader();
     reader.onloadend = () => {
       setAvatarPreview(reader.result);
@@ -74,7 +84,6 @@ const PlatformSettings = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
       toast.success("Profile updated successfully!");
@@ -91,7 +100,6 @@ const PlatformSettings = () => {
 
     setIsLoading(true);
 
-    // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
       setFormData((prev) => ({
@@ -122,8 +130,8 @@ const PlatformSettings = () => {
                   {avatarPreview ? (
                     <AvatarImage src={avatarPreview} alt="Profile picture" />
                   ) : (
-                    <AvatarFallback className="text-4xl">
-                      {user.name.charAt(0)}
+                    <AvatarFallback className="text-4xl bg-primary text-primary-foreground">
+                      {getInitials(formData.name || user.name)}
                     </AvatarFallback>
                   )}
                 </Avatar>
