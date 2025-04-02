@@ -52,7 +52,7 @@ const Login = () => {
       if (userRole === "instructor") {
         redirectPath = "/instructor-dashboard";
       } else if (userRole === "student") {
-        redirectPath = "/student-dashboard";
+        redirectPath = "/";
       } else if (userRole === "admin") {
         redirectPath = "/admin-dashboard";
       }
