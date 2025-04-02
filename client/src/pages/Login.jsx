@@ -134,6 +134,7 @@ const Login = () => {
                   className="glass-input"
                   placeholder="your.email@example.com"
                 />
+                
               </div>
 
               <div>
