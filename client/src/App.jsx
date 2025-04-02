@@ -14,12 +14,12 @@ import Profile from "./pages/Profile";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import PendingApproval from "./components/instructor/PendingApproval";
-
+import { Toaster } from "@/components/ui/sonner";
 
 const MainLayout = ({ children }) => (
   <>
     <Navbar />
-    {children}
+     {children}
     <Footer />
   </>
 );
@@ -29,112 +29,22 @@ const App = () => {
     <Router>
       <Routes>
         {/* Routes that include Navbar and Footer */}
-        <Route
-          path="/"
-          element={
-            <MainLayout>
-              <Index />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/courses"
-          element={
-            <MainLayout>
-              <Courses />
-            </MainLayout>
-          }
-        />
-        d
+        <Route path="/" element={<MainLayout><Index /></MainLayout>} />
+        <Route path="/courses" element={<MainLayout><Courses /></MainLayout>} />
+        <Route path="/courses/:courseId" element={<MainLayout><CourseDetails /></MainLayout>} />
+        <Route path="/pending-approval" element={<MainLayout><PendingApproval /></MainLayout>} />
+        <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
+        <Route path="/signup" element={<MainLayout><Signup /></MainLayout>} />
+        <Route path="/about" element={<MainLayout><About /></MainLayout>} />
+        <Route path="/contact" element={<MainLayout><Contact /></MainLayout>} />
 
-        <Route
-          path="/courses/:courseId"
-          element={
-            <MainLayout>
-              <CourseDetails />
-            </MainLayout>
-          }
-        />
-        {/* <Route
-          path="/student-dashboard"
-          element={
-            <MainLayout>
-              <StudentDashboard />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/instructor-dashboard"
-          element={
-            <MainLayout>
-              <InstructorDashboard />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/admin-dashboard"
-          element={
-            <MainLayout>
-              <AdminDashboard />
-            </MainLayout>
-          }
-        /> 
-        {/* <Route
-          path="/profile"
-          element={
-            <MainLayout>
-              <Profile />
-            </MainLayout>
-          }
-        /> */}
-        <Route
-          path="/pending-approval"
-          element={
-            <MainLayout>
-              <PendingApproval />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/login"
-          element={
-            <MainLayout>
-              <Login />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/signup"
-          element={
-            <MainLayout>
-              <Signup />
-            </MainLayout>
-          }
-        />
-
-        <Route
-          path="/about"
-          element={
-            <MainLayout>
-              <About />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/contact"
-          element={
-            <MainLayout>
-              <Contact />
-            </MainLayout>
-          }
-        />
-
-        {/* Routes without Navbar and Footer (like Auth pages) */}
+        {/* Routes without Navbar and Footer */}
         <Route path="/student-dashboard" element={<StudentDashboard />} />
         <Route path="/instructor-dashboard" element={<InstructorDashboard />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/profile" element={<Profile />} />
       </Routes>
+      <Toaster />
     </Router>
   );
 };

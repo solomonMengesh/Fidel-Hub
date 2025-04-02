@@ -5,13 +5,14 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   phone: { type: String },
-  role: { type: String, enum: ['student', 'instructor'], required: true },
+  role: { type: String, enum: ['student', 'instructor','admin'], required: true },
   expertise: { 
     type: String, 
     required: function() { return this.role === 'instructor'; }, // Ensure expertise is required for instructors
   },
   password: { type: String, required: true },
   cv: { type: String }, // Store the path to the CV if the user is an instructor
+  isApproved: { type: Boolean, default: function() { return this.role !== 'instructor'; } },
 }, { timestamps: true });
 
 // Password hashing middleware

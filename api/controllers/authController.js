@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
 import upload from '../middleware/uploadMiddleware.js'; // Import your multer upload middleware
+import jwt from 'jsonwebtoken';
 
 // Register a new user
 export const registerUser = async (req, res) => {
@@ -46,21 +47,35 @@ export const registerUser = async (req, res) => {
 // User login
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
+  console.log("Login attempt:", { email });
 
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: 'Invalid email or password' });
+    console.log("User found:", user ? user._id : "No user found");
 
-    // Compare the password using the method from the schema
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     const isMatch = await user.comparePassword(password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid email or password' });
+    console.log("Password match:", isMatch);
 
-    // Generate a token
-    const token = generateToken(user._id);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
 
-    // Return success message and token
-    res.json({ message: 'Login successful!', token });
+    if (user.role === "instructor" && !user.isApproved) {
+      console.log("Instructor approval status:", user.isApproved);
+      return res.status(403).json({ message: "Your account is pending approval by an admin." });
+    }
+
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    console.log("JWT Token generated:", token);
+
+    res.json({ token, user });
+
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
