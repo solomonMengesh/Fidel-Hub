@@ -6,6 +6,7 @@ import path from 'path';
 import authRoutes from './routes/authRoutes.js';
 import connectDB from './config/db.js';
 import cors from 'cors';
+import adminRoutes from './routes/admin-Routes/adminRoutes.js';
 
 dotenv.config();
 connectDB();
@@ -49,6 +50,9 @@ app.post('/upload', upload.single('cv'), (req, res) => {
 // Serve static files (optional if you want to serve the uploaded files)
 app.use('/uploads', express.static('uploads'));
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+
+
 // Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

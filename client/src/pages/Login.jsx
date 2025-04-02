@@ -72,7 +72,7 @@ const Login = () => {
               break;
             case 403:
               errorMessage = "Account not verified. Please check your email.";
-              toast.error("Account not verified. Please check your email.");
+              toast.error("Your account is pending approval by an admin.");
               break;
             case 404:
               errorMessage = "User not found";
@@ -134,6 +134,7 @@ const Login = () => {
                   className="glass-input"
                   placeholder="your.email@example.com"
                 />
+                
               </div>
 
               <div>
