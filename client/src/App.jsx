@@ -20,7 +20,7 @@ import UserDetails from "./pages/Userdetails";
 const MainLayout = ({ children }) => (
   <>
     <Navbar />
-     {children}
+    {children}
     <Footer />
   </>
 );
@@ -30,14 +30,70 @@ const App = () => {
     <>
       <Routes>
         {/* Routes that include Navbar and Footer */}
-        <Route path="/" element={<MainLayout><Index /></MainLayout>} />
-        <Route path="/courses" element={<MainLayout><Courses /></MainLayout>} />
-        <Route path="/courses/:courseId" element={<MainLayout><CourseDetails /></MainLayout>} />
-        <Route path="/pending-approval" element={<MainLayout><PendingApproval /></MainLayout>} />
-        <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
-        <Route path="/signup" element={<MainLayout><Signup /></MainLayout>} />
-        <Route path="/about" element={<MainLayout><About /></MainLayout>} />
-        <Route path="/contact" element={<MainLayout><Contact /></MainLayout>} />
+        <Route
+          path="/"
+          element={
+            <MainLayout>
+              <Index />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/courses"
+          element={
+            <MainLayout>
+              <Courses />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/courses/:courseId"
+          element={
+            <MainLayout>
+              <CourseDetails />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/pending-approval"
+          element={
+            <MainLayout>
+              <PendingApproval />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <MainLayout>
+              <Login />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <MainLayout>
+              <Signup />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/about"
+          element={
+            <MainLayout>
+              <About />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/contact"
+          element={
+            <MainLayout>
+              <Contact />
+            </MainLayout>
+          }
+        />
 
         {/* Routes without Navbar and Footer */}
         <Route path="/student-dashboard" element={<StudentDashboard />} />
