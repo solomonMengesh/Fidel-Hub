@@ -15,6 +15,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import PendingApproval from "./components/instructor/PendingApproval";
 import { Toaster } from "@/components/ui/sonner";
+import UserDetails from "./pages/Userdetails";
 
 const MainLayout = ({ children }) => (
   <>
@@ -43,6 +44,9 @@ const App = () => {
         <Route path="/instructor-dashboard" element={<InstructorDashboard />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/users/:userId" element={<UserDetails />} />
+
+   
       </Routes>
       <Toaster />
     </Router>
