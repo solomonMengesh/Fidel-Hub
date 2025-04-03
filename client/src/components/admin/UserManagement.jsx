@@ -98,57 +98,87 @@ const UserManagement = () => {
   : [];
 
 
-  const handleApproveUser = async (userId) => {
-    try {
-      await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/admin/approve-instructor/${userId}`);
-      toast.success(`User #${userId} has been approved`);
-      // Update user status locally or refetch data
-    } catch (error) {
-      toast.error(`Failed to approve User #${userId}`);
+const handleApproveUser = async (userId) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error("No authentication token found");
+      return;
     }
-  };
 
-  const handleRejectUser = async (userId) => {
-    try {
-      await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/api/admin/reject-instructor/${userId}`);
-      toast.error(`User #${userId} has been rejected`);
-      // Update user status locally or refetch data
-    } catch (error) {
-      toast.error(`Failed to reject User #${userId}`);
+    await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/admin/approve-instructor/${userId}`, {}, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    toast.success(`User #${userId} has been approved`);
+    // Optionally update user status locally or refetch data
+  } catch (error) {
+    console.error(`Error approving User #${userId}:`, error);
+    toast.error(`Failed to approve User #${userId}`);
+  }
+};
+
+const handleRejectUser = async (userId) => {
+  try {
+    const token = localStorage.getItem('token'); // Get token from localStorage
+
+    if (!token) {
+      toast.error("No authentication token found");
+      return;
     }
-  };
+
+    const response = await axios.delete(
+      `${import.meta.env.VITE_API_BASE_URL}/api/admin/reject-instructor/${userId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`, // Include token in headers
+        },
+      }
+    );
+
+    toast.error(`User #${userId} has been rejected`);
+    // Update user status locally or refetch data
+  } catch (error) {
+    console.error("Error rejecting user:", error);
+    toast.error("Failed to reject user");
+  }
+};
+
+
 
   const handleViewUser = (userId) => {
     navigate(`/users/${userId}`);
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "Active":
-        return (
-          <span className="flex items-center text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-            <UserCheck size={12} className="mr-1" />
-            Active
-          </span>
-        );
-      case "Inactive":
-        return (
-          <span className="flex items-center text-xs px-2 py-1 rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-            <UserX size={12} className="mr-1" />
-            Inactive
-          </span>
-        );
-      case "Pending":
-        return (
-          <span className="flex items-center text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-            <MoreHorizontal size={12} className="mr-1" />
-            Pending
-          </span>
-        );
-      default:
-        return null;
-    }
-  };
+  // const getStatusBadge = (status) => {
+  //   switch (status) {
+  //     case "Active":
+  //       return (
+  //         <span className="flex items-center text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+  //           <UserCheck size={12} className="mr-1" />
+  //           Active
+  //         </span>
+  //       );
+  //     case "Inactive":
+  //       return (
+  //         <span className="flex items-center text-xs px-2 py-1 rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+  //           <UserX size={12} className="mr-1" />
+  //           Inactive
+  //         </span>
+  //       );
+  //     case "Pending":
+  //       return (
+  //         <span className="flex items-center text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+  //           <MoreHorizontal size={12} className="mr-1" />
+  //           Pending
+  //         </span>
+  //       );
+  //     default:
+  //       return null;
+  //   }
+  // };
 
   return (
     <Card className="shadow-sm">
@@ -235,74 +265,77 @@ const UserManagement = () => {
                   if (a.status !== "Active" && b.status === "Active") return 1;
                   return 0;
                 })
-                .map((user) => (
-                  <TableRow
-                    key={user.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-800"
-                  >
-                    <TableCell>#{user._id}</TableCell>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <span className="capitalize">{user.role}</span>
-                    </TableCell>
-                    <TableCell>{(user.status)}</TableCell>
-                    {/* <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell> */}
-                    <TableCell>{new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</TableCell>
+                .map((user) => {
+                  const userStatus = user.status.toLowerCase(); // Normalize status
+                  return (
+                    <TableRow key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <TableCell>#{user._id}</TableCell>
+                      <TableCell className="font-medium">{user.name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <span className="capitalize">{user.role}</span>
+                      </TableCell>
+                      <TableCell>{(user.status)}</TableCell>
+                      {/* <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell> */}
+                      <TableCell>{new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</TableCell>
 
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleViewUser(user.id)}
-                          className="h-8 w-8"
-                        >
-                          <Eye size={16} />
-                        </Button>
-
-                        {user.status === "Pending" ? (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleApproveUser(user.id)}
-                              className="h-8 w-8 text-green-600"
-                            >
-                              <UserCheck size={16} />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleRejectUser(user.id)}
-                              className="h-8 w-8 text-red-600"
-                            >
-                              <UserX size={16} />
-                            </Button>
-                          </>
-                        ) : user.status === "Active" ? (
+                      <TableCell>
+                        <div className="flex items-center gap-2">
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleRejectUser(user.id)}
-                            className="h-8 w-8 text-red-600"
+                            onClick={() => handleViewUser(user._id)}
+                            className="h-8 w-8"
                           >
-                            <UserX size={16} />
+                            <Eye size={16} />
                           </Button>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleApproveUser(user.id)}
-                            className="h-8 w-8 text-green-600"
-                          >
-                            <UserCheck size={16} />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+
+                          {userStatus === "pending" && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleApproveUser(user._id)}
+                                className="h-8 w-8 text-green-600"
+                              >
+                                <UserCheck size={16} />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRejectUser(user._id)}
+                                className="h-8 w-8 text-red-600"
+                              >
+                                <UserX size={16} />
+                              </Button>
+                            </>
+                          )
+                          // : userStatus === "active" ? (
+                            
+                          //   <Button
+                          //     variant="ghost"
+                          //     size="icon"
+                          //     onClick={() => handleRejectUser(user._id)}
+                          //     className="h-8 w-8 text-red-600"
+                          //   >
+                          //     <UserX size={16} />
+                          //   </Button>
+                          // ) : (
+                          //   <Button
+                          //     variant="ghost"
+                          //     size="icon"
+                          //     onClick={() => handleApproveUser(user._id)}
+                          //     className="h-8 w-8 text-green-600"
+                          //   >
+                          //     <UserCheck size={16} />
+                          //   </Button>
+                          // )
+                          }
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
             </TableBody>
           </Table>
         </div>
