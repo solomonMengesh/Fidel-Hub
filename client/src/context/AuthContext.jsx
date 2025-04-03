@@ -38,24 +38,23 @@ export const AuthProvider = ({ children }) => {
         { email, password },
         { withCredentials: true }
       );
-      
+      console.log('Setting user:', res.data.user);
+      // Update user state
       setUser(res.data.user);
       toast.success("Login successful!");
-      
-      // Redirect based on role
-      const redirectPath = getDashboardPath(res.data.user?.role);
-      navigate(redirectPath);
-      
+  
+      // Navigate to the appropriate dashboard
+      navigate(getDashboardPath(res.data.user?.role));
+  
       return res.data;
     } catch (error) {
-      const errorMsg = error.response?.data?.message || "Login failed";
-      setError(errorMsg);
-      toast.error(errorMsg);
+      toast.error(error.response?.data?.message || "Login failed");
       throw error;
     } finally {
       setLoading(false);
     }
   };
+  
 
   // Logout function
   const logout = async () => {
@@ -78,7 +77,7 @@ export const AuthProvider = ({ children }) => {
   // Helper function to get dashboard path
   const getDashboardPath = (role) => {
     switch (role) {
-      case "student": return "/dashboard";
+      case "student": return "/";
       case "instructor": return "/instructor-dashboard";
       case "admin": return "/admin-dashboard";
       default: return "/";

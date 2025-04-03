@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 // import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "../context/AuthContext"; // Adjust path as needed
 import axios from "axios";
 import { toast } from "sonner";
 const Login = () => {
@@ -15,94 +16,88 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   // const { toast } = useToast();
   const navigate = useNavigate();
+  const { login } = useAuth();
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
+  try {
+    // Use the login function from AuthContext instead of direct axios call
+    const response = await login(email, password);
 
-    try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`,
-        {
-          email,
-          password
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true // For cookies if using them
-        }
-      );
-    
-      // Successful login
-      toast.success("Login Successful! Redirecting to your dashboard...");
-    
-      // Store the token if using JWT
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
-      }
-    
-      // Get the user role from the response
-      const userRole = response.data.user?.role;
-      const isApproved = response.data.user?.isApproved;
-      console.log("isApproved:", isApproved);
-      // Redirect based on the user role
-      console.log("isApproved:", isApproved);
-      let redirectPath = "/"; // default path
-      
+    // Successful login
+    toast.success("Login Successful! Redirecting to your dashboard...");
 
-      if (!isApproved) {
-        redirectPath = "/pending-approval";  // Redirect to pending approval if not approved
-      } else {
-        if (userRole === "instructor") {
-          redirectPath = "/instructor-dashboard";
-        } else if (userRole === "student") {
-          redirectPath = "/";
-        } else if (userRole === "admin") {
-          redirectPath = "/admin-dashboard";
-        }
-      }
-      console.log("Redirecting to:", redirectPath);
-
-      console.log("Full API Response:", response.data);  // Log the entire response
-
-      // Redirect to the appropriate dashboard
-      navigate(redirectPath);
-    
-    } catch (error) {
-      let errorMessage = "Login failed. Please try again.";
-
-      if (axios.isAxiosError(error)) {
-        if (error.response) {
-          switch (error.response.status) {
-            case 401:
-              errorMessage = "Invalid email or password";
-              toast.error("Invalid email or password");
-              break;
-            case 403:
-              errorMessage = "Account not verified. Please check your email.";
-              toast.error("Your account is pending approval by an admin.");
-              break;
-            case 404:
-              errorMessage = "User not found";
-              toast.error("User not found");
-              break;
-            default:
-              errorMessage = error.response.data.message || errorMessage;
-          }
-        }
-      }
-      console.log("Login Failed:", errorMessage);
-      // toast.error("Login failed", { 
-      //   description: error instanceof Error ? error.message : "An unknown error occurred"
-      // });
-      
-      
-    } finally {
-      setIsLoading(false);
+    // Store token if using JWT
+    if (response.token) {
+      localStorage.setItem("token", response.token);
     }
-  };
+
+    // Get user details - now from response directly (not response.data)
+    const { role: userRole, isApproved } = response.user || {};
+    console.log("Login response:", { userRole, isApproved });
+
+    // Determine redirect path
+    let redirectPath = "/";
+    if (!isApproved) {
+      redirectPath = "/pending-approval";
+    } else {
+      switch (userRole) {
+        case "instructor":
+          redirectPath = "/instructor-dashboard";
+          break;
+        case "admin":
+          redirectPath = "/admin-dashboard";
+          break;
+        case "student":
+        default:
+          redirectPath = "/";
+      }
+    }
+
+    // Navigate without delay since context is already updated
+    navigate(redirectPath, { 
+      replace: true,
+      state: { freshLogin: true }
+    });
+
+  } catch (error) {
+    let errorMessage = "Login failed. Please try again.";
+
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        switch (error.response.status) {
+          case 401:
+            errorMessage = "Invalid email or password";
+            break;
+          case 403:
+            if (error.response.data.message?.includes("approved")) {
+              errorMessage = "Your account is pending approval by an admin.";
+            } else {
+              errorMessage = "Account not verified. Please check your email.";
+            }
+            break;
+          case 404:
+            errorMessage = "User not found";
+            break;
+          case 429:
+            errorMessage = "Too many attempts. Please try again later.";
+            break;
+          default:
+            errorMessage = error.response.data.message || errorMessage;
+        }
+      } else if (error.request) {
+        errorMessage = "No response from server. Please check your connection.";
+      }
+    }
+
+    toast.error(errorMessage);
+    console.error("Login error:", error);
+
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex flex-col">
