@@ -1,4 +1,5 @@
 import User from '../../models/User.js';
+import jwt from 'jsonwebtoken';
 
 export const approveInstructor = async (req, res) => {
     const { userId } = req.params;
@@ -18,6 +19,7 @@ export const approveInstructor = async (req, res) => {
         }
 
         user.isApproved = true;
+        user.status = 'active';
         await user.save();
 
         res.json({ message: "Instructor approved successfully!" });
@@ -66,5 +68,51 @@ export const listPendingInstructors = async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+//  List All Active Instructors
+export const listActiveInstructors = async (req, res) => {
+  try {
+    const activeInstructors = await User.find({ role: 'instructor', isApproved: true })
+      .select('name email phone status createdAt');
+
+    res.status(200).json({ activeInstructors });
+
+  } catch (error) {
+    console.error("Error listing active instructors:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+//  List ALL Users (Students, Instructors, Admins)
+export const listAllUsers = async (req, res) => {
+  try {
+    const users = await User.find()
+      .select('name email phone role status createdAt');
+
+    res.status(200).json({ users });
+
+  } catch (error) {
+    console.error("Error listing users:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const getUsersByRole = async (req, res) => {
+  const { role } = req.params; 
+
+  try {
+    const users = await User.find({ role });
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: `No users found with the role: ${role}` });
+    }
+
+    res.status(200).json({ users });
+
+  } catch (error) {
+    console.error("Error retrieving users by role:", error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
