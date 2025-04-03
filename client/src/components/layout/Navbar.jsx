@@ -210,57 +210,83 @@ const Navbar = () => {
       </div>
 
       {/* Mobile menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg shadow-lg border-t border-gray-200 dark:border-slate-800 animate-fade-in">
-          <div className="p-4 space-y-4">
-            <nav className="flex flex-col space-y-2">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  to={link.href}
-                  className={cn(
-                    "px-3 py-2 rounded-md text-base font-medium transition-colors duration-200",
-                    location.pathname === link.href
-                      ? "text-fidel-500 bg-fidel-50 dark:bg-fidel-950/30"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                  )}
-                >
-                  {link.name}
-                </Link>
-              ))}
-              
-              {/* Show Dashboard link in mobile when logged in */}
-              {user && (
-                <Link
-                  to={getDashboardLink()}
-                  className={cn(
-                    "px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 flex items-center",
-                    location.pathname.startsWith("/dashboard")
-                      ? "text-fidel-500 bg-fidel-50 dark:bg-fidel-950/30"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                  )}
-                >
-                  <Grid className="w-4 h-4 mr-2" />
-                  Dashboard
-                </Link>
-              )}
-            </nav>
-            
-            {/* Mobile Logout Button */}
-            {user && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full text-red-500 focus:text-red-500"
-                onClick={handleLogout}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Log out
-              </Button>
+{mobileMenuOpen && (
+  <div className="md:hidden absolute top-full left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg shadow-lg border-t border-gray-200 dark:border-slate-800 animate-fade-in">
+    <div className="p-4 space-y-4">
+      <nav className="flex flex-col space-y-2">
+        {navLinks.map((link) => (
+          <Link
+            key={link.name}
+            to={link.href}
+            onClick={() => setMobileMenuOpen(false)} // Close menu when clicked
+            className={cn(
+              "px-3 py-2 rounded-md text-base font-medium transition-colors duration-200",
+              location.pathname === link.href
+                ? "text-fidel-500 bg-fidel-50 dark:bg-fidel-950/30"
+                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             )}
-          </div>
-        </div>
+          >
+            {link.name}
+          </Link>
+        ))}
+
+        {/* Show Dashboard link in mobile when logged in */}
+        {user && (
+          <Link
+            to={getDashboardLink()}
+            onClick={() => setMobileMenuOpen(false)} // Close menu when clicked
+            className={cn(
+              "px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 flex items-center",
+              location.pathname.startsWith("/dashboard")
+                ? "text-fidel-500 bg-fidel-50 dark:bg-fidel-950/30"
+                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            )}
+          >
+            <Grid className="w-4 h-4 mr-2" />
+            Dashboard
+          </Link>
+        )}
+      </nav>
+
+      {/* Mobile Logout Button */}
+      {user ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full text-red-500 focus:text-red-500"
+          onClick={handleLogout}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Log out
+        </Button>
+      ) : (
+        <>
+    <div className="grid grid-cols-2 gap-4 w-full">
+  <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+    <Button
+      className="w-full px-4 py-2 bg-fidel-500 hover:bg-fidel-600 text-white shadow-sm hover:shadow-md transition-all duration-200 rounded-md"
+      size="sm"
+    >
+      Log in
+    </Button>
+  </Link>
+  <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
+    <Button
+      className="w-full px-4 py-2 bg-fidel-500 hover:bg-fidel-600 text-white shadow-sm hover:shadow-md transition-all duration-200 rounded-md"
+      size="sm"
+    >
+      Sign up
+    </Button>
+  </Link>
+</div>
+
+      </>
+      
       )}
+    </div>
+  </div>
+)}
+
     </header>
   );
 };
