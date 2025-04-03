@@ -1,68 +1,111 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // Added error state to handle errors globally
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  // Fetch user from backend when component mounts
+  // Initialize auth state
   useEffect(() => {
-    const fetchUser = async () => {
+    const initializeAuth = async () => {
       try {
-        console.log("Fetching user...");
-
-        const res = await axios.get("http://localhost:5000/api/auth/me", { withCredentials: true });
-        console.log("User data received:", res.data);
-        setUser(res.data); // Set user data when fetched successfully
-      } catch (error) {
-        console.error("Error fetching user:", error.response?.data || error.message);
-
-        setUser(null); // Ensure user is null if fetching fails
-        setError("Failed to fetch user. Please login again.");
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/api/auth/me`,
+          { withCredentials: true }
+        );
+        setUser(res.data);
+      } catch (err) {
+        setUser(null);
       } finally {
         setLoading(false);
       }
     };
-    fetchUser();
+    initializeAuth();
   }, []);
 
   // Login function
   const login = async (email, password) => {
+    setLoading(true);
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/auth/login",
+        `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`,
         { email, password },
-        { withCredentials: true }  // Ensure cookies are sent with request
+        { withCredentials: true }
       );
-      setUser(res.data.user); // Assuming your API returns user data under 'user'
+      
+      setUser(res.data.user);
+      toast.success("Login successful!");
+      
+      // Redirect based on role
+      const redirectPath = getDashboardPath(res.data.user?.role);
+      navigate(redirectPath);
+      
       return res.data;
     } catch (error) {
-      console.error("Login error:", error.response?.data?.message || error.message);
-      setError(error.response?.data?.message || "Login failed. Please try again.");
+      const errorMsg = error.response?.data?.message || "Login failed";
+      setError(errorMsg);
+      toast.error(errorMsg);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   // Logout function
   const logout = async () => {
     try {
-      await axios.post("http://localhost:5000/api/auth/logout", {}, { withCredentials: true });
+      await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/api/auth/logout`,
+        {},
+        { withCredentials: true }
+      );
       setUser(null);
+      toast.success("Logged out successfully");
+      navigate("/login");
     } catch (error) {
-      console.error("Logout error:", error.response?.data?.message || error.message);
-      setError(error.response?.data?.message || "Logout failed. Please try again.");
+      const errorMsg = error.response?.data?.message || "Logout failed";
+      setError(errorMsg);
+      toast.error(errorMsg);
+    }
+  };
+
+  // Helper function to get dashboard path
+  const getDashboardPath = (role) => {
+    switch (role) {
+      case "student": return "/dashboard";
+      case "instructor": return "/instructor-dashboard";
+      case "admin": return "/admin-dashboard";
+      default: return "/";
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, error, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        error,
+        login,
+        logout,
+        isAuthenticated: !!user,
+        getDashboardPath,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Custom hook to use authentication context
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};

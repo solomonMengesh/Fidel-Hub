@@ -45,18 +45,28 @@ const Login = () => {
     
       // Get the user role from the response
       const userRole = response.data.user?.role;
-    
+      const isApproved = response.data.user?.isApproved;
+      console.log("isApproved:", isApproved);
       // Redirect based on the user role
-      let redirectPath = "/"; // Default path in case the role is unknown
-    
-      if (userRole === "instructor") {
-        redirectPath = "/instructor-dashboard";
-      } else if (userRole === "student") {
-        redirectPath = "/";
-      } else if (userRole === "admin") {
-        redirectPath = "/admin-dashboard";
+      console.log("isApproved:", isApproved);
+      let redirectPath = "/"; // default path
+      
+
+      if (!isApproved) {
+        redirectPath = "/pending-approval";  // Redirect to pending approval if not approved
+      } else {
+        if (userRole === "instructor") {
+          redirectPath = "/instructor-dashboard";
+        } else if (userRole === "student") {
+          redirectPath = "/";
+        } else if (userRole === "admin") {
+          redirectPath = "/admin-dashboard";
+        }
       }
-    
+      console.log("Redirecting to:", redirectPath);
+
+      console.log("Full API Response:", response.data);  // Log the entire response
+
       // Redirect to the appropriate dashboard
       navigate(redirectPath);
     
