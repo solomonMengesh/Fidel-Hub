@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
   Card,
   CardContent,
@@ -40,100 +41,81 @@ const UserManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [users, setUsers] = useState([]);
 
-  // Mock user data
-  const users = [
-    {
-      id: 1,
-      name: "John Smith",
-      email: "john@example.com",
-      role: "student",
-      status: "Active",
-      createdAt: "2023-01-15",
-      bio: "Computer Science student with focus on web development",
-      lastLogin: "2023-06-10 14:30",
-      coursesEnrolled: 5,
-    },
-    {
-      id: 2,
-      name: "Sarah Williams",
-      email: "sarah@example.com",
-      role: "student",
-      status: "Active",
-      createdAt: "2023-02-20",
-      bio: "Mathematics major interested in data science",
-      lastLogin: "2023-06-12 09:15",
-      coursesEnrolled: 3,
-    },
-    {
-      id: 3,
-      name: "Michael Brown",
-      email: "michael@example.com",
-      role: "student",
-      status: "Inactive",
-      createdAt: "2023-03-10",
-      bio: "Former student, now working in industry",
-      lastLogin: "2023-05-01 11:20",
-      coursesEnrolled: 2,
-    },
-    {
-      id: 4,
-      name: "Emily Rodriguez",
-      email: "emily@example.com",
-      role: "instructor",
-      status: "Pending",
-      createdAt: "2023-04-05",
-      bio: "Professional web developer with 5 years experience",
-      lastLogin: "2023-06-15 16:45",
-      coursesTaught: 0,
-    },
-    {
-      id: 5,
-      name: "David Chen",
-      email: "david@example.com",
-      role: "instructor",
-      status: "Active",
-      createdAt: "2023-03-22",
-      bio: "Senior software engineer and educator",
-      lastLogin: "2023-06-14 08:10",
-      coursesTaught: 4,
-    },
-    {
-      id: 6,
-      name: "Lisa Wang",
-      email: "lisa@example.com",
-      role: "instructor",
-      status: "Active",
-      createdAt: "2023-02-18",
-      bio: "UX/UI designer and frontend specialist",
-      lastLogin: "2023-06-13 13:25",
-      coursesTaught: 6,
-    },
-  ];
+  // Fetch user data from the API
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          toast.error("No authentication token found");
+          return;
+        }
+    
+        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/admin/all-users`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+    
+        // Handle nested array case
+        if (response.data?.users) {
+          setUsers(response.data.users);
+        } 
+        // Fallback (invalid format)
+        else {
+          toast.error("Invalid API response format");
+          setUsers([]);
+        }
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        toast.error("Failed to load user data");
+        setUsers([]);
+      }
+    };
+    
+    fetchUsers();
+  }, []);
 
   // Filter users based on search query and role filter
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredUsers = Array.isArray(users) 
+  ? users.filter((user) => {
+      const matchesSearch =
+        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesRole = filterRole === "all" || user.role === filterRole;
-    const matchesStatus =
-      filterStatus === "all" ||
-      (filterStatus === "active" && user.status === "Active") ||
-      (filterStatus === "pending" && user.status === "Pending");
+      const matchesRole = filterRole === "all" || user.role === filterRole;
+      
+      // Normalize user status to lowercase for consistency
+      const userStatus = user.status.toLowerCase();
 
-    return matchesSearch && matchesRole && matchesStatus;
-  });
+      const matchesStatus =
+        filterStatus === "all" ||
+        (filterStatus === "active" && userStatus === "active") ||
+        (filterStatus === "pending" && userStatus === "pending");
 
-  const handleApproveUser = (userId) => {
-    toast.success(`User #${userId} has been approved`);
-    // In a real app, you would update the user status in your database/state
+      return matchesSearch && matchesRole && matchesStatus;
+    })
+  : [];
+
+
+  const handleApproveUser = async (userId) => {
+    try {
+      await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/admin/approve-instructor/${userId}`);
+      toast.success(`User #${userId} has been approved`);
+      // Update user status locally or refetch data
+    } catch (error) {
+      toast.error(`Failed to approve User #${userId}`);
+    }
   };
 
-  const handleRejectUser = (userId) => {
-    toast.error(`User #${userId} has been rejected`);
-    // In a real app, you would update the user status in your database/state
+  const handleRejectUser = async (userId) => {
+    try {
+      await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/api/admin/reject-instructor/${userId}`);
+      toast.error(`User #${userId} has been rejected`);
+      // Update user status locally or refetch data
+    } catch (error) {
+      toast.error(`Failed to reject User #${userId}`);
+    }
   };
 
   const handleViewUser = (userId) => {
@@ -258,14 +240,16 @@ const UserManagement = () => {
                     key={user.id}
                     className="hover:bg-gray-50 dark:hover:bg-gray-800"
                   >
-                    <TableCell>#{user.id}</TableCell>
+                    <TableCell>#{user._id}</TableCell>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <span className="capitalize">{user.role}</span>
                     </TableCell>
-                    <TableCell>{getStatusBadge(user.status)}</TableCell>
-                    <TableCell>{user.createdAt}</TableCell>
+                    <TableCell>{(user.status)}</TableCell>
+                    {/* <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell> */}
+                    <TableCell>{new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</TableCell>
+
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Button

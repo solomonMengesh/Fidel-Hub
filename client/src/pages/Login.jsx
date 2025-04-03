@@ -32,7 +32,11 @@ const handleSubmit = async (e) => {
     if (response.token) {
       localStorage.setItem("token", response.token);
     }
-
+    if (checkTokenExpiry()) {
+      localStorage.removeItem("token");
+      navigate("/login");  // Redirect to login if the token is expired
+      return;
+    }
     // Get user details - now from response directly (not response.data)
     const { role: userRole, isApproved } = response.user || {};
     console.log("Login response:", { userRole, isApproved });

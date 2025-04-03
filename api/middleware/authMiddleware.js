@@ -6,12 +6,19 @@ dotenv.config();  // Load environment variables
 
 export const adminAuth = async (req, res, next) => {
   try {
-    // Get token from Authorization header
-    const token = req.header('Authorization').replace('Bearer ', '');
-    console.log("Received Token: ", token); // Add this line to check if the token is passed properly
+    // Check if the Authorization header is provided
+    const token = req.header('Authorization') ? req.header('Authorization').replace('Bearer ', '') : null;
+    
+    // Log the received token for debugging
+    console.log("Received Token: ", token);
+
+    // If no token is found, return an error
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided.' });
+    }
 
     // Verify the token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); // Use JWT secret from environment variable
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Find the user based on decoded information (like _id)
     const user = await User.findById(decoded.id);
@@ -35,7 +42,6 @@ export const adminAuth = async (req, res, next) => {
     res.status(401).json({ message: 'Unauthorized. Invalid token.' });
   }
 };
-
  
 export const protect = (req, res, next) => {
   let token;
