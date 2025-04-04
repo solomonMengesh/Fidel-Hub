@@ -67,6 +67,7 @@ app.use('/uploads', express.static('uploads'));
 // ✅ Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/users', adminRoutes);
 
 // ✅ Global Error Handling
 app.use((err, req, res, next) => {

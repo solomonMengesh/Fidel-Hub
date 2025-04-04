@@ -116,3 +116,50 @@ export const getUsersByRole = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+
+export const blockUser = async (req, res) => {
+  try {
+    const { id } = req.params; // Get user ID from URL params
+
+    // Find the user by their ID
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Block the user and set isApproved to false
+    user.blocked = true;
+    user.isApproved = false;
+    await user.save();
+
+    return res.status(200).json({ message: 'User has been blocked and approval revoked' });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Controller to unblock a user
+export const unblockUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.blocked = false;
+    user.isApproved = true; 
+    await user.save();
+
+    return res.status(200).json({ message: 'User has been unblocked and approval granted' });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};

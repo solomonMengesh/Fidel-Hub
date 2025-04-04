@@ -8,7 +8,7 @@ import {
   CardTitle,
   CardDescription,
   CardFooter,
-} from "@/components/ui/card";
+ } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -17,6 +17,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { FaBan, FaUnlock } from "react-icons/fa";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -33,6 +35,7 @@ import {
   UserX,
   Eye,
   MoreHorizontal,
+
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -150,6 +153,48 @@ const handleRejectUser = async (userId) => {
 
   const handleViewUser = (userId) => {
     navigate(`/users/${userId}`);
+  };
+
+
+  const handleBlockUser = async (userId) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/users/block/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      const result = await response.json();
+  
+      if (response.ok) {
+        // Update state or UI accordingly
+        toast.success('User blocked successfully');
+      } else {
+        alert(result.message || 'Failed to block user');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An error occurred while blocking the user');
+    }
+  };
+
+  // Function to handle unblocking user
+  const handleUnblockUser = async (userId) => {
+    try {
+      const response = await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/users/unblock/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      alert(response.data.message);
+      // Update the UI, for example, by refetching users or directly updating the user's status in state
+      setUsers(users.map(user => user._id === userId ? { ...user, blocked: false, status: 'active' } : user));
+    } catch (error) {
+      console.error('Error unblocking user:', error);
+      alert('Error unblocking user');
+    }
   };
 
   // const getStatusBadge = (status) => {
@@ -280,59 +325,63 @@ const handleRejectUser = async (userId) => {
                       <TableCell>{new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</TableCell>
 
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleViewUser(user._id)}
-                            className="h-8 w-8"
-                          >
-                            <Eye size={16} />
-                          </Button>
+  <div className="flex items-center gap-2">
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => handleViewUser(user._id)}
+      className="h-8 w-8"
+    >
+      <Eye size={16} />
+    </Button>
 
-                          {userStatus === "pending" && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleApproveUser(user._id)}
-                                className="h-8 w-8 text-green-600"
-                              >
-                                <UserCheck size={16} />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleRejectUser(user._id)}
-                                className="h-8 w-8 text-red-600"
-                              >
-                                <UserX size={16} />
-                              </Button>
-                            </>
-                          )
-                          // : userStatus === "active" ? (
-                            
-                          //   <Button
-                          //     variant="ghost"
-                          //     size="icon"
-                          //     onClick={() => handleRejectUser(user._id)}
-                          //     className="h-8 w-8 text-red-600"
-                          //   >
-                          //     <UserX size={16} />
-                          //   </Button>
-                          // ) : (
-                          //   <Button
-                          //     variant="ghost"
-                          //     size="icon"
-                          //     onClick={() => handleApproveUser(user._id)}
-                          //     className="h-8 w-8 text-green-600"
-                          //   >
-                          //     <UserCheck size={16} />
-                          //   </Button>
-                          // )
-                          }
-                        </div>
-                      </TableCell>
+    {userStatus === "pending" && (
+      <>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => handleApproveUser(user._id)}
+          className="h-8 w-8 text-green-600"
+        >
+          <UserCheck size={16} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => handleRejectUser(user._id)}
+          className="h-8 w-8 text-red-600"
+        >
+          <UserX size={16} />
+        </Button>
+      </>
+    )}
+
+    {/* Block/Unblock button for active or pending users */}
+    {userStatus === "active" && !user.blocked && (
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => handleBlockUser(user._id)}
+        className="h-8 w-8 text-yellow-600"
+      >
+        <FaBan  size={16} />
+      </Button>
+    )}
+
+{user && user.status === "blocked" && (
+  <Button
+    variant="ghost"
+    size="icon"
+    onClick={() => handleUnblockUser(user._id)}
+    className="h-8 w-8 text-green-600"
+  >
+    <FaUnlock   size={16} />
+  </Button>
+)}
+
+  </div>
+</TableCell>
+
                     </TableRow>
                   );
                 })}

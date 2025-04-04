@@ -18,18 +18,20 @@ const userSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'pending'], 
+    enum: ['active', 'pending', 'blocked'], 
     default: function() { return this.isApproved ? 'active' : 'pending'; } // Dynamic status
-  }
+  },
+  blocked: { type: Boolean, default: false }  
 }, { timestamps: true });
 
 // Middleware: Update `status` before saving
 userSchema.pre('save', function(next) {
-  console.log('Before save:', this.isApproved, this.status); // Log the values before saving
-
-  this.status = this.isApproved ? 'active' : 'pending';
-  
-  console.log('After save:', this.status); // Log the status after setting it
+  if (this.blocked) {
+    this.status = 'blocked';  // If the user is blocked, set status to 'blocked'
+    this.isApproved = false;  // Ensure isApproved is set to false when blocked
+  } else {
+    this.status = this.isApproved ? 'active' : 'pending';  // Otherwise, set the status based on approval
+  }
   next();
 });
 
