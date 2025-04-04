@@ -42,7 +42,7 @@ import { toast } from "sonner";
 const UserManagement = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterRole, setFilterRole] = useState("all");
+  const [filterRole, setFilterRole] = useState("instructor");
   const [filterStatus, setFilterStatus] = useState("all");
   const [users, setUsers] = useState([]);
 
@@ -86,7 +86,7 @@ const UserManagement = () => {
         user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.email.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesRole = filterRole === "all" || user.role === filterRole;
+      const matchesRole = filterRole === "instructor" || user.role === filterRole;
       
       // Normalize user status to lowercase for consistency
       const userStatus = user.status.toLowerCase();
