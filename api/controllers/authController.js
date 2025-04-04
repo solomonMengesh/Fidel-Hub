@@ -63,7 +63,9 @@ export const loginUser = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-
+    if (user.blocked) {
+      return res.status(403).json({ message: "Your account has been blocked by the admin." });
+    }
     if (user.role === "instructor" && !user.isApproved) {
       console.log("Instructor approval status:", user.isApproved);
       return res.status(403).json({ message: "Your account is pending approval by an admin." });

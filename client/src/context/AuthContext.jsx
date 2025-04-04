@@ -41,14 +41,14 @@ export const AuthProvider = ({ children }) => {
       console.log('Setting user:', res.data.user);
       // Update user state
       setUser(res.data.user);
-      toast.success("Login successful!");
+      // toast.success("Login successful!");
   
       // Navigate to the appropriate dashboard
       navigate(getDashboardPath(res.data.user?.role));
   
       return res.data;
     } catch (error) {
-      toast.error(error.response?.data?.message || "Login failed");
+      // toast.error(error.response?.data?.message || "Login failed");
       throw error;
     } finally {
       setLoading(false);

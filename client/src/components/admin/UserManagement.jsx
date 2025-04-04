@@ -173,6 +173,8 @@ const handleRejectUser = async (userId) => {
       } else {
         alert(result.message || 'Failed to block user');
       }
+      setUsers(users.map(user => user._id === userId ? { ...user, blocked: true, status: 'blocked' } : user));
+
     } catch (error) {
       console.error('Error:', error);
       alert('An error occurred while blocking the user');
@@ -188,7 +190,7 @@ const handleRejectUser = async (userId) => {
           'Content-Type': 'application/json',
         },
       });
-      alert(response.data.message);
+      toast.success(response.data.message);
       // Update the UI, for example, by refetching users or directly updating the user's status in state
       setUsers(users.map(user => user._id === userId ? { ...user, blocked: false, status: 'active' } : user));
     } catch (error) {

@@ -24,6 +24,9 @@ const handleSubmit = async (e) => {
   try {
     // Use the login function from AuthContext instead of direct axios call
     const response = await login(email, password);
+    if (!response || !response.token || !response.user) {
+      throw new Error("Invalid login response");
+    }
 
     // Successful login
     toast.success("Login Successful! Redirecting to your dashboard...");
@@ -32,15 +35,20 @@ const handleSubmit = async (e) => {
     if (response.token) {
       localStorage.setItem("token", response.token);
     }
-    if (checkTokenExpiry()) {
-      localStorage.removeItem("token");
-      navigate("/login");  // Redirect to login if the token is expired
-      return;
-    }
+    // if (checkTokenExpiry()) {
+    //   localStorage.removeItem("token");
+    //   navigate("/login");  
+    //   return;
+    // }
     // Get user details - now from response directly (not response.data)
-    const { role: userRole, isApproved } = response.user || {};
-    console.log("Login response:", { userRole, isApproved });
-
+    const { role: userRole, isApproved, status } = response.user || {};
+    console.log("Login response:", { userRole, isApproved, status });
+        if (status === "blocked") {
+      toast.error("Your account has been blocked by the admin.");
+      localStorage.removeItem("token"); // Remove token if stored
+      setIsLoading(false);
+      return; 
+    }
     // Determine redirect path
     let redirectPath = "/";
     if (!isApproved) {
@@ -67,7 +75,7 @@ const handleSubmit = async (e) => {
 
   } catch (error) {
     let errorMessage = "Login failed. Please try again.";
-
+  
     if (axios.isAxiosError(error)) {
       if (error.response) {
         switch (error.response.status) {
@@ -75,10 +83,17 @@ const handleSubmit = async (e) => {
             errorMessage = "Invalid email or password";
             break;
           case 403:
-            if (error.response.data.message?.includes("approved")) {
+            const { message } = error.response.data;
+  
+            // Check for blocked or pending approval status in the response message
+            if (message?.includes("blocked")) {
+              errorMessage = "Your account has been blocked by the admin.";
+            } else if (message?.includes("approved")) {
               errorMessage = "Your account is pending approval by an admin.";
-            } else {
+            } else if (message?.includes("not verified")) {
               errorMessage = "Account not verified. Please check your email.";
+            } else {
+              errorMessage = message || "Account not verified.";
             }
             break;
           case 404:
@@ -94,11 +109,11 @@ const handleSubmit = async (e) => {
         errorMessage = "No response from server. Please check your connection.";
       }
     }
-
+  
     toast.error(errorMessage);
     console.error("Login error:", error);
-
-  } finally {
+  }
+   finally {
     setIsLoading(false);
   }
 };
