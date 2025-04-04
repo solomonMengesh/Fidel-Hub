@@ -1,22 +1,37 @@
 import { useState } from "react";
+import React, { useEffect } from 'react';
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ThemeToggle from "@/components/ui/ThemeToggle";
-// import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "../context/AuthContext"; // Adjust path as needed
+import io from 'socket.io-client';
+ import { useAuth } from "../context/AuthContext"; // Adjust path as needed
 import axios from "axios";
 import { toast } from "sonner";
+import { useSearchParams } from 'react-router-dom';
+
+const socket = io(import.meta.env.VITE_API_BASE_URL); 
+
 const Login = () => {
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  // const { toast } = useToast();
   const navigate = useNavigate();
   const { login } = useAuth();
+  
+  useEffect(() => {
+    if (searchParams.get('blocked') === 'true') {
+      toast.error('Your account has been blocked by the administrator');
+      // Clear the query param after showing the message
+      window.history.replaceState(null, '', '/login');
+    }
+  }, [searchParams]);
+
+  
 const handleSubmit = async (e) => {
   e.preventDefault();
   setIsLoading(true);
@@ -41,8 +56,11 @@ const handleSubmit = async (e) => {
     //   return;
     // }
     // Get user details - now from response directly (not response.data)
-    const { role: userRole, isApproved, status } = response.user || {};
+    const { role: userRole, isApproved, status, _id} = response.user || {};
+
     console.log("Login response:", { userRole, isApproved, status });
+
+    socket.emit('userConnected', _id);
         if (status === "blocked") {
       toast.error("Your account has been blocked by the admin.");
       localStorage.removeItem("token"); // Remove token if stored

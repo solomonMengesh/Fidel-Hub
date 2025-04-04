@@ -1,5 +1,5 @@
 import User from '../../models/User.js';
-import jwt from 'jsonwebtoken';
+import { io } from '../../server.js';
 
 export const approveInstructor = async (req, res) => {
     const { userId } = req.params;
@@ -118,29 +118,48 @@ export const getUsersByRole = async (req, res) => {
 };
 
 
+
+
 export const blockUser = async (req, res) => {
   try {
-    const { id } = req.params; // Get user ID from URL params
-
-    // Find the user by their ID
+    const { id } = req.params;
+    
     const user = await User.findById(id);
-
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    // Block the user and set isApproved to false
+    // Block the user
     user.blocked = true;
     user.isApproved = false;
+    user.status = 'blocked';
     await user.save();
 
-    return res.status(200).json({ message: 'User has been blocked and approval revoked' });
+    // Force logout via Socket.IO
+    if (user.socketId) {
+      req.io.to(user.socketId).emit("forceLogout", {
+        message: "Your account has been blocked by the admin.",
+        reason: "blocked"
+      });
+      console.log(`User ${id} was blocked and logged out.`);
+      
+      // Clear socketId after logout
+      user.socketId = null;
+      await user.save();
+    } else {
+      console.log(`User ${id} is not currently connected but is now blocked.`);
+    }
 
+    return res.status(200).json({ 
+      message: "User blocked successfully.",
+      userId: id
+    });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Server error' });
+    console.error("Error blocking user:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // Controller to unblock a user
 export const unblockUser = async (req, res) => {

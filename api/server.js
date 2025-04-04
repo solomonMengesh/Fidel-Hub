@@ -1,82 +1,103 @@
 import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
+import connectDB from './config/db.js';
 import dotenv from 'dotenv';
+import cors from 'cors';
+import morgan from 'morgan';
+import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import multer from 'multer';
 import path from 'path';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import cookieParser from 'cookie-parser';
 import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/admin-Routes/adminRoutes.js';
-import connectDB from './config/db.js';
+import User from './models/User.js';
 
-// Load environment variables
 dotenv.config();
-
-// Connect to MongoDB
-connectDB();
+await connectDB(); // Ensure MongoDB is connected before starting server
 
 const app = express();
+const server = http.createServer(app);
 
-// ✅ Middlewares
-app.use(express.json()); // Parse JSON body
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded body
-app.use(cookieParser()); // Parse cookies for authentication
-app.use(helmet()); // Secure HTTP headers
-app.use(morgan('dev')); // Logs requests (use 'combined' for production)
-app.use(cors({
-  origin: 'http://localhost:5173', // Your frontend origin
-  credentials: true, // Allows sending cookies
-}));
-
-// ✅ Multer: File Upload Configuration
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // Upload directory
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL,
+    credentials: true
   }
 });
 
-// ✅ File Upload Middleware
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB file size limit
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
-    if (!allowedTypes.includes(file.mimetype)) {
-      return cb(new Error('Only JPG, PNG, and PDF files are allowed'), false);
+// Track connected users
+io.on('connection', (socket) => {
+  console.log('New client connected:', socket.id);
+  
+  // Handle user registration with their ID
+  socket.on('registerUser', async (userId) => {
+    try {
+      await User.findByIdAndUpdate(userId, { socketId: socket.id });
+      console.log(`User ${userId} registered with socket ${socket.id}`);
+    } catch (error) {
+      console.error('Error registering user socket:', error);
     }
-    cb(null, true);
-  }
+  });
+
+  // Handle disconnection
+  socket.on('disconnect', async () => {
+    try {
+      await User.findOneAndUpdate(
+        { socketId: socket.id },
+        { $set: { socketId: null } }
+      );
+      console.log(`Client disconnected: ${socket.id}`);
+    } catch (error) {
+      console.error('Error handling disconnect:', error);
+    }
+  });
 });
 
-// ✅ File Upload Route
+// Middleware: Attach `io` to `req` so controllers can use it
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
+// Middleware setup
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
+app.use(morgan('dev'));
+app.use(helmet());
+
+// File uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, 'uploads/'),
+  filename: (req, file, cb) =>
+    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname)),
+});
+const upload = multer({ storage });
+
 app.post('/upload', upload.single('cv'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: 'No file uploaded' });
-  }
+  if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
   res.json({ message: 'File uploaded successfully', file: req.file });
 });
 
-// ✅ Serve Uploaded Files
 app.use('/uploads', express.static('uploads'));
 
-// ✅ Routes
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/users', adminRoutes);
 
-// ✅ Global Error Handling
+// Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong', error: err.message });
+  res.status(500).json({ message: 'Server error', error: err.message });
 });
 
-// ✅ Start Server
+// Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
+
+export { io }; // Only export io since we're not using userSockets
