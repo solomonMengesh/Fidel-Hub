@@ -13,7 +13,6 @@ import { adminAuth } from '../../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.get("/:id", getUserById);
 
 router.put('/approve-instructor/:userId', adminAuth, approveInstructor);
 
@@ -27,5 +26,6 @@ router.get('/all-users', adminAuth, listAllUsers);
 router.get('/role/:role', adminAuth, getUsersByRole); 
 router.put('/block/:id', blockUser);
  router.put('/unblock/:id', unblockUser);
+ router.get("/:id", getUserById);
 
 export default router;

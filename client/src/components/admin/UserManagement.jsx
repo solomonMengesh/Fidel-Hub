@@ -151,9 +151,12 @@ const handleRejectUser = async (userId) => {
 
 
 
-  const handleViewUser = (userId) => {
-    navigate(`/users/${userId}`);
-  };
+const handleViewUser = (userId) => {
+  console.log("User ID passed to navigate: ", userId); // Log the correct userId being passed
+
+  navigate(`/users/${userId}`);
+};
+
 
 
   const handleBlockUser = async (userId) => {

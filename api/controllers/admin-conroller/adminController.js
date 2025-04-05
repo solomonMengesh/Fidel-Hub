@@ -1,5 +1,5 @@
 import User from '../../models/User.js';
-import { io } from '../../server.js';
+import mongoose from 'mongoose';
 
 export const approveInstructor = async (req, res) => {
     const { userId } = req.params;
@@ -85,7 +85,7 @@ export const listActiveInstructors = async (req, res) => {
   }
 };
 
-//  List ALL Users (Students, Instructors, Admins)
+//  List ALL Users 
 export const listAllUsers = async (req, res) => {
   try {
     const users = await User.find()
@@ -184,16 +184,27 @@ export const unblockUser = async (req, res) => {
 };
 
 
-// Get user by ID
+// Get single user by ID
 export const getUserById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    const user = await User.findById(id);
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.json({ user });
+
+    // Log user data to confirm it was fetched correctly
+    console.log("Fetched User:", user);
+
+    res.status(200).json(user);
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching user:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
