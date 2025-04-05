@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
   Card,
@@ -27,18 +26,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Search,
-  Filter,
-  UserCheck,
-  UserX,
-  Eye,
-  MoreHorizontal,
-} from "lucide-react";
+import { Search, Filter, UserCheck, UserX, Eye } from "lucide-react";
 import { toast } from "sonner";
 
-const UserManagement = () => {
-  const navigate = useNavigate();
+const UserManagement = ({ onViewUser }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState("instructor");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -82,7 +73,6 @@ const UserManagement = () => {
           user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           user.email.toLowerCase().includes(searchQuery.toLowerCase());
 
-        // Strict role matching - only show exact matches
         const matchesRole = user.role === filterRole;
 
         const userStatus = user.status.toLowerCase();
@@ -149,7 +139,7 @@ const UserManagement = () => {
   };
 
   const handleViewUser = (userId) => {
-    navigate(`/users/${userId}`);
+    onViewUser(userId);
   };
 
   const handleBlockUser = async (userId) => {
