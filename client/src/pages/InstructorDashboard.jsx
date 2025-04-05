@@ -32,7 +32,7 @@ import {
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import CourseBuilder from "@/components/instructor/CourseBuilder";
+import CourseBuilder from "../components/instructor/CourseBuilder";
 import InstructorStudentChat from "@/components/chat/InstructorStudentChat";
 import {
   Select,
@@ -42,6 +42,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Logo from "../components/layout/Logo";
 
 // StudentManagement component (made responsive)
 const StudentManagement = () => {
@@ -335,13 +336,10 @@ const InstructorDashboard = () => {
         } md:translate-x-0 md:relative md:block`}
       >
         <div className="flex items-center space-x-2 mb-8">
-          <span className="bg-fidel-500 text-white h-7 w-7 rounded flex items-center justify-center mr-2 shadow">
-            F
-          </span>
-          <div className="font-semibold text-lg">Fidel Hub</div>
+          <Logo />
         </div>
 
-        <nav className="space-y-1">
+        <nav className="space-y-1 h-100vh">
           {[
             { id: "dashboard", label: "Dashboard", icon: BarChart },
             { id: "courses", label: "My Courses", icon: BookOpen },

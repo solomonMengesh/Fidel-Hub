@@ -9,6 +9,7 @@ import {
   Settings,
   Sliders,
   Shield,
+  ChevronLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ui/ThemeToggle";
@@ -17,11 +18,13 @@ import PlatformAnalytics from "@/components/admin/PlatformAnalytics";
 import PaymentManagement from "@/components/admin/PaymentManagement";
 import PlatformSettings from "../components/admin/PlatformSettings";
 import UserManagement from "../components/admin/UserManagement";
+import UserDetail from "../pages/Userdetails";
 import Logo from "../components/layout/Logo";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
   const navItems = [
     { id: "overview", label: "Overview", icon: Layers },
@@ -33,10 +36,23 @@ const AdminDashboard = () => {
   ];
 
   const handleNavItemClick = (id) => {
+    if (id !== "users") {
+      setSelectedUserId(null);
+    }
     setActiveTab(id);
     if (window.innerWidth < 768) {
       setIsSidebarOpen(false);
     }
+  };
+
+  const handleViewUser = (userId) => {
+    setSelectedUserId(userId);
+    setActiveTab("user-detail");
+  };
+
+  const handleBackToUsers = () => {
+    setSelectedUserId(null);
+    setActiveTab("users");
   };
 
   return (
@@ -48,8 +64,6 @@ const AdminDashboard = () => {
         } md:translate-x-0 md:relative md:block overflow-hidden`}
       >
         <div className="flex items-center space-x-2 mb-8">
-          {/* <div className="h-8 w-8 rounded-full bg-fidel-500"></div>
-          <div className="font-semibold text-lg">Fidel Hub</div> */}
           <Logo />
         </div>
 
@@ -94,12 +108,20 @@ const AdminDashboard = () => {
       {/* Main content */}
       <div className="flex-1 flex flex-col p-5 overflow-auto h-[100vh]">
         <header className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold pl-10">Admin Dashboard</h1>
-
+          <h1 className="text-2xl font-bold pl-10">
+            {activeTab === "user-detail" ? "User Details" : "Admin Dashboard"}
+          </h1>
           <div className="flex items-center space-x-3">
             <ThemeToggle />
           </div>
         </header>
+
+        {activeTab === "user-detail" && (
+          <Button variant="ghost" className="mb-4" onClick={handleBackToUsers}>
+            <ChevronLeft size={16} className="mr-2" />
+            Back to User Management
+          </Button>
+        )}
 
         {/* Page content based on active tab */}
         {activeTab === "overview" && (
@@ -137,7 +159,21 @@ const AdminDashboard = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
           >
-            <UserManagement />
+            <UserManagement onViewUser={handleViewUser} />
+          </motion.div>
+        )}
+
+        {activeTab === "user-detail" && selectedUserId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <UserDetail
+              userId={selectedUserId}
+              onBack={handleBackToUsers}
+              embedded={true}
+            />
           </motion.div>
         )}
 
