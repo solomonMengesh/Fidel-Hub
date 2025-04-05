@@ -17,11 +17,8 @@ import {
   Calendar,
   User,
   FileText,
-  Award,
   CheckCircle,
   XCircle,
-  GraduationCap,
-  Briefcase,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
@@ -29,58 +26,111 @@ import UserAvatar from "@/components/layout/UserAvatar";
 import axios from "axios";
 
 const UserDetail = () => {
-  const { id } = useParams();
+  const { userId } = useParams();
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserData = async () => {
+      console.log("userId from URL:", userId);
+      if (!userId) {
+        console.warn("userId is undefined in useParams()");
+        return;
+      }
       try {
+        const token = localStorage.getItem('token');
         const response = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/api/users/${id}`
+          `${import.meta.env.VITE_API_BASE_URL}/api/users/${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
-        setUserData(response.data.user);
+        console.log('User Data:', response.data);
+        setUserData(response.data);
       } catch (error) {
         toast.error("Failed to fetch user data");
-        console.error(error);
+        console.error("Axios error:", error.response?.data || error.message);
       } finally {
         setLoading(false);
       }
     };
 
     fetchUserData();
-  }, [id]);
+  }, [userId]);
 
-  const handleDownload = (fileName) => {
-    // In a real app, this would trigger a download of the actual file
-    // Here we're just showing a toast notification
-    toast.success(`Downloading ${fileName}`);
+  const handleDownload = (fileUrl) => {
+    const filePath = `${import.meta.env.VITE_API_BASE_URL}/uploads/${fileUrl.split(/[\\/]/).pop()}`;
+    const newWindow = window.open(filePath, '_blank', 'width=800,height=600');
+    if (!newWindow) {
+      toast.error("Failed to open the file. Please disable your pop-up blocker.");
+      return;
+    }
+    toast.success("File opened in a new window");
   };
 
-  const handleApproveUser = async () => {
+  const handleApproveUser = async (userId) => {
     try {
-      await axios.patch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/users/${id}/approve`
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error("No authentication token found");
+        return;
+      }
+
+      await axios.put(
+        `${import.meta.env.VITE_API_BASE_URL}/api/admin/approve-instructor/${userId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-      toast.success(`User has been approved`);
-      setUserData((prev) => ({ ...prev, approvalStatus: "approved" }));
+
+      // Update status locally to "active" (assuming "active" means approved)
+      setUserData((prev) => ({ ...prev, status: "active" }));
+      toast.success(`User #${userId} has been approved`);
     } catch (error) {
-      toast.error("Failed to approve user");
-      console.error(error);
+      console.error(`Error approving User #${userId}:`, error.response?.data || error.message);
+      toast.error(`Failed to approve User #${userId}`);
     }
   };
 
-  const handleRejectUser = async () => {
+  const handleRejectUser = async (user) => {
+    const userId = user?._id;
+    console.log('user:', user);
+    console.log('userId:', userId);
+
+    if (!userId) {
+      toast.error("User ID is missing");
+      console.error("No user ID provided:", user);
+      return;
+    }
+
     try {
-      await axios.patch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/users/${id}/reject`
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error("No authentication token found");
+        return;
+      }
+
+      await axios.delete(
+        `${import.meta.env.VITE_API_BASE_URL}/api/admin/reject-instructor/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-      toast.error(`User has been rejected`);
-      setUserData((prev) => ({ ...prev, approvalStatus: "rejected" }));
+
+      // Update status locally to "blocked" (assuming "blocked" means rejected)
+      setUserData((prev) => ({ ...prev, status: "blocked" }));
+      toast.success(`User #${userId} has been rejected`);
     } catch (error) {
+      console.error("Error rejecting user:", error.response?.data || error.message);
       toast.error("Failed to reject user");
-      console.error(error);
     }
   };
 
@@ -109,6 +159,19 @@ const UserDetail = () => {
     );
   }
 
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'active':
+        return 'Approved';
+      case 'blocked':
+        return 'Blocked';
+      case 'pending':
+        return 'Pending Approval';
+      default:
+        return 'Unknown';
+    }
+  };
+
   return (
     <div className="container mx-auto py-8 px-4">
       <Button
@@ -121,7 +184,6 @@ const UserDetail = () => {
       </Button>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* User Profile Card */}
         <Card className="md:col-span-1">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
@@ -135,18 +197,14 @@ const UserDetail = () => {
               <div className="flex items-center justify-center mt-2">
                 <span
                   className={`text-xs px-2 py-1 rounded-full ${
-                    userData.approvalStatus === "approved"
+                    userData.status === "active"
                       ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                      : userData.approvalStatus === "rejected"
+                      : userData.status === "blocked"
                       ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
                       : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
                   }`}
                 >
-                  {userData.approvalStatus === "approved"
-                    ? "Approved"
-                    : userData.approvalStatus === "rejected"
-                    ? "Rejected"
-                    : "Pending Approval"}
+                  {getStatusLabel(userData.status)}
                 </span>
               </div>
             </CardDescription>
@@ -179,10 +237,7 @@ const UserDetail = () => {
                 {userData.cv && (
                   <div className="flex items-center justify-between bg-muted p-3 rounded-md">
                     <div className="flex items-center">
-                      <FileText
-                        size={16}
-                        className="text-muted-foreground mr-2"
-                      />
+                      <FileText size={16} className="text-muted-foreground mr-2" />
                       <div>
                         <p className="text-sm font-medium">
                           {userData.cv.split("/").pop()}
@@ -204,11 +259,11 @@ const UserDetail = () => {
             )}
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
-            {userData.approvalStatus === "pending" ? (
+            {userData.status === "pending" ? (
               <>
                 <Button
                   className="w-full flex items-center"
-                  onClick={handleApproveUser}
+                  onClick={() => handleApproveUser(userData._id)}
                 >
                   <CheckCircle size={16} className="mr-2" />
                   Approve User
@@ -216,21 +271,16 @@ const UserDetail = () => {
                 <Button
                   variant="destructive"
                   className="w-full flex items-center"
-                  onClick={handleRejectUser}
+                  onClick={() => handleRejectUser(userData)}
                 >
                   <XCircle size={16} className="mr-2" />
                   Reject User
                 </Button>
               </>
-            ) : (
-              <Button variant="outline" className="w-full">
-                Send Message
-              </Button>
-            )}
+            ) : null}
           </CardFooter>
         </Card>
 
-        {/* User Details Tabs */}
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>User Details</CardTitle>
@@ -241,9 +291,7 @@ const UserDetail = () => {
               <TabsList className="mb-4">
                 <TabsTrigger value="profile">Profile</TabsTrigger>
                 {userData.role === "instructor" && (
-                  <>
-                    <TabsTrigger value="expertise">Expertise</TabsTrigger>
-                  </>
+                  <TabsTrigger value="expertise">Expertise</TabsTrigger>
                 )}
               </TabsList>
 
@@ -251,17 +299,13 @@ const UserDetail = () => {
                 {userData.bio && (
                   <div>
                     <h3 className="text-sm font-semibold mb-2">Bio</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {userData.bio}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{userData.bio}</p>
                   </div>
                 )}
                 {userData.address && (
                   <div>
                     <h3 className="text-sm font-semibold mb-2">Address</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {userData.address}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{userData.address}</p>
                   </div>
                 )}
               </TabsContent>
@@ -271,12 +315,8 @@ const UserDetail = () => {
                   <div className="space-y-4">
                     {userData.expertise && (
                       <div>
-                        <h3 className="text-sm font-semibold mb-2">
-                          Areas of Expertise
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {userData.expertise}
-                        </p>
+                        <h3 className="text-sm font-semibold mb-2">Areas of Expertise</h3>
+                        <p className="text-sm text-muted-foreground">{userData.expertise}</p>
                       </div>
                     )}
                   </div>

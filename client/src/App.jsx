@@ -1,5 +1,5 @@
-import React from "react";
-import { Routes, Route } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import Login from "./pages/Login";
@@ -14,9 +14,10 @@ import Profile from "./pages/Profile";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import PendingApproval from "./components/instructor/PendingApproval";
-import { Toaster } from "@/components/ui/sonner";
 import UserDetails from "./pages/Userdetails";
-
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "react-toastify";
+import { connectSocket, listenForForceLogout, disconnectSocket } from "./socket";
 const MainLayout = ({ children }) => (
   <>
     <Navbar />
@@ -26,10 +27,46 @@ const MainLayout = ({ children }) => (
 );
 
 const App = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
+
+    if (token && userId) {
+      // Connect socket and register user
+      connectSocket(userId);
+      
+      // Listen for force logout events (like when admin blocks user)
+      listenForForceLogout((data) => {
+        // Show error message
+        toast.error(data.message || "You have been logged out");
+        
+        // Clear local storage
+        localStorage.removeItem("token");
+        localStorage.removeItem("userId");
+        
+        // Redirect to login with blocked state
+        if (data.reason === "blocked") {
+          navigate("/login?blocked=true", { replace: true });
+        } else {
+          navigate("/login", { replace: true });
+        }
+        
+        // Force page reload to clear any sensitive data
+        window.location.reload();
+      });
+    }
+
+    return () => {
+      disconnectSocket();
+    };
+  }, [navigate]);
+
   return (
     <>
       <Routes>
-        {/* Routes that include Navbar and Footer */}
+        {/* Routes with Navbar and Footer */}
         <Route
           path="/"
           element={
@@ -101,7 +138,11 @@ const App = () => {
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/users/:userId" element={<UserDetails />} />
+
+
+
       </Routes>
+
       <Toaster />
     </>
   );

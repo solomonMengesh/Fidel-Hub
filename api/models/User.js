@@ -21,7 +21,9 @@ const userSchema = new mongoose.Schema({
     enum: ['active', 'pending', 'blocked'], 
     default: function() { return this.isApproved ? 'active' : 'pending'; } // Dynamic status
   },
-  blocked: { type: Boolean, default: false }  
+  blocked: { type: Boolean, default: false }  ,
+  socketId: { type: String, default: null }, // New field for tracking user's socket connection
+
 }, { timestamps: true });
 
 // Middleware: Update `status` before saving
