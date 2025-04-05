@@ -18,7 +18,6 @@ import UserDetails from "./pages/Userdetails";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "react-toastify";
 import { connectSocket, listenForForceLogout, disconnectSocket } from "./socket";
-
 const MainLayout = ({ children }) => (
   <>
     <Navbar />

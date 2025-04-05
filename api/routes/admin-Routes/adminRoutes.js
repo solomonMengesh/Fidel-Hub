@@ -6,11 +6,14 @@ import {
     listActiveInstructors, 
     listAllUsers,
     getUsersByRole,
-    blockUser, unblockUser
+    blockUser, unblockUser,
+    getUserById
 } from '../../controllers/admin-conroller/adminController.js';
 import { adminAuth } from '../../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+router.get("/:id", getUserById);
 
 router.put('/approve-instructor/:userId', adminAuth, approveInstructor);
 
