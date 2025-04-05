@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -25,21 +24,15 @@ import { Separator } from "@/components/ui/separator";
 import UserAvatar from "@/components/layout/UserAvatar";
 import axios from "axios";
 
-const UserDetail = () => {
-  const { userId } = useParams();
-  const navigate = useNavigate();
+const UserDetail = ({ userId, onBack, embedded = false }) => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserData = async () => {
-      console.log("userId from URL:", userId);
-      if (!userId) {
-        console.warn("userId is undefined in useParams()");
-        return;
-      }
+      if (!userId) return;
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
         const response = await axios.get(
           `${import.meta.env.VITE_API_BASE_URL}/api/users/${userId}`,
           {
@@ -48,7 +41,6 @@ const UserDetail = () => {
             },
           }
         );
-        console.log('User Data:', response.data);
         setUserData(response.data);
       } catch (error) {
         toast.error("Failed to fetch user data");
@@ -62,10 +54,14 @@ const UserDetail = () => {
   }, [userId]);
 
   const handleDownload = (fileUrl) => {
-    const filePath = `${import.meta.env.VITE_API_BASE_URL}/uploads/${fileUrl.split(/[\\/]/).pop()}`;
-    const newWindow = window.open(filePath, '_blank', 'width=800,height=600');
+    const filePath = `${import.meta.env.VITE_API_BASE_URL}/uploads/${fileUrl
+      .split(/[\\/]/)
+      .pop()}`;
+    const newWindow = window.open(filePath, "_blank", "width=800,height=600");
     if (!newWindow) {
-      toast.error("Failed to open the file. Please disable your pop-up blocker.");
+      toast.error(
+        "Failed to open the file. Please disable your pop-up blocker."
+      );
       return;
     }
     toast.success("File opened in a new window");
@@ -73,14 +69,16 @@ const UserDetail = () => {
 
   const handleApproveUser = async (userId) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
         toast.error("No authentication token found");
         return;
       }
 
       await axios.put(
-        `${import.meta.env.VITE_API_BASE_URL}/api/admin/approve-instructor/${userId}`,
+        `${
+          import.meta.env.VITE_API_BASE_URL
+        }/api/admin/approve-instructor/${userId}`,
         {},
         {
           headers: {
@@ -89,35 +87,35 @@ const UserDetail = () => {
         }
       );
 
-      // Update status locally to "active" (assuming "active" means approved)
       setUserData((prev) => ({ ...prev, status: "active" }));
       toast.success(`User #${userId} has been approved`);
     } catch (error) {
-      console.error(`Error approving User #${userId}:`, error.response?.data || error.message);
+      console.error(
+        `Error approving User #${userId}:`,
+        error.response?.data || error.message
+      );
       toast.error(`Failed to approve User #${userId}`);
     }
   };
 
   const handleRejectUser = async (user) => {
     const userId = user?._id;
-    console.log('user:', user);
-    console.log('userId:', userId);
-
     if (!userId) {
       toast.error("User ID is missing");
-      console.error("No user ID provided:", user);
       return;
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
         toast.error("No authentication token found");
         return;
       }
 
       await axios.delete(
-        `${import.meta.env.VITE_API_BASE_URL}/api/admin/reject-instructor/${userId}`,
+        `${
+          import.meta.env.VITE_API_BASE_URL
+        }/api/admin/reject-instructor/${userId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -125,11 +123,13 @@ const UserDetail = () => {
         }
       );
 
-      // Update status locally to "blocked" (assuming "blocked" means rejected)
       setUserData((prev) => ({ ...prev, status: "blocked" }));
       toast.success(`User #${userId} has been rejected`);
     } catch (error) {
-      console.error("Error rejecting user:", error.response?.data || error.message);
+      console.error(
+        "Error rejecting user:",
+        error.response?.data || error.message
+      );
       toast.error("Failed to reject user");
     }
   };
@@ -145,43 +145,37 @@ const UserDetail = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-8 px-4 flex justify-center">
+      <div className="flex justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-fidel-500"></div>
       </div>
     );
   }
 
   if (!userData) {
-    return (
-      <div className="container mx-auto py-8 px-4 text-center">
-        <p>User not found</p>
-      </div>
-    );
+    return <div className="text-center">User not found</div>;
   }
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'active':
-        return 'Approved';
-      case 'blocked':
-        return 'Blocked';
-      case 'pending':
-        return 'Pending Approval';
+      case "active":
+        return "Approved";
+      case "blocked":
+        return "Blocked";
+      case "pending":
+        return "Pending Approval";
       default:
-        return 'Unknown';
+        return "Unknown";
     }
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <Button
-        variant="ghost"
-        className="mb-6"
-        onClick={() => navigate("/admin-dashboard")}
-      >
-        <ChevronLeft size={16} className="mr-2" />
-        Back to User Management
-      </Button>
+    <div className={embedded ? "" : "container mx-auto py-8 px-4"}>
+      {!embedded && (
+        <Button variant="ghost" className="mb-6" onClick={onBack}>
+          <ChevronLeft size={16} className="mr-2" />
+          Back to User Management
+        </Button>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-1">
@@ -237,7 +231,10 @@ const UserDetail = () => {
                 {userData.cv && (
                   <div className="flex items-center justify-between bg-muted p-3 rounded-md">
                     <div className="flex items-center">
-                      <FileText size={16} className="text-muted-foreground mr-2" />
+                      <FileText
+                        size={16}
+                        className="text-muted-foreground mr-2"
+                      />
                       <div>
                         <p className="text-sm font-medium">
                           {userData.cv.split("/").pop()}
@@ -299,13 +296,17 @@ const UserDetail = () => {
                 {userData.bio && (
                   <div>
                     <h3 className="text-sm font-semibold mb-2">Bio</h3>
-                    <p className="text-sm text-muted-foreground">{userData.bio}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {userData.bio}
+                    </p>
                   </div>
                 )}
                 {userData.address && (
                   <div>
                     <h3 className="text-sm font-semibold mb-2">Address</h3>
-                    <p className="text-sm text-muted-foreground">{userData.address}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {userData.address}
+                    </p>
                   </div>
                 )}
               </TabsContent>
@@ -315,8 +316,12 @@ const UserDetail = () => {
                   <div className="space-y-4">
                     {userData.expertise && (
                       <div>
-                        <h3 className="text-sm font-semibold mb-2">Areas of Expertise</h3>
-                        <p className="text-sm text-muted-foreground">{userData.expertise}</p>
+                        <h3 className="text-sm font-semibold mb-2">
+                          Areas of Expertise
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {userData.expertise}
+                        </p>
                       </div>
                     )}
                   </div>

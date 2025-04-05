@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
   Card,
@@ -8,7 +7,7 @@ import {
   CardTitle,
   CardDescription,
   CardFooter,
- } from "@/components/ui/card";
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -18,7 +17,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { FaBan, FaUnlock } from "react-icons/fa";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,44 +26,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Search,
-  Filter,
-  UserCheck,
-  UserX,
-  Eye,
-  MoreHorizontal,
-
-} from "lucide-react";
+import { Search, Filter, UserCheck, UserX, Eye } from "lucide-react";
 import { toast } from "sonner";
 
-const UserManagement = () => {
-  const navigate = useNavigate();
+const UserManagement = ({ onViewUser }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState("instructor");
   const [filterStatus, setFilterStatus] = useState("all");
   const [users, setUsers] = useState([]);
 
-  // Fetch user data from the API
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
         if (!token) {
           toast.error("No authentication token found");
           return;
         }
-    
-        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/admin/all-users`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-    
-        // Handle nested array case
+
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/api/admin/all-users`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
         if (response.data?.users) {
           setUsers(response.data.users);
-        } 
-        // Fallback (invalid format)
-        else {
+        } else {
           toast.error("Invalid API response format");
           setUsers([]);
         }
@@ -75,160 +63,141 @@ const UserManagement = () => {
         setUsers([]);
       }
     };
-    
+
     fetchUsers();
   }, []);
 
-  // Filter users based on search query and role filter
-  const filteredUsers = Array.isArray(users) 
-  ? users.filter((user) => {
-      const matchesSearch =
-        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredUsers = Array.isArray(users)
+    ? users.filter((user) => {
+        const matchesSearch =
+          user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.email.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesRole = filterRole === "instructor" || user.role === filterRole;
-      
-      // Normalize user status to lowercase for consistency
-      const userStatus = user.status.toLowerCase();
+        const matchesRole = user.role === filterRole;
 
-      const matchesStatus =
-        filterStatus === "all" ||
-        (filterStatus === "active" && userStatus === "active") ||
-        (filterStatus === "pending" && userStatus === "pending");
+        const userStatus = user.status.toLowerCase();
+        const matchesStatus =
+          filterStatus === "all" ||
+          (filterStatus === "active" && userStatus === "active") ||
+          (filterStatus === "pending" && userStatus === "pending");
 
-      return matchesSearch && matchesRole && matchesStatus;
-    })
-  : [];
+        return matchesSearch && matchesRole && matchesStatus;
+      })
+    : [];
 
-
-const handleApproveUser = async (userId) => {
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      toast.error("No authentication token found");
-      return;
-    }
-
-    await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/admin/approve-instructor/${userId}`, {}, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    toast.success(`User #${userId} has been approved`);
-    // Optionally update user status locally or refetch data
-  } catch (error) {
-    console.error(`Error approving User #${userId}:`, error);
-    toast.error(`Failed to approve User #${userId}`);
-  }
-};
-
-const handleRejectUser = async (userId) => {
-  try {
-    const token = localStorage.getItem('token'); // Get token from localStorage
-
-    if (!token) {
-      toast.error("No authentication token found");
-      return;
-    }
-
-    const response = await axios.delete(
-      `${import.meta.env.VITE_API_BASE_URL}/api/admin/reject-instructor/${userId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`, // Include token in headers
-        },
+  const handleApproveUser = async (userId) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("No authentication token found");
+        return;
       }
-    );
 
-    toast.error(`User #${userId} has been rejected`);
-    // Update user status locally or refetch data
-  } catch (error) {
-    console.error("Error rejecting user:", error);
-    toast.error("Failed to reject user");
-  }
-};
+      await axios.put(
+        `${
+          import.meta.env.VITE_API_BASE_URL
+        }/api/admin/approve-instructor/${userId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
+      toast.success(`User #${userId} has been approved`);
+    } catch (error) {
+      console.error(`Error approving User #${userId}:`, error);
+      toast.error(`Failed to approve User #${userId}`);
+    }
+  };
 
+  const handleRejectUser = async (userId) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("No authentication token found");
+        return;
+      }
 
-const handleViewUser = (userId) => {
-  console.log("User ID passed to navigate: ", userId); // Log the correct userId being passed
+      const response = await axios.delete(
+        `${
+          import.meta.env.VITE_API_BASE_URL
+        }/api/admin/reject-instructor/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-  navigate(`/users/${userId}`);
-};
+      toast.error(`User #${userId} has been rejected`);
+    } catch (error) {
+      console.error("Error rejecting user:", error);
+      toast.error("Failed to reject user");
+    }
+  };
 
-
+  const handleViewUser = (userId) => {
+    onViewUser(userId);
+  };
 
   const handleBlockUser = async (userId) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/users/block/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-  
-      const result = await response.json();
-  
-      if (response.ok) {
-        // Update state or UI accordingly
-        toast.success('User blocked successfully');
-      } else {
-        alert(result.message || 'Failed to block user');
-      }
-      setUsers(users.map(user => user._id === userId ? { ...user, blocked: true, status: 'blocked' } : user));
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/users/block/${userId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
+      const result = await response.json();
+
+      if (response.ok) {
+        toast.success("User blocked successfully");
+      } else {
+        alert(result.message || "Failed to block user");
+      }
+      setUsers(
+        users.map((user) =>
+          user._id === userId
+            ? { ...user, blocked: true, status: "blocked" }
+            : user
+        )
+      );
     } catch (error) {
-      console.error('Error:', error);
-      alert('An error occurred while blocking the user');
+      console.error("Error:", error);
+      alert("An error occurred while blocking the user");
     }
   };
 
-  // Function to handle unblocking user
   const handleUnblockUser = async (userId) => {
     try {
-      const response = await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/users/unblock/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axios.put(
+        `${import.meta.env.VITE_API_BASE_URL}/api/users/unblock/${userId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
       toast.success(response.data.message);
-      // Update the UI, for example, by refetching users or directly updating the user's status in state
-      setUsers(users.map(user => user._id === userId ? { ...user, blocked: false, status: 'active' } : user));
+      setUsers(
+        users.map((user) =>
+          user._id === userId
+            ? { ...user, blocked: false, status: "active" }
+            : user
+        )
+      );
     } catch (error) {
-      console.error('Error unblocking user:', error);
-      alert('Error unblocking user');
+      console.error("Error unblocking user:", error);
+      alert("Error unblocking user");
     }
   };
-
-  // const getStatusBadge = (status) => {
-  //   switch (status) {
-  //     case "Active":
-  //       return (
-  //         <span className="flex items-center text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-  //           <UserCheck size={12} className="mr-1" />
-  //           Active
-  //         </span>
-  //       );
-  //     case "Inactive":
-  //       return (
-  //         <span className="flex items-center text-xs px-2 py-1 rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-  //           <UserX size={12} className="mr-1" />
-  //           Inactive
-  //         </span>
-  //       );
-  //     case "Pending":
-  //       return (
-  //         <span className="flex items-center text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-  //           <MoreHorizontal size={12} className="mr-1" />
-  //           Pending
-  //         </span>
-  //       );
-  //     default:
-  //       return null;
-  //   }
-  // };
 
   return (
     <Card className="shadow-sm">
@@ -237,7 +206,6 @@ const handleViewUser = (userId) => {
         <CardDescription>Manage all users across the platform</CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Status Filter Tabs */}
         <div className="flex items-center space-x-2 mb-4 overflow-x-auto pb-2">
           <Button
             variant={filterStatus === "all" ? "default" : "ghost"}
@@ -316,77 +284,81 @@ const handleViewUser = (userId) => {
                   return 0;
                 })
                 .map((user) => {
-                  const userStatus = user.status.toLowerCase(); // Normalize status
+                  const userStatus = user.status.toLowerCase();
                   return (
-                    <TableRow key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <TableRow
+                      key={user.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
                       <TableCell>#{user._id}</TableCell>
                       <TableCell className="font-medium">{user.name}</TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
                         <span className="capitalize">{user.role}</span>
                       </TableCell>
-                      <TableCell>{(user.status)}</TableCell>
-                      {/* <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell> */}
-                      <TableCell>{new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</TableCell>
-
+                      <TableCell>{user.status}</TableCell>
                       <TableCell>
-  <div className="flex items-center gap-2">
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={() => handleViewUser(user._id)}
-      className="h-8 w-8"
-    >
-      <Eye size={16} />
-    </Button>
+                        {new Date(user.createdAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleViewUser(user._id)}
+                            className="h-8 w-8"
+                          >
+                            <Eye size={16} />
+                          </Button>
 
-    {userStatus === "pending" && (
-      <>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => handleApproveUser(user._id)}
-          className="h-8 w-8 text-green-600"
-        >
-          <UserCheck size={16} />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => handleRejectUser(user._id)}
-          className="h-8 w-8 text-red-600"
-        >
-          <UserX size={16} />
-        </Button>
-      </>
-    )}
+                          {userStatus === "pending" && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleApproveUser(user._id)}
+                                className="h-8 w-8 text-green-600"
+                              >
+                                <UserCheck size={16} />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRejectUser(user._id)}
+                                className="h-8 w-8 text-red-600"
+                              >
+                                <UserX size={16} />
+                              </Button>
+                            </>
+                          )}
 
-    {/* Block/Unblock button for active or pending users */}
-    {userStatus === "active" && !user.blocked && (
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => handleBlockUser(user._id)}
-        className="h-8 w-8 text-yellow-600"
-      >
-        <FaBan  size={16} />
-      </Button>
-    )}
+                          {userStatus === "active" && !user.blocked && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleBlockUser(user._id)}
+                              className="h-8 w-8 text-yellow-600"
+                            >
+                              <FaBan size={16} />
+                            </Button>
+                          )}
 
-{user && user.status === "blocked" && (
-  <Button
-    variant="ghost"
-    size="icon"
-    onClick={() => handleUnblockUser(user._id)}
-    className="h-8 w-8 text-green-600"
-  >
-    <FaUnlock   size={16} />
-  </Button>
-)}
-
-  </div>
-</TableCell>
-
+                          {user && user.status === "blocked" && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleUnblockUser(user._id)}
+                              className="h-8 w-8 text-green-600"
+                            >
+                              <FaUnlock size={16} />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -399,7 +371,6 @@ const handleViewUser = (userId) => {
           Showing <span className="font-medium">{filteredUsers.length}</span> of{" "}
           <span className="font-medium">{users.length}</span> users
         </div>
-
         <div className="flex items-center space-x-2">
           <Button variant="outline" size="sm" disabled>
             Previous
