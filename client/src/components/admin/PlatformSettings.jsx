@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+
 import {
   Card,
   CardContent,
@@ -12,30 +14,66 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import axios from "axios";
 
 const PlatformSettings = () => {
-  // Mock user data
-  const user = {
-    name: "John Doe",
-    email: "johndoe@example.com",
-    avatarUrl: "",
-    role: "User",
-  };
+  // Define states
+  const [user, setUser] = useState({
+    profilePic: "", 
+    name: "",       
+    email: "",      
+    bio: "",        
+  });
 
   const [formData, setFormData] = useState({
-    name: user.name || "",
-    email: user.email || "",
-    bio: "I am passionate about learning and sharing knowledge with others.",
+    name: "",
+    email: "",
+    bio: "",
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
-
-  const [avatarPreview, setAvatarPreview] = useState(user.avatarUrl);
+  const [avatarPreview, setAvatarPreview] = useState(user.profilePic);
   const [isLoading, setIsLoading] = useState(false);
   const [isAvatarLoading, setIsAvatarLoading] = useState(false);
+  const { userId } = useParams();
 
-  // Get first letter of user's name for fallback avatar
+  // Fetch user data on component mount
+  useEffect(() => {
+    console.log("userId from URL:", userId);
+      if (!userId) {
+        console.warn("userId is undefined in useParams()");
+        return;
+      }
+    const fetchUserData = async () => {
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/api/users/profile`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+            },
+          }
+        );
+        // Set the user data to state
+        const fetchedUser = response.data; 
+        setUser(fetchedUser);
+        setFormData((prev) => ({
+          ...prev,
+          name: fetchedUser.name,
+          email: fetchedUser.email,
+          bio: fetchedUser.bio,
+        }));
+        setAvatarPreview(fetchedUser.profilePic);
+      } catch (error) {
+        toast.error(error.response?.data?.message || "Failed to fetch user data.");
+      }
+    };
+
+    fetchUserData();
+  }, []); // Empty array ensures this effect runs only once when the component mounts
+
+  // Get initials from name
   const getInitials = (name) => {
     if (!name) return "";
     const names = name.split(" ");
@@ -60,8 +98,7 @@ const PlatformSettings = () => {
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      // 2MB limit
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit
       toast.error("File size should be less than 2MB");
       return;
     }
@@ -80,17 +117,42 @@ const PlatformSettings = () => {
     setAvatarPreview("");
   };
 
-  const handleProfileUpdate = (e) => {
+  const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
-    setTimeout(() => {
+    const formDataToSend = new FormData();
+    formDataToSend.append("name", formData.name);
+    formDataToSend.append("email", formData.email);
+    formDataToSend.append("bio", formData.bio);
+
+    if (avatarPreview && avatarPreview !== user.profilePic) {
+      // Convert data URL to Blob for file upload
+      const blob = await (await fetch(avatarPreview)).blob();
+      formDataToSend.append("profilePic", blob, "avatar.jpg");
+    }
+
+    try {
+      const response = await axios.put(
+        `${import.meta.env.VITE_API_BASE_URL}/api/users/${userId}`,
+        formDataToSend,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
       setIsLoading(false);
       toast.success("Profile updated successfully!");
-    }, 1000);
+    } catch (error) {
+      setIsLoading(false);
+      toast.error(error.response?.data?.message || "Failed to update profile.");
+    }
   };
 
-  const handlePasswordUpdate = (e) => {
+  const handlePasswordUpdate = async (e) => {
     e.preventDefault();
 
     if (formData.newPassword !== formData.confirmPassword) {
@@ -100,7 +162,20 @@ const PlatformSettings = () => {
 
     setIsLoading(true);
 
-    setTimeout(() => {
+    try {
+      const response = await axios.put(
+        `${import.meta.env.VITE_API_BASE_URL}/api/users/profile/password`,
+        {
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+          },
+        }
+      );
+
       setIsLoading(false);
       setFormData((prev) => ({
         ...prev,
@@ -109,7 +184,10 @@ const PlatformSettings = () => {
         confirmPassword: "",
       }));
       toast.success("Password updated successfully!");
-    }, 1000);
+    } catch (error) {
+      setIsLoading(false);
+      toast.error(error.response?.data?.message || "Failed to update password.");
+    }
   };
 
   return (
@@ -226,10 +304,10 @@ const PlatformSettings = () => {
 
                       <Button
                         type="submit"
-                        disabled={isLoading}
+                        disabled={isLoading || isAvatarLoading}
                         className="w-full"
                       >
-                        {isLoading ? "Updating..." : "Update Profile"}
+                        {isLoading ? "Updating..." : "Save Changes"}
                       </Button>
                     </div>
                   </form>
@@ -242,23 +320,21 @@ const PlatformSettings = () => {
                 <CardHeader>
                   <CardTitle>Security Settings</CardTitle>
                   <CardDescription>
-                    Update your password and security preferences
+                    Update your password for better security
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handlePasswordUpdate}>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="currentPassword">
-                          Current Password
-                        </Label>
+                        <Label htmlFor="currentPassword">Current Password</Label>
                         <Input
                           id="currentPassword"
                           name="currentPassword"
                           type="password"
                           value={formData.currentPassword}
                           onChange={handleInputChange}
-                          placeholder="••••••••"
+                          placeholder="Enter your current password"
                         />
                       </div>
 
@@ -270,21 +346,19 @@ const PlatformSettings = () => {
                           type="password"
                           value={formData.newPassword}
                           onChange={handleInputChange}
-                          placeholder="••••••••"
+                          placeholder="Enter your new password"
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="confirmPassword">
-                          Confirm New Password
-                        </Label>
+                        <Label htmlFor="confirmPassword">Confirm New Password</Label>
                         <Input
                           id="confirmPassword"
                           name="confirmPassword"
                           type="password"
                           value={formData.confirmPassword}
                           onChange={handleInputChange}
-                          placeholder="••••••••"
+                          placeholder="Confirm your new password"
                         />
                       </div>
 
@@ -293,7 +367,7 @@ const PlatformSettings = () => {
                         disabled={isLoading}
                         className="w-full"
                       >
-                        {isLoading ? "Updating..." : "Update Password"}
+                        {isLoading ? "Updating..." : "Change Password"}
                       </Button>
                     </div>
                   </form>

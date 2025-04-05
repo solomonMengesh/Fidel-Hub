@@ -1,6 +1,6 @@
 import User from '../../models/User.js';
 import mongoose from 'mongoose';
-
+import { sendEmail } from '../../Email Service/emailService.js'; 
 export const approveInstructor = async (req, res) => {
     const { userId } = req.params;
 
@@ -21,6 +21,18 @@ export const approveInstructor = async (req, res) => {
         user.isApproved = true;
         user.status = 'active';
         await user.save();
+
+          const subject = 'Your Account Has Been Approved';
+          const text = `Dear ${user.name},\n\nYour account has been approved by the admin. You can now access the platform as an instructor. If you have any questions, please contact support.`;
+          const htmlContent = `
+            <h1>Account Approved</h1>
+            <p>Dear ${user.name},</p>
+            <p>Your account has been approved by the admin. You can now access the platform as an instructor.</p>
+            <p>If you have any questions, please contact support.</p>
+          `;
+
+          await sendEmail(user.email, subject, text, htmlContent);
+
 
         res.json({ message: "Instructor approved successfully!" });
 
@@ -51,6 +63,17 @@ export const rejectInstructor = async (req, res) => {
     // Delete the instructor from the database
     await User.findByIdAndDelete(id);
 
+    const subject = 'Your Account Approval Has Been Rejected';
+    const text = `Dear ${user.name},\n\nYour account approval has been rejected by the admin. You will not be able to access the platform as an instructor. If you have any questions, please contact support.`;
+    const htmlContent = `
+      <h1>Account Approval Rejected</h1>
+      <p>Dear ${user.name},</p>
+      <p>Your account approval has been rejected by the admin. You will not be able to access the platform as an instructor.</p>
+      <p>If you have any questions, please contact support.</p>
+    `;
+    
+    await sendEmail(user.email, subject, text, htmlContent);
+    
     return res.status(200).json({ message: 'Instructor rejected and deleted successfully' });
 
   } catch (error) {
@@ -134,6 +157,19 @@ export const blockUser = async (req, res) => {
     user.isApproved = false;
     user.status = 'blocked';
     await user.save();
+    
+    // Send email to the user about being blocked
+    const subject = 'Your Account Has Been Blocked';
+    const text = `Dear ${user.name},\n\nYour account has been blocked by the admin. You will not be able to access the platform until further notice. If you have any questions, please contact support.`;
+    const htmlContent = `
+      <h1>Account Blocked</h1>
+      <p>Dear ${user.name},</p>
+      <p>Your account has been blocked by the admin. You will not be able to access the platform until further notice.</p>
+      <p>If you have any questions, please contact support.</p>
+    `;
+    
+    // Ensure the email is sent asynchronously
+    await sendEmail(user.email, subject, text, htmlContent);
 
     // Force logout via Socket.IO
     if (user.socketId) {
@@ -174,6 +210,18 @@ export const unblockUser = async (req, res) => {
     user.blocked = false;
     user.isApproved = true; 
     await user.save();
+
+    const subject = 'Your Account Has Been Unblocked';
+    const text = `Dear ${user.name},\n\nYour account has been unblocked by the admin. You can now access the platform again. If you have any questions, please contact support.`;
+    const htmlContent = `
+      <h1>Account Unblocked</h1>
+      <p>Dear ${user.name},</p>
+      <p>Your account has been unblocked by the admin. You can now access the platform again.</p>
+      <p>If you have any questions, please contact support.</p>
+    `;
+
+    await sendEmail(user.email, subject, text, htmlContent);
+
 
     return res.status(200).json({ message: 'User has been unblocked and approval granted' });
 

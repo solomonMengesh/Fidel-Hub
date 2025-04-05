@@ -12,6 +12,7 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/admin-Routes/adminRoutes.js';
 import User from './models/User.js';
+import userRoutes from './routes/userRoutes/userRoutes.js';
 
 dotenv.config();
 await connectDB(); // Ensure MongoDB is connected before starting server
@@ -91,7 +92,7 @@ app.use('/uploads', express.static('uploads')); // Serve uploaded files as stati
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/users', adminRoutes); // Adjust as needed
+app.use('/api/users', userRoutes); // Adjust as needed
 
 // Error handling middleware
 app.use((err, req, res, next) => {

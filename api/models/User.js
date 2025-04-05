@@ -22,7 +22,19 @@ const userSchema = new mongoose.Schema({
     default: function() { return this.isApproved ? 'active' : 'pending'; } // Dynamic status
   },
   blocked: { type: Boolean, default: false }  ,
-  socketId: { type: String, default: null }, // New field for tracking user's socket connection
+  socketId: { type: String, default: null },
+  bio: {
+    type: String,
+    default: 'I am passionate about learning and sharing knowledge with others.',
+    trim: true,
+    maxlength: [500, 'Bio cannot exceed 500 characters']
+  },
+
+  // Avatar
+  profilePic: {
+    type: String,
+    default: '' // Stores the URL or path to the uploaded avatar
+  },
 
 }, { timestamps: true });
 
@@ -49,6 +61,23 @@ userSchema.pre('save', async function(next) {
 // Password comparison method
 userSchema.methods.comparePassword = async function(password) {
   return bcrypt.compare(password, this.password);
+};
+
+// Method: Update profile (optional helper)
+userSchema.methods.updateProfile = async function(updates) {
+  const allowedUpdates = ['name', 'email', 'bio', 'profilePic'];
+  const updatesKeys = Object.keys(updates);
+  const isValidUpdate = updatesKeys.every(key => allowedUpdates.includes(key));
+
+  if (!isValidUpdate) {
+    throw new Error('Invalid profile updates');
+  }
+
+  updatesKeys.forEach(key => {
+    this[key] = updates[key];
+  });
+
+  return this.save();
 };
 
 export default mongoose.model('User', userSchema);

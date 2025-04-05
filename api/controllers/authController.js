@@ -1,6 +1,6 @@
 import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
-import upload from '../middleware/uploadMiddleware.js'; // Import your multer upload middleware
+import { uploadImage, uploadPDF } from '../middleware/uploadMiddleware.js';
 import jwt from 'jsonwebtoken';
 
 // Register a new user
