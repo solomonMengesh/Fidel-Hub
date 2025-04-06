@@ -15,7 +15,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import PendingApproval from "./components/instructor/PendingApproval";
 import UserDetails from "./pages/Userdetails";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "./components/ui/sonner";
 import { toast } from "react-toastify";
 import { connectSocket, listenForForceLogout, disconnectSocket } from "./socket";
 const MainLayout = ({ children }) => (

@@ -22,8 +22,7 @@ const storage = (folder) =>
       const ext = path.extname(file.originalname);
       const name = req.user?.name?.replace(/\s+/g, '-') || 'user';
       cb(null, `${name}-${Date.now()}${ext}`);
-    }
-    
+    },
   });
 
 // File filters
@@ -35,23 +34,27 @@ const pdfFilter = (req, file, cb) => {
 };
 
 const imageFilter = (req, file, cb) => {
-  const allowed = /jpeg|jpg|png/;
-  const isValid =
-    allowed.test(path.extname(file.originalname).toLowerCase()) &&
-    allowed.test(file.mimetype);
-  if (!isValid) {
-    return cb(new Error('Only image files (jpg, jpeg, png) are allowed.'));
+  const allowedExt = /jpeg|jpg|png|gif|bmp|svg|webp|tiff/; // Add other image extensions here
+  const allowedMime = /image\/(jpeg|png|gif|bmp|svg\+xml|webp|tiff)/; // Add corresponding MIME types here
+
+  const isValidExt = allowedExt.test(path.extname(file.originalname).toLowerCase());
+  const isValidMime = allowedMime.test(file.mimetype);
+
+  if (!isValidExt || !isValidMime) {
+    return cb(new Error('Only image files are allowed.'));
   }
+
   cb(null, true);
 };
 
+
 // Export specific uploaders
 export const uploadPDF = multer({
-  storage: storage('pdfs'),
+  storage: storage('cvs'),
   fileFilter: pdfFilter,
 });
 
 export const uploadImage = multer({
-  storage: storage('profile-pics'),
-  fileFilter: imageFilter,
-});
+    storage: storage('avatars'),
+    fileFilter: imageFilter,
+  });

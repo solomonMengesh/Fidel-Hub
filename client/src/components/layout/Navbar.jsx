@@ -5,8 +5,7 @@ import cn from "classnames"; // Utility for conditional class names
 import { Grid, LogOut, Menu, X } from "react-feather"; // Corrected to use Grid for Dashboard icon
 import { Button } from "../ui/button"; // Assuming Button component is available
 import { DropdownMenu, DropdownMenuItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu"; // Assuming DropdownMenu component is available
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"; // Adjust based on your project structure
-
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 const Navbar = () => {
   const { user, logout, loading } = useAuth();  // Get user state from AuthContext
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

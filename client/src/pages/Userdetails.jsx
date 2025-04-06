@@ -54,7 +54,7 @@ const UserDetail = ({ userId, onBack, embedded = false }) => {
   }, [userId]);
 
   const handleDownload = (fileUrl) => {
-    const filePath = `${import.meta.env.VITE_API_BASE_URL}/uploads/${fileUrl
+    const filePath = `${import.meta.env.VITE_API_BASE_URL}/uploads/cvs/${fileUrl
       .split(/[\\/]/)
       .pop()}`;
     const newWindow = window.open(filePath, "_blank", "width=800,height=600");

@@ -45,15 +45,13 @@ const PlatformSettings = () => {
       try {
         const tokenPayload = JSON.parse(atob(token.split(".")[1]));
         userId = tokenPayload.id;
-        console.log("Extracted User ID:", userId);
-      } catch (error) {
+       } catch (error) {
         toast.error("Invalid token format");
         return;
       }
   
       const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/api/users/${userId}`;
-      console.log("Fetching from:", apiUrl);
-  
+   
       try {
         setIsLoading(true);
         const response = await axios.get(apiUrl, {
@@ -64,7 +62,6 @@ const PlatformSettings = () => {
   
         const userData = response.data;
         console.log("API Response:", userData);
-  
         setUser(userData);
         setFormData((prev) => ({
           ...prev,
@@ -72,16 +69,20 @@ const PlatformSettings = () => {
           email: userData.email || "",
           bio: userData.bio || "",
         }));
+        const fullProfilePicUrl = userData.profilePic && typeof userData.profilePic === 'string'
+        ? `${userData.profilePic}` 
+        : "/avatars/default-avatar.jpg";
   
-        const fullProfilePicUrl = userData.profilePic 
-          ? `http://localhost:5000${userData.profilePic}` 
-          : "http://localhost:5000/uploads/profile-pics/default-avatar.jpg";
-        console.log("Profile Pic URL:", fullProfilePicUrl);
-        setAvatarPreview(fullProfilePicUrl);
-        console.log("Avatar Preview Set To:", fullProfilePicUrl);
-      } catch (error) {
-        console.error("API Error:", error.response?.data);
-        toast.error(error.response?.data?.message || "Failed to fetch user data");
+      
+         
+           console.log("Profile Pic URL:", fullProfilePicUrl);
+           setAvatarPreview(fullProfilePicUrl);
+           console.log("Avatar Preview Set To:", fullProfilePicUrl);        console.log("Avatar Preview Set To:", fullProfilePicUrl);
+      }  catch (error) {
+        console.error("API Error:", error.response?.data || error.message);
+        console.log("API Response:", response.data);
+
+        toast.error(error.response?.data?.message || error.message || "Failed to fetch user data");
       } finally {
         setIsLoading(false);
       }
@@ -146,6 +147,8 @@ const PlatformSettings = () => {
       // Convert data URL to Blob for file upload
       const blob = await (await fetch(avatarPreview)).blob();
       formDataToSend.append("profilePic", blob, "avatar.jpg");
+      console.log("User profile pic:", user.profilePic);
+
     }
 
     try {
@@ -220,15 +223,15 @@ const PlatformSettings = () => {
           <CardContent className="p-6">
             <div className="flex flex-col items-center">
               <div className="relative mb-4">
-              <Avatar className="w-32 h-32">
-  {avatarPreview ? (
-    <AvatarImage src={"avatarPreview"} alt="Profile picture" />
-  ) : (
-    <AvatarFallback className="text-4xl bg-primary text-primary-foreground">
-      {getInitials(formData?.name || user?.name || "User")}
-    </AvatarFallback>
-  )}
-</Avatar>;
+                <Avatar className="w-32 h-32">
+                  {avatarPreview ? (
+                    <AvatarImage src={avatarPreview} alt="Profile picture" />
+                  ) : (
+                    <AvatarFallback className="text-4xl bg-primary text-primary-foreground">
+                      {getInitials(formData?.name || user?.name || "User")}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
                 {isAvatarLoading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>

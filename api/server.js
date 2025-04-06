@@ -87,7 +87,7 @@ app.get('/download/:filename', (req, res) => {
   });
 });
 
-app.use('/uploads', express.static('uploads')); // Serve uploaded files as static assets
+app.use('/uploads', cors(), express.static('uploads'));
 
 // API Routes
 app.use('/api/auth', authRoutes);

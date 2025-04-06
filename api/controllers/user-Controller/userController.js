@@ -18,7 +18,7 @@ export const getProfile = async (req, res) => {
 export const updateProfile = async (req, res) => {
   const userId = req.user._id;
   const { name, email, bio } = req.body;
-  const profilePic = req.file ? `/uploads/profile-pics/${req.file.filename}` : undefined;
+  const profilePic = req.file ? `/uploads/avatars/${req.file.filename}` : undefined;
 
   try {
     const user = await User.findById(userId);
