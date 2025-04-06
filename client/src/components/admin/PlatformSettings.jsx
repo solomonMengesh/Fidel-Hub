@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-
 import {
   Card,
   CardContent,
@@ -17,14 +15,12 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import axios from "axios";
 
 const PlatformSettings = () => {
-  // Define states
   const [user, setUser] = useState({
-    profilePic: "", 
-    name: "",       
-    email: "",      
-    bio: "",        
+    profilePic: "",
+    name: "",
+    email: "",
+    bio: "",
   });
-
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -36,43 +32,63 @@ const PlatformSettings = () => {
   const [avatarPreview, setAvatarPreview] = useState(user.profilePic);
   const [isLoading, setIsLoading] = useState(false);
   const [isAvatarLoading, setIsAvatarLoading] = useState(false);
-  const { userId } = useParams();
 
-  // Fetch user data on component mount
   useEffect(() => {
-    console.log("userId from URL:", userId);
-      if (!userId) {
-        console.warn("userId is undefined in useParams()");
+    const fetchUserData = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Please log in to view your profile");
         return;
       }
-    const fetchUserData = async () => {
+  
+      let userId;
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/api/users/profile`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-            },
-          }
-        );
-        // Set the user data to state
-        const fetchedUser = response.data; 
-        setUser(fetchedUser);
+        const tokenPayload = JSON.parse(atob(token.split(".")[1]));
+        userId = tokenPayload.id;
+        console.log("Extracted User ID:", userId);
+      } catch (error) {
+        toast.error("Invalid token format");
+        return;
+      }
+  
+      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/api/users/${userId}`;
+      console.log("Fetching from:", apiUrl);
+  
+      try {
+        setIsLoading(true);
+        const response = await axios.get(apiUrl, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+  
+        const userData = response.data;
+        console.log("API Response:", userData);
+  
+        setUser(userData);
         setFormData((prev) => ({
           ...prev,
-          name: fetchedUser.name,
-          email: fetchedUser.email,
-          bio: fetchedUser.bio,
+          name: userData.name || "",
+          email: userData.email || "",
+          bio: userData.bio || "",
         }));
-        setAvatarPreview(fetchedUser.profilePic);
+  
+        const fullProfilePicUrl = userData.profilePic 
+          ? `http://localhost:5000${userData.profilePic}` 
+          : "http://localhost:5000/uploads/profile-pics/default-avatar.jpg";
+        console.log("Profile Pic URL:", fullProfilePicUrl);
+        setAvatarPreview(fullProfilePicUrl);
+        console.log("Avatar Preview Set To:", fullProfilePicUrl);
       } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to fetch user data.");
+        console.error("API Error:", error.response?.data);
+        toast.error(error.response?.data?.message || "Failed to fetch user data");
+      } finally {
+        setIsLoading(false);
       }
     };
-
+  
     fetchUserData();
-  }, []); // Empty array ensures this effect runs only once when the component mounts
-
+  }, []);
   // Get initials from name
   const getInitials = (name) => {
     if (!name) return "";
@@ -134,7 +150,7 @@ const PlatformSettings = () => {
 
     try {
       const response = await axios.put(
-        `${import.meta.env.VITE_API_BASE_URL}/api/users/${userId}`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/users/profile`,
         formDataToSend,
         {
           headers: {
@@ -204,15 +220,15 @@ const PlatformSettings = () => {
           <CardContent className="p-6">
             <div className="flex flex-col items-center">
               <div className="relative mb-4">
-                <Avatar className="w-32 h-32">
-                  {avatarPreview ? (
-                    <AvatarImage src={avatarPreview} alt="Profile picture" />
-                  ) : (
-                    <AvatarFallback className="text-4xl bg-primary text-primary-foreground">
-                      {getInitials(formData.name || user.name)}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
+              <Avatar className="w-32 h-32">
+  {avatarPreview ? (
+    <AvatarImage src={"avatarPreview"} alt="Profile picture" />
+  ) : (
+    <AvatarFallback className="text-4xl bg-primary text-primary-foreground">
+      {getInitials(formData?.name || user?.name || "User")}
+    </AvatarFallback>
+  )}
+</Avatar>;
                 {isAvatarLoading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>

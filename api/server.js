@@ -92,8 +92,8 @@ app.use('/uploads', express.static('uploads')); // Serve uploaded files as stati
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/users', userRoutes); // Adjust as needed
-
+app.use('/api/users', adminRoutes); // Adjust as needed
+app.use('/api/users', userRoutes);
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

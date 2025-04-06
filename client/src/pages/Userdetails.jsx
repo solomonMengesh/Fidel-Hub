@@ -155,6 +155,7 @@ const UserDetail = ({ userId, onBack, embedded = false }) => {
     return <div className="text-center">User not found</div>;
   }
 
+
   const getStatusLabel = (status) => {
     switch (status) {
       case "active":
@@ -224,6 +225,7 @@ const UserDetail = ({ userId, onBack, embedded = false }) => {
             </div>
 
             <Separator className="my-6" />
+
 
             {userData.role === "instructor" && (
               <div className="space-y-4">
