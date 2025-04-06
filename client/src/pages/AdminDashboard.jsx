@@ -32,7 +32,7 @@ const AdminDashboard = () => {
     { id: "courses", label: "Course Moderation", icon: BookOpen },
     { id: "analytics", label: "Analytics", icon: PieChart },
     { id: "payments", label: "Payments", icon: Award },
-    { id: "settings", label: "Platform Settings", icon: Settings },
+    { id: "settings", label: " Settings", icon: Settings },
   ];
 
   const handleNavItemClick = (id) => {

@@ -1,6 +1,7 @@
 import User from '../../models/User.js';
 import mongoose from 'mongoose';
 import { sendEmail } from '../../Email Service/emailService.js'; 
+
 export const approveInstructor = async (req, res) => {
     const { userId } = req.params;
 

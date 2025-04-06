@@ -14,12 +14,12 @@ const userSchema = new mongoose.Schema({
   cv: { type: String }, // Store the path to the CV if the user is an instructor
   isApproved: { 
     type: Boolean, 
-    default: function() { return this.role !== 'instructor'; } // Automatically approve non-instructors
+    default: function() { return this.role !== 'instructor'; } 
   },
   status: {
     type: String,
     enum: ['active', 'pending', 'blocked'], 
-    default: function() { return this.isApproved ? 'active' : 'pending'; } // Dynamic status
+    default: function() { return this.isApproved ? 'active' : 'pending'; } 
   },
   blocked: { type: Boolean, default: false }  ,
   socketId: { type: String, default: null },
@@ -35,6 +35,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: '' // Stores the URL or path to the uploaded avatar
   },
+  otp: { type: String },
+  otpExpiration: { type: Date },
+  isVerified: { type: Boolean, default: false },
+  passwordResetOtp: { type: String },
+passwordResetOtpExpiration: { type: Date },
+
 
 }, { timestamps: true });
 
@@ -62,6 +68,37 @@ userSchema.pre('save', async function(next) {
 userSchema.methods.comparePassword = async function(password) {
   return bcrypt.compare(password, this.password);
 };
+
+// OTP generation and verification
+userSchema.methods.generateOTP = function() {
+  const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+  this.otp = otp;
+  this.otpExpiration = Date.now() + 10 * 60 * 1000; // OTP expires in 10 minutes
+  return otp;
+};
+
+userSchema.methods.verifyOTP = function(otp) {
+  if (this.otp === otp && this.otpExpiration > Date.now()) {
+    return true;
+  }
+  return false;
+};
+
+// User schema method to handle password reset OTP generation and verification
+userSchema.methods.generatePasswordResetOTP = function() {
+  const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+  this.passwordResetOtp = otp;
+  this.passwordResetOtpExpiration = Date.now() + 10 * 60 * 1000; // OTP expires in 10 minutes
+  return otp;
+};
+
+userSchema.methods.verifyPasswordResetOTP = function(otp) {
+  if (this.passwordResetOtp === otp && this.passwordResetOtpExpiration > Date.now()) {
+    return true;
+  }
+  return false;
+};
+
 
 // Method: Update profile (optional helper)
 userSchema.methods.updateProfile = async function(updates) {

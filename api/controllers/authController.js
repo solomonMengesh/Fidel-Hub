@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
 import { uploadImage, uploadPDF } from '../middleware/uploadMiddleware.js';
 import jwt from 'jsonwebtoken';
+import { sendEmail } from '../Email Service/emailService.js';
 
 // Register a new user
 export const registerUser = async (req, res) => {
@@ -38,15 +39,22 @@ export const registerUser = async (req, res) => {
     });
 
     await user.save();
-    res.status(201).json({ message: 'Registration successful!' });
+
+    // Generate OTP and send it via email
+    const otp = user.generateOTP(); // Generates OTP and stores it in user model
+    await user.save(); // Save OTP in the user model
+    await sendEmail(email, 'Your OTP Code', `Your OTP code is: ${otp}`);
+
+    res.status(201).json({ message: 'Registration successful! Please verify your email with the OTP sent.' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-// User login
+
 export const loginUser = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, otp } = req.body; // Include OTP in the body for verification
+
   console.log("Login attempt:", { email });
 
   try {
@@ -63,9 +71,33 @@ export const loginUser = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
+
     if (user.blocked) {
       return res.status(403).json({ message: "Your account has been blocked by the admin." });
     }
+
+    // Check if the user has verified their OTP
+    if (!user.isVerified) {
+      if (!otp) {
+        // If OTP is not provided, send it to the user's email
+        const generatedOtp = user.generateOTP();
+        await user.save();
+        await sendEmail(user.email, 'Your OTP Code', `Your OTP code is: ${generatedOtp}`);
+        
+        return res.status(400).json({ message: "OTP required to verify your account. Check your email." });
+      }
+
+      // If OTP is provided, verify it
+      const isOtpValid = user.verifyOTP(otp);
+      if (!isOtpValid) {
+        return res.status(400).json({ message: "Invalid or expired OTP" });
+      }
+
+      // OTP is valid, mark user as verified
+      user.isVerified = true;
+      await user.save();
+    }
+
     if (user.role === "instructor" && !user.isApproved) {
       console.log("Instructor approval status:", user.isApproved);
       return res.status(403).json({ message: "Your account is pending approval by an admin." });
@@ -82,7 +114,7 @@ export const loginUser = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    res.status(200).json({ message: "Login successful", user , token });
+    res.status(200).json({ message: "Login successful", user, token });
 
   } catch (error) {
     console.error("Login error:", error);

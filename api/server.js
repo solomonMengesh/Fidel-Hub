@@ -13,6 +13,7 @@ import authRoutes from './routes/authRoutes.js';
 import adminRoutes from './routes/admin-Routes/adminRoutes.js';
 import User from './models/User.js';
 import userRoutes from './routes/userRoutes/userRoutes.js';
+import otpRoutes from './routes/otp-Routes/otpRoutes.js';
 
 dotenv.config();
 await connectDB(); // Ensure MongoDB is connected before starting server
@@ -94,6 +95,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/users', adminRoutes); // Adjust as needed
 app.use('/api/users', userRoutes);
+app.use('/api/otp', otpRoutes);
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

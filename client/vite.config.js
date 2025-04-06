@@ -9,4 +9,19 @@ export default defineConfig({
       '@': '/src', // This will resolve '@' to the 'src' directory
     },
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false, // If you're working with a non-HTTPS backend in development
+      },
+      '/uploads': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 });
+
