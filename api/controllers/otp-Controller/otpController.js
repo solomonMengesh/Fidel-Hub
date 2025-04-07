@@ -29,7 +29,7 @@ export const verifyOtp = async (req, res) => {
     if (!user) return res.status(400).json({ message: 'User not found' });
     
     const isValid = user.verifyOTP(otp);
-    if (!isValid) return res.status(400).json({ message: 'Invalid or expired OTP' });
+    if (!isValid) return res.status(400).json({ message: 'Invalid or expired OTP You can ' });
     
     user.isVerified = true;
     await user.save();
@@ -67,24 +67,33 @@ export const requestPasswordReset = async (req, res) => {
 
 
   // Verify OTP for password reset
-export const verifyPasswordResetOtp = async (req, res) => {
+  export const verifyPasswordResetOtp = async (req, res) => {
     const { email, otp } = req.body;
   
     try {
       const user = await User.findOne({ email });
       if (!user) return res.status(404).json({ message: 'User not found' });
   
+      // Log OTP and expiry details for debugging
+      console.log('Stored OTP:', user.otp); // Log stored OTP
+      console.log('OTP Expiry:', user.otpExpiry); // Log OTP expiration time
+      console.log('Received OTP:', otp); // Log received OTP
+  
       // Verify OTP
       const isOtpValid = user.verifyPasswordResetOTP(otp);
+      console.log('Is OTP valid:', isOtpValid); // Log whether OTP is valid
+  
       if (!isOtpValid) {
-        return res.status(400).json({ message: 'Invalid or expired OTP' });
+        return res.status(400).json({ message: 'Invalid or expired OTPw' });
       }
   
-      res.status(200).json({ message: 'OTP verified successfully. You can now reset your password.' });
+      res.status(200).json({ message: 'verified successfully' });
     } catch (error) {
+      console.error('Error:', error);
       res.status(500).json({ message: 'Error verifying OTP', error: error.message });
     }
   };
+  
   
 
   // Reset password after OTP verification

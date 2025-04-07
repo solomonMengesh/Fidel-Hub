@@ -18,6 +18,9 @@ import UserDetails from "./pages/Userdetails";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "react-toastify";
 import { connectSocket, listenForForceLogout, disconnectSocket } from "./socket";
+import ForgotPassword from "./pages/ForgotPassword";
+import OTPVerification from "./pages/OTPVerification";
+import OTPSend from "./pages/OTPSend";
 const MainLayout = ({ children }) => (
   <>
     <Navbar />
@@ -120,6 +123,30 @@ const App = () => {
           element={
             <MainLayout>
               <About />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <MainLayout>
+              <ForgotPassword />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/verify-otp"
+          element={
+            <MainLayout>
+              <OTPVerification />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/send-otp"
+          element={
+            <MainLayout>
+              <OTPSend />
             </MainLayout>
           }
         />
