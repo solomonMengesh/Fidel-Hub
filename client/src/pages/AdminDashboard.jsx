@@ -29,7 +29,7 @@ const AdminDashboard = () => {
   const navItems = [
     { id: "overview", label: "Overview", icon: Layers },
     { id: "users", label: "User Management", icon: Users },
-    { id: "courses", label: "Course Moderation", icon: BookOpen },
+    { id: "courses", label: "Course Management", icon: BookOpen },
     { id: "analytics", label: "Analytics", icon: PieChart },
     { id: "payments", label: "Payments", icon: Award },
     { id: "settings", label: " Settings", icon: Settings },

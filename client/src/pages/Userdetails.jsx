@@ -171,12 +171,15 @@ const UserDetail = ({ userId, onBack, embedded = false }) => {
 
   return (
     <div className={embedded ? "" : "container mx-auto py-8 px-4"}>
-      {!embedded && (
-        <Button variant="ghost" className="mb-6" onClick={onBack}>
-          <ChevronLeft size={16} className="mr-2" />
-          Back to User Management
-        </Button>
-      )}
+    {!embedded && (
+      <div className="flex justify-start mb-6">
+      <Button variant="ghost" onClick={onBack}>
+        <ChevronLeft size={16} className="mr-2" />
+        Back to User Management
+      </Button>
+    </div>
+    
+    )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-1">

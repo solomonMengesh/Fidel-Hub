@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -57,8 +57,7 @@ const Signup = () => {
   const [cvFile, setCvFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
-  const { toast } = useToast();
-  const navigate = useNavigate();
+   const navigate = useNavigate();
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -134,27 +133,27 @@ const Signup = () => {
         }
       );
 
-      toast({
-        title: "Registration Successful",
-        description: response.data.message,
-      });
+      toast.success(response.data.message || "Registration successful!");
 
       // Navigate based on role
-      if (values.role === "instructor") {
-        navigate("/pending-approval", {
-          state: {
-            email: values.email,
-            name: values.name,
-          },
-        });
-      } else {
-        navigate("/login", {
-          state: {
-            email: values.email,
-            newlyRegistered: true,
-          },
-        });
-      }
+      // if (values.role === "instructor") {
+      //   navigate("/pending-approval", {
+      //     state: {
+      //       email: values.email,
+      //       name: values.name,
+      //     },
+      //   });
+      // } else {
+      //   navigate("/login", {
+      //     state: {
+      //       email: values.email,
+      //       newlyRegistered: true,
+      //     },
+      //   });
+      // }
+      console.log("Navigating to /send-otp with registrationData:", values);
+      navigate('/signup/send-otp-Registration', { state: { registrationData: values } });
+
 
     } catch (error) {
       let errorMessage = "An error occurred during registration";
@@ -167,11 +166,7 @@ const Signup = () => {
           .join(", ");
       }
 
-      toast({
-        title: "Registration Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

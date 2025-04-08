@@ -21,6 +21,9 @@ import { connectSocket, listenForForceLogout, disconnectSocket } from "./socket"
 import ForgotPassword from "./pages/ForgotPassword";
 import OTPVerification from "./pages/OTPVerification";
 import OTPSend from "./pages/OTPSend";
+import RegisterOTPSend from "./pages/RegisterOTPSend";
+import VerifyOTP from "./pages/VerifyOTP";
+
 const MainLayout = ({ children }) => (
   <>
     <Navbar />
@@ -42,21 +45,15 @@ const App = () => {
       
       // Listen for force logout events (like when admin blocks user)
       listenForForceLogout((data) => {
-        // Show error message
         toast.error(data.message || "You have been logged out");
-        
-        // Clear local storage
         localStorage.removeItem("token");
         localStorage.removeItem("userId");
         
-        // Redirect to login with blocked state
         if (data.reason === "blocked") {
           navigate("/login?blocked=true", { replace: true });
         } else {
           navigate("/login", { replace: true });
         }
-        
-        // Force page reload to clear any sensitive data
         window.location.reload();
       });
     }
@@ -69,105 +66,33 @@ const App = () => {
   return (
     <>
       <Routes>
-        {/* Routes with Navbar and Footer */}
-        <Route
-          path="/"
-          element={
-            <MainLayout>
-              <Index />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/courses"
-          element={
-            <MainLayout>
-              <Courses />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/courses/:courseId"
-          element={
-            <MainLayout>
-              <CourseDetails />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/pending-approval"
-          element={
-            <MainLayout>
-              <PendingApproval />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/login"
-          element={
-            <MainLayout>
-              <Login />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/signup"
-          element={
-            <MainLayout>
-              <Signup />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/about"
-          element={
-            <MainLayout>
-              <About />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/forgot-password"
-          element={
-            <MainLayout>
-              <ForgotPassword />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/verify-otp"
-          element={
-            <MainLayout>
-              <OTPVerification />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/send-otp"
-          element={
-            <MainLayout>
-              <OTPSend />
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/contact"
-          element={
-            <MainLayout>
-              <Contact />
-            </MainLayout>
-          }
-        />
+        {/* Public routes with layout */}
+        <Route path="/" element={<MainLayout><Index /></MainLayout>} />
+        <Route path="/courses" element={<MainLayout><Courses /></MainLayout>} />
+        <Route path="/courses/:courseId" element={<MainLayout><CourseDetails /></MainLayout>} />
+        <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
+        <Route path="/signup" element={<MainLayout><Signup /></MainLayout>} />
+        <Route path="/about" element={<MainLayout><About /></MainLayout>} />
+        <Route path="/contact" element={<MainLayout><Contact /></MainLayout>} />
+        
+        {/* Authentication flow routes */}
+        <Route path="/forgot-password" element={<MainLayout><ForgotPassword /></MainLayout>} />
+        <Route path="/verify-otp" element={<MainLayout><OTPVerification /></MainLayout>} />
+        <Route path="/send-otp" element={<MainLayout><OTPSend /></MainLayout>} />
+        
+        {/* Registration-specific OTP routes */}
+        <Route path="/signup/send-otp-Registration" element={<MainLayout><RegisterOTPSend /></MainLayout>} />
+        <Route path="/signup/verify-otp" element={<MainLayout><VerifyOTP /></MainLayout>} />
+        
+        {/* Instructor approval */}
+        <Route path="/pending-approval" element={<MainLayout><PendingApproval /></MainLayout>} />
 
-        {/* Routes without Navbar and Footer */}
+        {/* Protected routes without layout */}
         <Route path="/student-dashboard" element={<StudentDashboard />} />
         <Route path="/instructor-dashboard" element={<InstructorDashboard />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/users/:userId" element={<UserDetails />} />
-
-
-
       </Routes>
 
       <Toaster />

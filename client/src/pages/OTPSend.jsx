@@ -18,6 +18,27 @@ const OTPSend = () => {
     // Get registration data if coming from registration
     const registrationData = location.state?.registrationData;
 
+    // Log the received location.state data for debugging
+    useEffect(() => {
+        console.log('Received data from previous page:', location.state);
+        
+        // Check if we have registration data with email or phone
+        if (registrationData) {
+            console.log('Processing registration data:', registrationData);
+            
+            // Prioritize email if both exist
+            if (registrationData.email) {
+                console.log('Setting email:', registrationData.email);
+                setEmailOrPhone(registrationData.email);
+                setContactMethod('email');
+            } else if (registrationData.phone) {
+                console.log('Setting phone:', registrationData.phone);
+                setEmailOrPhone(registrationData.phone);
+                setContactMethod('phone');
+            }
+        }
+    }, [registrationData]); // Only depend on registrationData
+
     // Set page title and description based on flow type
     let pageTitle, pageDescription;
     
@@ -25,16 +46,6 @@ const OTPSend = () => {
         case 'registration':
             pageTitle = "Verify Your Account";
             pageDescription = "Please verify your contact information to complete registration";
-            // Pre-fill from registration data if available
-            useEffect(() => {
-                if (registrationData?.email) {
-                    setEmailOrPhone(registrationData.email);
-                    setContactMethod('email');
-                } else if (registrationData?.phone) {
-                    setEmailOrPhone(registrationData.phone);
-                    setContactMethod('phone');
-                }
-            }, [registrationData]);
             break;
         case 'password-reset':
             pageTitle = "Reset Password";
@@ -90,7 +101,6 @@ const OTPSend = () => {
         }
     };
 
-    // Determine where the back button should go
     const handleBackClick = () => {
         if (flowType === 'registration') {
             navigate('/register');
@@ -157,19 +167,19 @@ const OTPSend = () => {
                                 {contactMethod === 'email' ? 'Email address' : 'Phone number'}
                             </label>
                             <div className="mt-1">
-                                <Input
-                                    id="contact"
-                                    name="contact"
-                                    type={contactMethod === 'email' ? 'email' : 'tel'}
-                                    autoComplete={contactMethod === 'email' ? 'email' : 'tel'}
-                                    placeholder={contactMethod === 'email' ? 'name@example.com' : '+1234567890'}
-                                    required
-                                    value={emailOrPhone}
-                                    onChange={(e) => setEmailOrPhone(e.target.value)}
-                                    readOnly={!!registrationData}
-                                    className={registrationData ? "bg-gray-100" : ""}
-                                />
-                            </div>
+    <Input
+        id="contact"
+        name="contact"
+        type={contactMethod === 'email' ? 'email' : 'tel'}
+        autoComplete={contactMethod === 'email' ? 'email' : 'tel'}
+        placeholder={contactMethod === 'email' ? 'name@example.com' : '+1234567890'}
+        required
+        value={emailOrPhone || ''} // Ensure we always have a string
+        onChange={(e) => !registrationData && setEmailOrPhone(e.target.value)}
+        readOnly={!!registrationData}
+        className={registrationData ? "bg-gray-100" : ""}
+    />
+</div>
                         </div>
 
                         <div>

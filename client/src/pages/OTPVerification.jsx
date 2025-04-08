@@ -28,7 +28,7 @@ const OTPVerificationPage = () => {
       });
     } else if (isRegistration && registrationData) {
       // Complete the registration process
-      navigate('/', { 
+      navigate('/login', { 
         replace: true,
         state: { 
           verifiedData: registrationData,

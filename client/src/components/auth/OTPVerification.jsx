@@ -4,7 +4,6 @@ import { Lock, UserPlus } from 'lucide-react';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '../ui/input-otp';
 import { Input } from '@/components/ui/input';
 import axios from 'axios';
-import { useAuth } from "../../context/AuthContext";
 import { toast } from 'sonner';
 
 const OTPVerification = ({
@@ -20,7 +19,7 @@ const OTPVerification = ({
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // New state for toggling password visibility
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleResendOTP = async () => {
     try {
@@ -50,17 +49,26 @@ const OTPVerification = ({
       });
       return;
     }
-  
+
     setIsVerifying(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/otp/verify-password-reset-otp', {
+      const route = isRegistration 
+        ? 'http://localhost:5000/api/otp/verify-otp' 
+        : 'http://localhost:5000/api/otp/verify-password-reset-otp';
+
+      const response = await axios.post(route, {
         email,
         otp,
       });
-  
+
       if (response.data.success || response.data.message.includes('verified successfully')) {
         toast.success("OTP verified successfully");
-        setShowPasswordForm(true);
+        if (isRegistration) {
+          // If it's registration, you can handle registration completion
+          onSuccess();
+        } else {
+          setShowPasswordForm(true);
+        }
       } else {
         throw new Error(response.data.message || "Verification failed");
       }
@@ -77,26 +85,25 @@ const OTPVerification = ({
       toast.error("Password must be at least 6 characters long.");
       return;
     }
-  
+
     if (password !== confirmPassword) {
       toast.error("Passwords do not match.");
       return;
     }
-  
+
     try {
       await axios.post('http://localhost:5000/api/otp/reset-password', {
         email,
         otp,
         newPassword: password,
       });
-  
+
       toast.success("Password reset successfully");
       onSuccess();
     } catch (error) {
       toast.error(error.response?.data?.message || "An error occurred while resetting the password.");
     }
   };
-  
 
   if (showPasswordForm && isPasswordReset) {
     return (
@@ -110,7 +117,7 @@ const OTPVerification = ({
             Please enter and confirm your new password
           </p>
         </div>
-  
+
         <div className="space-y-4">
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
@@ -118,20 +125,20 @@ const OTPVerification = ({
             </label>
             <Input
               id="password"
-              type={showPassword ? "text" : "password"} // Toggle between "text" and "password"
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="mt-1"
             />
           </div>
-  
+
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
               Confirm Password
             </label>
             <Input
               id="confirmPassword"
-              type={showPassword ? "text" : "password"} // Toggle between "text" and "password"
+              type={showPassword ? "text" : "password"}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="mt-1"
@@ -150,7 +157,7 @@ const OTPVerification = ({
             </label>
           </div>
         </div>
-  
+
         <div className="flex flex-col space-y-3">
           <Button 
             onClick={handleResetPassword} 

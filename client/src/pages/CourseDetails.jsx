@@ -186,7 +186,7 @@ const CourseDetails = () => {
 
                   <Button className="w-full mb-3 bg-fidel-600 hover:bg-fidel-700">Enroll Now</Button>
 
-                  <Button variant="outline" className="w-full mb-6">
+                  <Button variant="outline" className="w-full mb-6  text-black">
                     Try Free Preview
                   </Button>
 
@@ -195,10 +195,10 @@ const CourseDetails = () => {
                       <Clock size={16} className="mr-2 text-muted-foreground" />
                       <span>Full lifetime access</span>
                     </div>
-                    <div className="flex items-center">
+                    {/* <div className="flex items-center">
                       <Download size={16} className="mr-2 text-muted-foreground" />
                       <span>Downloadable resources</span>
-                    </div>
+                    </div> */}
                     <div className="flex items-center">
                       <Award size={16} className="mr-2 text-muted-foreground" />
                       <span>Certificate of completion</span>
