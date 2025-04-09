@@ -238,7 +238,7 @@ const StudentManagement = () => {
                     <TabsTrigger value="grades">Grades</TabsTrigger>
                     <TabsTrigger value="activity">Activity</TabsTrigger>
                   </TabsList>
-                  
+                   
                   <TabsContent value="grades">
                     <Card>
                       <CardHeader className="pb-3">
