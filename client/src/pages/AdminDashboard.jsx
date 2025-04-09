@@ -20,6 +20,7 @@ import PlatformSettings from "../components/admin/PlatformSettings";
 import UserManagement from "../components/admin/UserManagement";
 import UserDetail from "../pages/Userdetails";
 import Logo from "../components/layout/Logo";
+import { useAuth } from "../context/AuthContext"; 
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -55,14 +56,15 @@ const AdminDashboard = () => {
     setActiveTab("users");
   };
 
+  const { user } = useAuth();
+
   return (
     <div className="flex h-[100vh] dark:bg-slate-950">
       {/* Sidebar */}
       <div
         className={`fixed inset-y-0 left-0 z-50 w-64 h-[100vh] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-5 transition-transform duration-300 ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 md:relative md:block overflow-hidden`}
-      >
+        } md:translate-x-0 md:relative md:block overflow-hidden`} >
         <div className="flex items-center space-x-2 mb-8">
           <Logo />
         </div>
@@ -86,17 +88,20 @@ const AdminDashboard = () => {
 
         <div className="absolute bottom-5 left-5">
           <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-slate-700"></div>
+            <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-slate-700 flex items-center justify-center text-xs font-medium">
+              {user?.name ? user.name[0].toUpperCase() : "A"}
+            </div>
             <div>
-              <div className="text-sm font-medium">Admin User</div>
+              <div className="text-sm font-medium">
+                {user?.name || "Admin User"}
+              </div>
               <div className="text-xs text-muted-foreground">
-                admin@fidelhub.com
+                {user?.email || "admin@fidelhub.com"}
               </div>
             </div>
           </div>
         </div>
       </div>
-
       {/* Sidebar toggle button */}
       <button
         className="fixed top-5 left-5 z-50 md:hidden p-2 rounded-full bg-fidel-500 text-white"
@@ -107,7 +112,7 @@ const AdminDashboard = () => {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col p-5 overflow-auto h-[100vh]">
-        <header className="flex justify-between items-center mb-6">
+        <header className="flex justify-between items-start mb-6">
           <h1 className="text-2xl font-bold pl-10">
             {activeTab === "user-detail" ? "User Details" : "Admin Dashboard"}
           </h1>
@@ -117,10 +122,12 @@ const AdminDashboard = () => {
         </header>
 
         {activeTab === "user-detail" && (
-          <Button variant="ghost" className="mb-4" onClick={handleBackToUsers}>
-            <ChevronLeft size={16} className="mr-2" />
-            Back to User Management
-          </Button>
+          <div className="mb-4 pl-10">
+            <Button variant="ghost" onClick={handleBackToUsers}>
+              <ChevronLeft size={16} className="mr-2" />
+              Back to User Management
+            </Button>
+          </div>
         )}
 
         {/* Page content based on active tab */}
