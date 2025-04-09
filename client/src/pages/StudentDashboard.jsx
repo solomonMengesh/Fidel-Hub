@@ -17,6 +17,8 @@ import { MessagesTab } from "@/components/student-dashboard/MessagesTab";
 import { ScheduleTab } from "@/components/student-dashboard/ScheduleTab";
 import { InstructorsTab } from "@/components/student-dashboard/InstructorsTab";
 import Logo from "../components/layout/Logo";
+import { useAuth } from "../context/AuthContext"; 
+import PlatformSettings from "../components/admin/PlatformSettings";
 
 const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -28,6 +30,7 @@ const StudentDashboard = () => {
     { id: "schedule", label: "Schedule", icon: Calendar },
     { id: "messages", label: "Messages", icon: MessageSquare },
     { id: "instructors", label: "Instructors", icon: Users },
+    { id: "settings", label: "Settings", icon: Settings },
   ];
 
   const handleNavItemClick = (id) => {
@@ -49,10 +52,14 @@ const StudentDashboard = () => {
         return "Messages";
       case "instructors":
         return "Instructors";
+      case "settings":
+        return "Platform Settings";
       default:
         return "Dashboard";
     }
   };
+
+    const { user } = useAuth();
 
   return (
     <div className="flex h-[100vh] dark:bg-slate-950">
@@ -82,16 +89,24 @@ const StudentDashboard = () => {
             </button>
           ))}
         </nav>
-
+ 
         <div className="absolute bottom-5 left-5 right-5">
           <div className="flex items-center space-x-2 p-2 rounded-lg bg-slate-100 dark:bg-slate-800">
             <div className="h-8 w-8 rounded-full bg-fidel-100 dark:bg-fidel-900/30 flex items-center justify-center text-fidel-600 dark:text-fidel-400 font-medium">
-              JD
+              {user?.name
+                ? user.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()
+                : "ST"}
             </div>
-            <div>
-              <div className="text-sm font-medium">John Doe</div>
-              <div className="text-xs text-muted-foreground">
-                Student ID: 12345
+            <div className="overflow-hidden">
+              <div className="text-sm font-medium truncate">
+                {user?.name || "Student Name"}
+              </div>
+              <div className="text-xs text-muted-foreground truncate">
+                {user?.email || "student@example.com"}
               </div>
             </div>
           </div>
@@ -100,7 +115,7 @@ const StudentDashboard = () => {
 
       {/* Sidebar toggle button */}
       <button
-        className="fixed top-5 left-5 z-40 md:hidden p-2 rounded-full bg-fidel-500 text-white"
+        className="fixed top-5 left-5 z-50 md:hidden p-2 rounded-full bg-fidel-500 text-white"
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
       >
         <Menu size={20} />
@@ -108,24 +123,26 @@ const StudentDashboard = () => {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-auto h-[100vh]">
-        <header className="flex justify-between items-center h-16 px-4 md:px-6 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
-          <h1 className="text-xl font-semibold">{getActiveTabTitle()}</h1>
+        <header className="flex justify-between items-start mb-6 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 md:px-6 py-4 sticky top-0 z-30">
+          <h1 className="text-2xl font-bold pl-12 text-slate-900 dark:text-white">
+            {getActiveTabTitle()}
+          </h1>
 
           <div className="flex items-center space-x-3">
-            <button className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200 relative">
+            {/* <button className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200 relative">
               <Bell size={20} />
               <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
             </button>
             <button className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200 relative">
               <MessageSquare size={20} />
               <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-fidel-500"></span>
-            </button>
+            </button> */}
             <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2"></div>
             <ThemeToggle />
             <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2"></div>
-            <button className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200">
+            {/* <button className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200">
               <Settings size={20} />
-            </button>
+            </button> */}
           </div>
         </header>
 
@@ -141,6 +158,7 @@ const StudentDashboard = () => {
             {activeTab === "schedule" && <ScheduleTab />}
             {activeTab === "messages" && <MessagesTab />}
             {activeTab === "instructors" && <InstructorsTab />}
+            {activeTab === "settings" && <PlatformSettings />}
           </motion.div>
         </main>
       </div>
