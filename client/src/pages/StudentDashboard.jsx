@@ -140,9 +140,9 @@ const StudentDashboard = () => {
             <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2"></div>
             <ThemeToggle />
             <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2"></div>
-            {/* <button className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200">
+            <button className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200">
               <Settings size={20} />
-            </button> */}
+            </button>
           </div>
         </header>
 
