@@ -130,7 +130,7 @@ const InstructorStudentChat = ({ onBack }) => {
   };
 
   return (
-    <div className="h-full flex flex-col  mt-[500px]">
+    <div className="h-full flex flex-col">
       {/* Search and Filter */}
       <div className="flex mb-4 gap-4 p-4">
         <div className="flex-1">

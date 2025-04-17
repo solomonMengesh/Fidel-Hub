@@ -11,6 +11,7 @@ import CoursesTab from "@/components/instructor/CoursesTab";
 import StudentManagement from "@/components/instructor/StudentManagement";
 import InstructorStudentChat from "@/components/chat/InstructorStudentChat";
 import PlatformSettings from "@/components/admin/PlatformSettings";
+import { MessagesTab } from "../components/student-dashboard/MessagesTab";
 
 const InstructorDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -102,7 +103,7 @@ const InstructorDashboard = () => {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <InstructorStudentChat />
+              <MessagesTab currentUserType="instructor" />
             </motion.div>
           )}
 

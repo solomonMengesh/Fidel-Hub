@@ -1512,12 +1512,6 @@ const LessonEditor = ({
           />
         </div>
 
-
-
-
-
-
-
         {lesson.type === "video" ? (
           <div>
             <Label>Video Content</Label>
@@ -1664,7 +1658,7 @@ const LessonEditor = ({
               </div>
             )}
 
-             <div className="mt-4">
+            <div className="mt-4">
               <Label htmlFor="video-description">Description (Optional)</Label>
               <Textarea
                 id="video-description"
@@ -1682,16 +1676,6 @@ const LessonEditor = ({
               />
             </div>
           </div>
-
-
-
-
-
-
-
-
-
-
         ) : (
           <div>
             <Label className="mb-3 block">Quiz Questions</Label>
@@ -1701,7 +1685,7 @@ const LessonEditor = ({
             />
           </div>
         )}
-      </CardContent> 
+      </CardContent>
 
       <CardFooter className="border-t pt-4 flex justify-between">
         <div className="text-sm text-muted-foreground">
