@@ -162,7 +162,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/otp", otpRoutes);
-app.use("/api/courses", );
+
 
 
 
