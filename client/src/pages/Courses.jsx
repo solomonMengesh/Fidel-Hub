@@ -5,156 +5,6 @@ import ThemeToggle from "@/components/ui/ThemeToggle";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
- const allCourses = [
-  {
-    id: "1",
-    title: "Introduction to Machine Learning",
-    instructor: "Dr. Selamawit Gebre",
-    level: "Beginner",
-    rating: 4.8,
-    students: 12436,
-    duration: "10 hours",
-    lessons: 24,
-    price: "2,799 ETB",  
-    category: "Computer Science",
-    featured: true,
-  },
-  {
-    id: "2",
-    title: "Advanced Data Structures and Algorithms",
-    instructor: "Prof. Yohannes Tesfaye",
-    level: "Advanced",
-    rating: 4.9,
-    students: 8752,
-    duration: "15 hours",
-    lessons: 32,
-    price: "3,359 ETB",  
-    category: "Programming",
-  },
-  {
-    id: "3",
-    title: "Marketing in the Digital Age",
-    instructor: "Eyerusalem Kebede",
-    level: "Intermediate",
-    rating: 4.6,
-    students: 10328,
-    duration: "8 hours",
-    lessons: 18,
-    price: "2,239 ETB",  
-    category: "Business",
-  },
-  {
-    id: "4",
-    title: "Introduction to Psychology",
-    instructor: "Dr. Abebe Mekonnen",
-    level: "Beginner",
-    rating: 4.7,
-    students: 15642,
-    duration: "12 hours",
-    lessons: 28,
-    price: "2,519 ETB",  
-    category: "Psychology",
-    featured: true,
-  },
-  {
-    id: "5",
-    title: "Financial Accounting Principles",
-    instructor: "Tigist Hailu",
-    level: "Beginner",
-    rating: 4.5,
-    students: 7895,
-    duration: "9 hours",
-    lessons: 22,
-    price: "2,799 ETB", 
-    category: "Finance",
-  },
-  {
-    id: "6",
-    title: "Graphic Design Fundamentals",
-    instructor: "Mekdes Assefa",
-    level: "Beginner",
-    rating: 4.8,
-    students: 9452,
-    duration: "11 hours",
-    lessons: 26,
-    price: "3,079 ETB",  
-    category: "Design",
-  },
-  {
-    id: "7",
-    title: "Web Development with React",
-    instructor: "Dawit Alemayehu",
-    level: "Intermediate",
-    rating: 4.9,
-    students: 11782,
-    duration: "14 hours",
-    lessons: 30,
-    price: "3,359 ETB", 
-    category: "Programming",
-    featured: true,
-  },
-  {
-    id: "8",
-    title: "Amharic for Beginners",
-    instructor: "Marta Girma",
-    level: "Beginner",
-    rating: 4.7,
-    students: 6423,
-    duration: "8 hours",
-    lessons: 20,
-    price: "1,959 ETB", 
-    category: "Languages",
-  },
-  {
-    id: "9",
-    title: "Introduction to Artificial Intelligence",
-    instructor: "Dr. Samuel Lemma",
-    level: "Intermediate",
-    rating: 4.9,
-    students: 8245,
-    duration: "16 hours",
-    lessons: 35,
-    price: "3,639 ETB", 
-    category: "Computer Science",
-  },
-  {
-    id: "10",
-    title: "Photography Masterclass",
-    instructor: "Hana Solomon",
-    level: "Beginner",
-    rating: 4.8,
-    students: 7352,
-    duration: "12 hours",
-    lessons: 24,
-    price: "2,799 ETB",  
-    category: "Design",
-  },
-  {
-    id: "11",
-    title: "Blockchain and Cryptocurrency",
-    instructor: "Kaleb Teka",
-    level: "Intermediate",
-    rating: 4.7,
-    students: 5823,
-    duration: "10 hours",
-    lessons: 22,
-    price: "3,079 ETB",  
-    category: "Computer Science",
-  },
-  {
-    id: "12",
-    title: "Public Speaking and Presentation Skills",
-    instructor: "Sara Tadesse",
-    level: "Beginner",
-    rating: 4.6,
-    students: 9136,
-    duration: "8 hours",
-    lessons: 18,
-    price: "2,239 ETB",  
-    category: "Personal Development",
-  },
-];
-
 const categories = [
   "All",
   "Computer Science",
@@ -170,6 +20,9 @@ const categories = [
 const levels = ["All Levels", "Beginner", "Intermediate", "Advanced"];
 
 const Courses = () => {
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedLevel, setSelectedLevel] = useState("All Levels");
@@ -179,49 +32,94 @@ const Courses = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    fetchCourses();
   }, []);
 
-  // Filter and sort courses
-  const filteredCourses = allCourses
-    .filter((course) => {
-      const matchesSearch =
-        course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        course.instructor.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory =
-        selectedCategory === "All" || course.category === selectedCategory;
-      const matchesLevel =
-        selectedLevel === "All Levels" || course.level === selectedLevel;
-
-      return matchesSearch && matchesCategory && matchesLevel;
-    })
-    .sort((a, b) => {
-      let comparison = 0;
-
-      switch (sortBy) {
-        case "popular":
-          comparison = a.students - b.students;
-          break;
-        case "rating":
-          comparison = a.rating - b.rating;
-          break;
-        case "title":
-          comparison = a.title.localeCompare(b.title);
-          break;
-        case "price":
-          comparison =
-            parseFloat(a.price?.replace("$", "") || "0") -
-            parseFloat(b.price?.replace("$", "") || "0");
-          break;
-        default:
-          comparison = 0;
+  const fetchCourses = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/courses");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      const data = await response.json();
+      setCourses(data);
+    } catch (err) {
+      setError(err.message);
+      console.error("Error fetching courses:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      return sortDirection === "asc" ? comparison : -comparison;
-    });
+  // Filter and sort courses
+  // Filter and sort courses
+const filteredCourses = courses
+.filter((course) => {
+  const matchesSearch =
+    course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (typeof course.instructor === 'object' 
+      ? course.instructor.name.toLowerCase().includes(searchQuery.toLowerCase())
+      : course.instructor.toLowerCase().includes(searchQuery.toLowerCase()));
+  const matchesCategory =
+    selectedCategory === "All" || course.category === selectedCategory;
+  const matchesLevel =
+    selectedLevel === "All Levels" || course.level === selectedLevel;
+
+  return matchesSearch && matchesCategory && matchesLevel;
+})
+.sort((a, b) => {
+  let comparison = 0;
+
+  switch (sortBy) {
+    case "popular":
+      comparison = (a.students || 0) - (b.students || 0);
+      break;
+    case "rating":
+      comparison = (a.rating || 0) - (b.rating || 0);
+      break;
+    case "title":
+      comparison = a.title.localeCompare(b.title);
+      break;
+    case "price":
+      // Handle both number and string prices safely
+      const priceA = typeof a.price === 'number' ? a.price : parseFloat(a.price || 0);
+      const priceB = typeof b.price === 'number' ? b.price : parseFloat(b.price || 0);
+      comparison = priceA - priceB;
+      break;
+    default:
+      comparison = 0;
+  }
+
+  return sortDirection === "asc" ? comparison : -comparison;
+});
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-fidel-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2 text-red-500">Error loading courses</h2>
+          <p className="text-muted-foreground">{error}</p>
+          <button
+            onClick={fetchCourses}
+            className="mt-4 px-4 py-2 bg-fidel-500 text-white rounded-lg hover:bg-fidel-600 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
-
       <main className="flex-1 pt-24 pb-20">
         <div className="max-w-7xl mx-auto px-6 md:px-8">
           {/* Hero Section */}
@@ -409,7 +307,6 @@ const Courses = () => {
           )}
         </div>
       </main>
-
 
       <div className="fixed bottom-6 right-6 z-50">
         <ThemeToggle />

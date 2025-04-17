@@ -1,25 +1,80 @@
- const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const courseSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  description: { type: String, required: true },
-  level: { type: String, enum: ['beginner', 'intermediate', 'advanced'], default: 'beginner' },
-  category: { type: String, required: true },
-  price: { type: Number, required: true },
-    instructorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    prerequisites: { type: String },
-  technicalRequirements: { type: String },
-  status: {
+  title: {
     type: String,
-    enum: ['draft', 'published'],
-    default: 'draft'
+    required: [true, 'Course title is required'],
+    trim: true,
+    maxlength: [100, 'Title cannot exceed 100 characters']
   },
-  isApproved: {
+  description: {
+    type: String,
+    required: [true, 'Course description is required'],
+    trim: true,
+    maxlength: [2000, 'Description cannot exceed 2000 characters']
+  },
+  instructor: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  category: {
+    type: String,
+    required: true,
+    enum: [
+      'computer-science', 'programming', 'web-development', 
+      'business', 'marketing', 'data-science', 'psychology',
+      'finance', 'design', 'languages', 'health-fitness',
+      'mathematics', 'photography', 'music', 'other','Machine Learning'
+    ]
+  },
+  level: {
+    type: String,
+    required: true,
+    enum: ['beginner', 'intermediate', 'advanced']
+  },
+  price: {
+    type: Number,
+    required: true,
+    min: [0, 'Price cannot be negative']
+  },
+  thumbnail: {
+    url: String,
+    publicId: String
+  },
+  requirements: [String],
+  published: {
     type: Boolean,
     default: false
   },
-  totalLessons: { type: Number, required: true }, 
-  courseImage: { type: String }, 
-}, { timestamps: true });
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
+}, {
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
 
-module.exports = mongoose.model('Course', courseSchema);
+// Virtual populate modules
+courseSchema.virtual('modules', {
+  ref: 'Module',
+  localField: '_id',
+  foreignField: 'course',
+  justOne: false
+});
+
+// Cascade delete modules when a course is deleted
+courseSchema.pre('deleteOne', { document: true }, async function(next) {
+  await this.model('Module').deleteMany({ course: this._id });
+  next();
+});
+
+const Course = mongoose.model('Course', courseSchema);
+
+export default Course;

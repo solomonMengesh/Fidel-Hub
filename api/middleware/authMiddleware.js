@@ -37,7 +37,14 @@ export const adminAuth = async (req, res, next) => {
     res.status(401).json({ message: 'Unauthorized. Invalid token.' });
   }
 };
-
+export const instructor = (req, res, next) => {
+  if (req.user && req.user.role === 'instructor') {
+    next();
+  } else {
+    res.status(401);
+    throw new Error('Not authorized as an instructor');
+  }
+};
 export const protect = async (req, res, next) => {
   let token;
 

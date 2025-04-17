@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import axios from "axios";
 import {
   Book,
   UploadCloud,
@@ -68,6 +69,29 @@ import {
 } from "@/components/ui/dialog";
 import VideoManager from "./VideoManager";
 
+const categories = [
+	"Computer Science",
+	"Programming",
+	"Web Development",
+	"Business",
+	"Marketing",
+	"Data Science",
+	"Psychology",
+	"Finance",
+	"Design",
+	"Languages",
+	"Health & Fitness",
+	"Mathematics",
+	"Photography",
+	"Music",
+	"Other"
+];
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  withCredentials: true,
+});
+
 const courseFormSchema = z.object({
   title: z.string().min(5, {
     message: "Title must be at least 5 characters.",
@@ -88,30 +112,15 @@ const courseFormSchema = z.object({
 
 const CourseBuilder = ({ onSave }) => {
   const [activeTab, setActiveTab] = useState("details");
-  const [modules, setModules] = useState([
-    {
-      id: 1,
-      title: "Introduction to the Course",
-      description: "",
-      lessons: [
-        {
-          id: 101,
-          title: "Welcome to the Course",
-          type: "video",
-          duration: "5:30",
-          content: "",
-          free: false,
-        },
-      ],
-    },
-  ]);
-  const [videoUploads, setVideoUploads] = useState([]);
+  const [modules, setModules] = useState([]);
+  const [course, setCourse] = useState(null);
   const [selectedModule, setSelectedModule] = useState(null);
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [currentQuizQuestions, setCurrentQuizQuestions] = useState([]);
   const [previewVideo, setPreviewVideo] = useState(null);
   const [showReplaceDialog, setShowReplaceDialog] = useState(false);
   const [lessonToReplace, setLessonToReplace] = useState(null);
+  const [videoUploads, setVideoUploads] = useState([]);
   const fileInputRef = useRef(null);
   const moduleFileInputRef = useRef(null);
   const dropAreaRef = useRef(null);
@@ -127,214 +136,188 @@ const CourseBuilder = ({ onSave }) => {
     },
   });
 
-  const onSubmit = (values) => {
-    console.log("Course created:", values, modules);
-    onSave();
-  };
+  const onSubmit = async (values) => {
+    try {
+      const formData = new FormData();
+      Object.entries(values).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
 
-  const addModule = () => {
-    const newModuleId =
-      modules.length > 0 ? Math.max(...modules.map((m) => m.id)) + 1 : 1;
-    setModules([
-      ...modules,
-      {
-        id: newModuleId,
-        title: `Module ${modules.length + 1}`,
-        description: "",
-        lessons: [],
-      },
-    ]);
-  };
+      // Save the course to the database
+      const response = await api.post("/courses", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-  const deleteModule = (moduleId) => {
-    setModules(modules.filter((module) => module.id !== moduleId));
-  };
-
-  const updateModule = (moduleId, field, value) => {
-    setModules(
-      modules.map((module) =>
-        module.id === moduleId ? { ...module, [field]: value } : module
-      )
-    );
-  };
-
-  const addLesson = (moduleId, type = "video") => {
-    const module = modules.find((m) => m.id === moduleId);
-    if (!module) return;
-
-    const newLessonId =
-      module.lessons.length > 0
-        ? Math.max(...module.lessons.map((l) => l.id)) + 1
-        : moduleId * 100 + 1;
-
-    const newLesson = {
-      id: newLessonId,
-      title: `${type === "video" ? "Video" : "Quiz"} ${
-        module.lessons.length + 1
-      }`,
-      type,
-      duration: type === "video" ? "0:00" : "15:00",
-      content: "",
-      free: false,
-    };
-
-    if (type === "quiz") {
-      newLesson.quizQuestions = [];
-    }
-
-    setModules(
-      modules.map((module) =>
-        module.id === moduleId
-          ? { ...module, lessons: [...module.lessons, newLesson] }
-          : module
-      )
-    );
-
-    setSelectedModule(moduleId);
-    setSelectedLesson(newLessonId);
-  };
-
-  const deleteLesson = (moduleId, lessonId) => {
-    setModules(
-      modules.map((module) =>
-        module.id === moduleId
-          ? {
-              ...module,
-              lessons: module.lessons.filter(
-                (lesson) => lesson.id !== lessonId
-              ),
-            }
-          : module
-      )
-    );
-
-    if (selectedModule === moduleId && selectedLesson === lessonId) {
-      setSelectedLesson(null);
+      // Update the course and modules in local state
+      setCourse(response.data);
+      setModules(response.data.modules || []);
+      toast.success("Course created successfully");
+      setActiveTab("curriculum");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to create course"
+      );
     }
   };
 
-  const updateLesson = (moduleId, lessonId, field, value) => {
-    setModules(
-      modules.map((module) =>
-        module.id === moduleId
-          ? {
-              ...module,
-              lessons: module.lessons.map((lesson) =>
-                lesson.id === lessonId ? { ...lesson, [field]: value } : lesson
-              ),
-            }
-          : module
-      )
-    );
-  };
-
-  const moveModule = (moduleId, direction) => {
-    const moduleIndex = modules.findIndex((m) => m.id === moduleId);
-    if (
-      (direction === "up" && moduleIndex === 0) ||
-      (direction === "down" && moduleIndex === modules.length - 1)
-    ) {
+  const addModule = async () => {
+    if (!course) {
+      toast.error("Please create the course first by clicking 'Continue'.");
       return;
     }
-
-    const newModules = [...modules];
-    const moduleToMove = newModules[moduleIndex];
-
-    if (direction === "up") {
-      newModules[moduleIndex] = newModules[moduleIndex - 1];
-      newModules[moduleIndex - 1] = moduleToMove;
-    } else {
-      newModules[moduleIndex] = newModules[moduleIndex + 1];
-      newModules[moduleIndex + 1] = moduleToMove;
+    try {
+      const response = await api.post("/modules", {
+        title: `Module ${modules.length + 1}`,
+        description: "",
+        courseId: course._id,
+      });
+      setModules([...modules, response.data]);
+      setSelectedModule(response.data._id);
+      toast.success("Module added successfully");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to add module"
+      );
     }
+  };
 
-    setModules(newModules);
+  const addLesson = async (moduleId, type = "video") => {
+    if (!course) {
+      toast.error("Please create the course first by clicking 'Continue'.");
+      return;
+    }
+    try {
+      const response = await api.post("/lessons", {
+        title: `${type === "video" ? "Video" : "Quiz"} Lesson`,
+        type,
+        moduleId: moduleId,
+        duration: type === "video" ? "0:00" : "15:00",
+        content: "",
+        free: false,
+      });
+      setModules(
+        modules.map((module) =>
+          (module._id === moduleId || module.id === moduleId)
+            ? { ...module, lessons: [...(module.lessons ?? []), response.data] }
+            : module
+        )
+      );
+      setSelectedModule(moduleId);
+      setSelectedLesson(response.data._id || response.data.id);
+      if (type === "quiz") {
+        setCurrentQuizQuestions([]);
+      }
+      toast.success(`${type === "video" ? "Video" : "Quiz"} lesson added`);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to add lesson"
+      );
+    }
+  };
+
+  const updateLesson = async (moduleId, lessonId, field, value) => {
+    try {
+      await api.put(`/lessons/${lessonId}`, { [field]: value });
+      setModules(
+        modules.map((module) =>
+          (module._id === moduleId || module.id === moduleId)
+            ? {
+                ...module,
+                lessons: (module.lessons ?? []).map((lesson) =>
+                  (lesson._id === lessonId || lesson.id === lessonId)
+                    ? { ...lesson, [field]: value }
+                    : lesson
+                ),
+              }
+            : module
+        )
+      );
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to update lesson"
+      );
+    }
   };
 
   const moveLesson = (moduleId, lessonId, direction) => {
-    const moduleIndex = modules.findIndex((m) => m.id === moduleId);
-    const module = modules[moduleIndex];
-    const lessonIndex = module.lessons.findIndex((l) => l.id === lessonId);
-
-    if (
-      (direction === "up" && lessonIndex === 0) ||
-      (direction === "down" && lessonIndex === module.lessons.length - 1)
-    ) {
-      return;
-    }
-
-    const newLessons = [...module.lessons];
-    const lessonToMove = newLessons[lessonIndex];
-
-    if (direction === "up") {
-      newLessons[lessonIndex] = newLessons[lessonIndex - 1];
-      newLessons[lessonIndex - 1] = lessonToMove;
-    } else {
-      newLessons[lessonIndex] = newLessons[lessonIndex + 1];
-      newLessons[lessonIndex + 1] = lessonToMove;
-    }
-
-    setModules(
-      modules.map((m) =>
-        m.id === moduleId ? { ...m, lessons: newLessons } : m
-      )
+    setModules((prevModules) =>
+      prevModules.map((module) => {
+        if ((module._id || module.id) !== moduleId) return module;
+        const lessons = [...(module.lessons ?? [])];
+        const idx = lessons.findIndex(
+          (l) => (l._id || l.id) === lessonId
+        );
+        if (idx === -1) return module;
+        if (
+          (direction === "up" && idx === 0) ||
+          (direction === "down" && idx === lessons.length - 1)
+        ) {
+          return module;
+        }
+        const swapWith = direction === "up" ? idx - 1 : idx + 1;
+        [lessons[idx], lessons[swapWith]] = [lessons[swapWith], lessons[idx]];
+        return { ...module, lessons };
+      })
     );
   };
 
-  const handleModuleBulkUpload = (moduleId) => {
-    if (moduleFileInputRef.current) {
-      moduleFileInputRef.current.dataset.moduleId = moduleId.toString();
-      moduleFileInputRef.current.click();
+  const deleteLesson = (moduleId, lessonId) => {
+    setModules((prevModules) =>
+      prevModules.map((module) => {
+        if ((module._id || module.id) !== moduleId) return module;
+        return {
+          ...module,
+          lessons: (module.lessons ?? []).filter(
+            (lesson) => (lesson._id || lesson.id) !== lessonId
+          ),
+        };
+      })
+    );
+    if (selectedModule === moduleId && selectedLesson === lessonId) {
+      setSelectedLesson(null);
     }
+    toast.success("Lesson deleted");
   };
 
-  const handleModuleFileUpload = (event) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-
-    const moduleId = moduleFileInputRef.current?.dataset.moduleId
-      ? parseInt(moduleFileInputRef.current.dataset.moduleId)
-      : null;
-
-    if (moduleId === null) return;
-
-    const sortedFiles = Array.from(files).sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
-
-    const videoFiles = sortedFiles.filter(
-      (file) =>
-        file.type.startsWith("video/") ||
-        ["mp4", "webm", "mov", "avi", "mkv"].some((ext) =>
-          file.name.toLowerCase().endsWith(`.${ext}`)
-        )
-    );
-
-    if (videoFiles.length !== sortedFiles.length) {
-      toast.warning(
-        `${sortedFiles.length - videoFiles.length} non-video files were skipped`
-      );
+  const handleReplaceLessonWithVideo = () => {
+    if (!lessonToReplace) return;
+    if (fileInputRef.current) {
+      fileInputRef.current.dataset.replace = JSON.stringify(lessonToReplace);
+      fileInputRef.current.click();
     }
+    setShowReplaceDialog(false);
+    toast.success("Replace with video triggered");
+  };
 
-    if (videoFiles.length === 0) {
-      toast.error("No valid video files selected");
-      return;
-    }
+  const handleReplaceWithQuiz = () => {
+    if (!lessonToReplace) return;
+    updateLesson(lessonToReplace.moduleId, lessonToReplace.lessonId, "type", "quiz");
+    updateLesson(lessonToReplace.moduleId, lessonToReplace.lessonId, "videoId", undefined);
+    updateLesson(lessonToReplace.moduleId, lessonToReplace.lessonId, "duration", "15:00");
+    setSelectedModule(lessonToReplace.moduleId);
+    setSelectedLesson(lessonToReplace.lessonId);
+    setCurrentQuizQuestions([]);
+    setShowReplaceDialog(false);
+    toast.success("Lesson converted to quiz");
+  };
 
-    videoFiles.forEach((file, index) => {
-      const moduleIndex = modules.findIndex((m) => m.id === moduleId);
-      if (moduleIndex === -1) return;
-
-      const module = modules[moduleIndex];
-      const newLessonId =
-        module.lessons.length > 0
-          ? Math.max(...module.lessons.map((l) => l.id)) + 1 + index
-          : moduleId * 100 + 1 + index;
-
+  const handleReplaceLessonFileUpload = (event) => {
+    // Return early if no file selected
+    if (!event.target.files || event.target.files.length === 0) return;
+    const replaceData = event.target.dataset.replace;
+    if (!replaceData) return;
+    try {
+      const { moduleId, lessonId } = JSON.parse(replaceData);
+      const file = event.target.files[0];
+      if (!file.type.startsWith("video/")) {
+        toast.error("Please select a valid video file");
+        return;
+      }
       const video = document.createElement("video");
       video.preload = "metadata";
       video.src = URL.createObjectURL(file);
-
       video.onloadedmetadata = () => {
         URL.revokeObjectURL(video.src);
         const minutes = Math.floor(video.duration / 60);
@@ -342,72 +325,68 @@ const CourseBuilder = ({ onSave }) => {
         const duration = `${minutes.toString().padStart(2, "0")}:${seconds
           .toString()
           .padStart(2, "0")}`;
-
         const canvas = document.createElement("canvas");
         canvas.width = 320;
         canvas.height = 180;
-
         video.currentTime = Math.min(1, video.duration / 4);
-
         video.onseeked = () => {
           const ctx = canvas.getContext("2d");
           if (ctx) {
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             const thumbnailUrl = canvas.toDataURL("image/jpeg");
-
-            const videoPreviewId = `video-${Date.now()}-${index}`;
-            const formattedName = file.name
-              .replace(/\.[^/.]+$/, "")
-              .replace(/[-_]/g, " ")
-              .split(" ")
-              .map(
-                (word) =>
-                  word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-              )
-              .join(" ");
-
-            const videoPreview = {
-              id: videoPreviewId,
-              name: formattedName,
-              size: formatFileSize(file.size),
-              duration: duration,
-              thumbnail: thumbnailUrl,
-              status: "complete",
-            };
-
-            setVideoUploads((prev) => [...prev, videoPreview]);
-
-            const newLesson = {
-              id: newLessonId,
-              title: formattedName,
-              type: "video",
-              duration: duration,
-              content: "",
-              videoId: videoPreviewId,
-              free: false,
-            };
-
-            setModules((modules) =>
-              modules.map((m) =>
-                m.id === moduleId
-                  ? { ...m, lessons: [...m.lessons, newLesson] }
-                  : m
-              )
-            );
-
-            if (index === 0) {
-              toast.success(`Adding ${videoFiles.length} videos as lessons`);
-            }
+            // Update lesson with new video info
+            updateLesson(moduleId, lessonId, "videoId", `video-${Date.now()}`);
+            updateLesson(moduleId, lessonId, "duration", duration);
+            // Optionally update lesson title if needed
+            toast.success("Video replaced successfully");
           }
-
-          URL.revokeObjectURL(video.src);
         };
       };
+    } catch (error) {
+      console.error("Error replacing lesson:", error);
+      toast.error("Failed to replace lesson");
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleModuleFileUpload = (event) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    
+    const sortedFiles = Array.from(files).sort((a, b) => a.name.localeCompare(b.name));
+    const videoFiles = sortedFiles.filter((file) =>
+      file.type.startsWith("video/") || /\.(mp4|webm|mov|avi|mkv)$/i.test(file.name)
+    );
+    
+    if (videoFiles.length !== sortedFiles.length) {
+      toast.warning(`${sortedFiles.length - videoFiles.length} non-video files were skipped`);
+    }
+    if (videoFiles.length === 0) {
+      toast.error("No valid video files selected");
+      return;
+    }
+    
+    videoFiles.forEach((file, index) => {
+      // Simulate processing of each video file,
+      // e.g., extracting duration & thumbnail, similar to handleReplaceLessonFileUpload.
+      toast.success(`Processing video file: ${file.name}`);
+      // ...existing processing logic can be added here...
     });
 
-    if (moduleFileInputRef.current) {
-      moduleFileInputRef.current.value = "";
-    }
+    event.target.value = "";
+  };
+
+  const handleQuizQuestionsChange = (questions) => {
+    setCurrentQuizQuestions(questions);
+    // Optionally, update the lesson's quizQuestions field in the backend or local state here if needed.
+  };
+
+  const replaceVideoInLesson = (moduleId, lessonId, videoId) => {
+    updateLesson(moduleId, lessonId, "videoId", videoId);
+    // Optionally, update duration or other fields if needed.
+    toast.success("Video replaced in lesson");
   };
 
   const handleReplaceLessonClick = (moduleId, lessonId) => {
@@ -415,381 +394,67 @@ const CourseBuilder = ({ onSave }) => {
     setShowReplaceDialog(true);
   };
 
-  const handleReplaceLessonWithVideo = () => {
-    if (!lessonToReplace) return;
-
-    const module = modules.find((m) => m.id === lessonToReplace.moduleId);
-    const lesson = module?.lessons.find(
-      (l) => l.id === lessonToReplace.lessonId
-    );
-
-    if (!lesson) return;
-
-    if (lesson.type === "video") {
-      if (fileInputRef.current) {
-        fileInputRef.current.dataset.replace = JSON.stringify(lessonToReplace);
-        fileInputRef.current.click();
-      }
-    } else {
-      updateLesson(
-        lessonToReplace.moduleId,
-        lessonToReplace.lessonId,
-        "type",
-        "video"
-      );
-      if (fileInputRef.current) {
-        fileInputRef.current.dataset.replace = JSON.stringify(lessonToReplace);
-        fileInputRef.current.click();
-      }
-    }
-
-    setShowReplaceDialog(false);
-  };
-
-  const handleReplaceWithQuiz = () => {
-    if (!lessonToReplace) return;
-
-    const module = modules.find((m) => m.id === lessonToReplace.moduleId);
-    const lesson = module?.lessons.find(
-      (l) => l.id === lessonToReplace.lessonId
-    );
-
-    if (!lesson) return;
-
-    updateLesson(
-      lessonToReplace.moduleId,
-      lessonToReplace.lessonId,
-      "type",
-      "quiz"
-    );
-    updateLesson(
-      lessonToReplace.moduleId,
-      lessonToReplace.lessonId,
-      "videoId",
-      undefined
-    );
-    updateLesson(
-      lessonToReplace.moduleId,
-      lessonToReplace.lessonId,
-      "duration",
-      "15:00"
-    );
-    updateLesson(
-      lessonToReplace.moduleId,
-      lessonToReplace.lessonId,
-      "quizQuestions",
-      []
-    );
-
-    setSelectedModule(lessonToReplace.moduleId);
-    setSelectedLesson(lessonToReplace.lessonId);
-    setCurrentQuizQuestions([]);
-
-    setShowReplaceDialog(false);
-    toast.success("Lesson converted to quiz");
-  };
-
-  const handleReplaceLessonFileUpload = (event) => {
-    if (!event.target.files || event.target.files.length === 0) return;
-
-    const replaceData = event.target.dataset.replace;
-    if (!replaceData) return;
-
-    try {
-      const { moduleId, lessonId } = JSON.parse(replaceData);
-
-      const file = event.target.files[0];
-
-      if (!file.type.startsWith("video/")) {
-        toast.error("Please select a valid video file");
-        return;
-      }
-
-      const video = document.createElement("video");
-      video.preload = "metadata";
-      video.src = URL.createObjectURL(file);
-
-      video.onloadedmetadata = () => {
-        URL.revokeObjectURL(video.src);
-        const minutes = Math.floor(video.duration / 60);
-        const seconds = Math.floor(video.duration % 60);
-        const duration = `${minutes.toString().padStart(2, "0")}:${seconds
-          .toString()
-          .padStart(2, "0")}`;
-
-        const canvas = document.createElement("canvas");
-        canvas.width = 320;
-        canvas.height = 180;
-
-        video.currentTime = Math.min(1, video.duration / 4);
-
-        video.onseeked = () => {
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const thumbnailUrl = canvas.toDataURL("image/jpeg");
-
-            const videoPreviewId = `video-${Date.now()}`;
-            const formattedName = file.name
-              .replace(/\.[^/.]+$/, "")
-              .replace(/[-_]/g, " ")
-              .split(" ")
-              .map(
-                (word) =>
-                  word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-              )
-              .join(" ");
-
-            const videoPreview = {
-              id: videoPreviewId,
-              name: formattedName,
-              size: formatFileSize(file.size),
-              duration: duration,
-              thumbnail: thumbnailUrl,
-              status: "complete",
-            };
-
-            setVideoUploads((prev) => [...prev, videoPreview]);
-
-            updateLesson(moduleId, lessonId, "videoId", videoPreviewId);
-            updateLesson(moduleId, lessonId, "duration", duration);
-            updateLesson(moduleId, lessonId, "title", formattedName);
-
-            toast.success("Video replaced successfully");
-          }
-
-          URL.revokeObjectURL(video.src);
-        };
-      };
-    } catch (error) {
-      console.error("Error replacing lesson:", error);
-      toast.error("Failed to replace lesson");
-    }
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    if (dropAreaRef.current) {
-      dropAreaRef.current.classList.add(
-        "border-fidel-500",
-        "bg-fidel-50/50",
-        "dark:bg-fidel-950/10"
-      );
-    }
-  };
-
-  const handleDragLeave = () => {
-    if (dropAreaRef.current) {
-      dropAreaRef.current.classList.remove(
-        "border-fidel-500",
-        "bg-fidel-50/50",
-        "dark:bg-fidel-950/10"
-      );
-    }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    handleDragLeave();
-
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      processVideoFiles(files);
-    }
-  };
-
-  const handleVideoUpload = (event) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-
-    processVideoFiles(files);
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const processVideoFiles = (files) => {
-    const videoFiles = Array.from(files).filter(
-      (file) =>
-        file.type.startsWith("video/") ||
-        ["mp4", "webm", "mov", "avi", "mkv"].some((ext) =>
-          file.name.toLowerCase().endsWith(`.${ext}`)
-        )
-    );
-
-    if (videoFiles.length !== files.length) {
-      toast.warning(
-        `${files.length - videoFiles.length} non-video files were skipped`
-      );
-    }
-
-    if (videoFiles.length === 0) {
-      toast.error("No valid video files selected");
-      return;
-    }
-
-    const newUploads = videoFiles.map((file, index) => ({
-      id: `video-${Date.now()}-${index}`,
-      name: file.name,
-      size: formatFileSize(file.size),
-      duration: "Processing...",
-      thumbnail: "https://placehold.co/320x180/333/white.png?text=Processing",
-      progress: 0,
-      status: "uploading",
-    }));
-
-    setVideoUploads([...videoUploads, ...newUploads]);
-
-    newUploads.forEach((upload, index) => {
-      simulateVideoProcessing(upload.id, videoFiles[index]);
-    });
-
-    toast.success(`Processing ${videoFiles.length} video(s)`);
-  };
-
-  const simulateVideoProcessing = (videoId, file) => {
-    let progress = 0;
-    const totalSteps = 10;
-    const interval = setInterval(() => {
-      progress += 100 / totalSteps;
-
-      if (progress > 100) {
-        clearInterval(interval);
-        progress = 100;
-
-        setVideoUploads((current) =>
-          current.map((video) =>
-            video.id === videoId
-              ? {
-                  ...video,
-                  progress: 100,
-                  status: "complete",
-                  duration: generateRandomDuration(),
-                  thumbnail: `https://placehold.co/320x180/222/white.png?text=${encodeURIComponent(
-                    file.name.substring(0, 15)
-                  )}`,
-                }
-              : video
-          )
-        );
-
-        toast.success(`"${file.name}" processed successfully`);
-      } else {
-        setVideoUploads((current) =>
-          current.map((video) =>
-            video.id === videoId
-              ? { ...video, progress: Math.round(progress) }
-              : video
-          )
-        );
-      }
-    }, 300);
-  };
-
-  const generateRandomDuration = () => {
-    const minutes = Math.floor(Math.random() * 30) + 1;
-    const seconds = Math.floor(Math.random() * 60);
-    return `${minutes}:${seconds < 10 ? "0" + seconds : seconds}`;
-  };
-
-  const formatFileSize = (bytes) => {
-    if (bytes < 1024) return bytes + " bytes";
-    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
-    else return (bytes / 1048576).toFixed(1) + " MB";
-  };
-
-  const removeVideoUpload = (videoId) => {
-    setVideoUploads(videoUploads.filter((video) => video.id !== videoId));
-    toast.info("Video removed from uploads");
-  };
-
-  const viewVideoPreview = (video) => {
-    setPreviewVideo(video);
-  };
-
-  const assignVideoToLesson = (videoId) => {
-    if (!selectedModule || !selectedLesson) {
-      toast.error("Please select a lesson first");
-      return;
-    }
-
-    const video = videoUploads.find((v) => v.id === videoId);
-    if (!video) return;
-
-    updateLesson(selectedModule, selectedLesson, "videoId", videoId);
-    updateLesson(selectedModule, selectedLesson, "duration", video.duration);
-
-    toast.success(`Video assigned to the selected lesson`);
-  };
-
-  const replaceVideoInLesson = (moduleId, lessonId, newVideoId) => {
-    const video = videoUploads.find((v) => v.id === newVideoId);
-    if (!video) return;
-
-    updateLesson(moduleId, lessonId, "videoId", newVideoId);
-    updateLesson(moduleId, lessonId, "duration", video.duration);
-
-    toast.success("Video replaced successfully");
-  };
-
-  const handleQuizQuestionsChange = (questions) => {
-    setCurrentQuizQuestions(questions);
-
-    if (selectedModule && selectedLesson) {
-      updateLesson(selectedModule, selectedLesson, "quizQuestions", questions);
-    }
-  };
-
   const selectLesson = (moduleId, lessonId) => {
     setSelectedModule(moduleId);
     setSelectedLesson(lessonId);
+  };
 
-    const module = modules.find((m) => m.id === moduleId);
-    const lesson = module?.lessons.find((l) => l.id === lessonId);
+  const handleVideoUpload = async (file, moduleId, lessonId) => {
+    try {
+      const formData = new FormData();
+      formData.append("video", file);
 
-    if (lesson?.type === "quiz") {
-      setCurrentQuizQuestions(lesson.quizQuestions || []);
+      // Upload video to /api/media
+      const uploadRes = await api.post("/media", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const videoData = uploadRes.data;
+
+      // Assign video to lesson
+      const assignRes = await api.post(
+        `/media/assign/${lessonId}`,
+        {
+          videoId: videoData.id,
+          videoUrl: videoData.url,
+          thumbnailUrl: videoData.thumbnail,
+          duration: videoData.duration,
+          videoPublicId: videoData.id,
+          thumbnailPublicId: videoData.thumbnail
+            .split("/")
+            .slice(-2)
+            .join("/")
+            .replace(/\.[^/.]+$/, ""),
+        }
+      );
+
+      // Update lesson in local state
+      setModules((prevModules) =>
+        prevModules.map((module) => {
+          if ((module._id || module.id) !== moduleId) return module;
+          return {
+            ...module,
+            lessons: (module.lessons ?? []).map((lesson) =>
+              (lesson._id || lesson.id) === lessonId
+                ? {
+                    ...lesson,
+                    videoId: videoData.id,
+                    videoUrl: assignRes.data.lesson.video.url,
+                    thumbnailUrl: assignRes.data.lesson.video.thumbnailUrl,
+                    duration: assignRes.data.lesson.duration,
+                    status: "complete",
+                  }
+                : lesson
+            ),
+          };
+        })
+      );
+      toast.success("Video uploaded and assigned to lesson");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to upload and assign video"
+      );
     }
   };
-
-  const handleVideoFilesAdded = (videos) => {
-    const newVideoPreviews = videos.map((video) => ({
-      id: video.id,
-      name: video.name,
-      size: formatFileSize(video.file.size),
-      duration: video.duration,
-      thumbnail:
-        video.thumbnail ||
-        "https://placehold.co/320x180/222/white.png?text=Video",
-      status: "complete",
-    }));
-
-    setVideoUploads((prev) => [...prev, ...newVideoPreviews]);
-    toast.success(`${videos.length} videos added successfully`);
-  };
-
-  const categories = [
-    "Computer Science",
-    "Programming",
-    "Web Development",
-    "Business",
-    "Marketing",
-    "Data Science",
-    "Psychology",
-    "Finance",
-    "Design",
-    "Languages",
-    "Health & Fitness",
-    "Mathematics",
-    "Photography",
-    "Music",
-    "Other",
-  ];
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
@@ -969,6 +634,61 @@ const CourseBuilder = ({ onSave }) => {
                         </div>
                       </div>
                     </div>
+
+                    <div>
+                      <Label>What students need to know</Label>
+                      <Textarea
+                        placeholder="List any prerequisites for taking this course..."
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Technical requirements</Label>
+                      <Textarea
+                        placeholder="List any technical requirements for the course..."
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="price"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Course Price ($)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="text"
+                              placeholder="e.g. 49.99"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Set a price for your course
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex justify-end mt-8">
+                      <Button
+                        type="button"
+                        size="lg"
+                        onClick={async () => {
+                          const valid = await form.trigger();
+                          if (valid) {
+                            form.handleSubmit(async (values) => {
+                              await onSubmit(values);
+                              setActiveTab("curriculum");
+                            })();
+                          }
+                        }}
+                      >
+                        Continue
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -988,7 +708,7 @@ const CourseBuilder = ({ onSave }) => {
                     <div className="lg:col-span-4 space-y-4">
                       {modules.map((module, moduleIndex) => (
                         <div
-                          key={module.id}
+                          key={module._id || module.id}
                           className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-800"
                         >
                           <div className="flex justify-between items-start mb-4">
@@ -1002,7 +722,7 @@ const CourseBuilder = ({ onSave }) => {
                                 value={module.title}
                                 onChange={(e) =>
                                   updateModule(
-                                    module.id,
+                                    module._id || module.id,
                                     "title",
                                     e.target.value
                                   )
@@ -1014,7 +734,7 @@ const CourseBuilder = ({ onSave }) => {
                                 value={module.description}
                                 onChange={(e) =>
                                   updateModule(
-                                    module.id,
+                                    module._id || module.id,
                                     "description",
                                     e.target.value
                                   )
@@ -1027,7 +747,7 @@ const CourseBuilder = ({ onSave }) => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => moveModule(module.id, "up")}
+                                onClick={() => moveModule(module._id || module.id, "up")}
                                 disabled={moduleIndex === 0}
                               >
                                 <MoveUp size={18} />
@@ -1036,7 +756,7 @@ const CourseBuilder = ({ onSave }) => {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() =>
-                                  handleModuleBulkUpload(module.id)
+                                  handleModuleBulkUpload(module._id || module.id)
                                 }
                                 title="Bulk upload videos as lessons"
                               >
@@ -1045,7 +765,7 @@ const CourseBuilder = ({ onSave }) => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => moveModule(module.id, "down")}
+                                onClick={() => moveModule(module._id || module.id, "down")}
                                 disabled={moduleIndex === modules.length - 1}
                               >
                                 <MoveDown size={18} />
@@ -1053,7 +773,7 @@ const CourseBuilder = ({ onSave }) => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => deleteModule(module.id)}
+                                onClick={() => deleteModule(module._id || module.id)}
                                 className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
                               >
                                 <Trash2 size={18} />
@@ -1062,12 +782,10 @@ const CourseBuilder = ({ onSave }) => {
                           </div>
 
                           <div className="space-y-3 pl-0 mt-4">
-                            {module.lessons.map((lesson, lessonIndex) => (
+                            {(module.lessons ?? []).map((lesson, lessonIndex) => (
                               <div
-                                key={lesson.id}
+                                key={lesson._id || lesson.id}
                                 className={`flex items-start p-3 rounded-md border 
-                                  ${
-                                    selectedModule === module.id &&
                                     selectedLesson === lesson.id
                                       ? "bg-fidel-50 dark:bg-fidel-900/20 border-fidel-200 dark:border-fidel-800"
                                       : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
@@ -1213,45 +931,6 @@ const CourseBuilder = ({ onSave }) => {
                   <h3 className="text-lg font-medium mb-4">
                     Prerequisites & Requirements
                   </h3>
-
-                  <div className="space-y-4">
-                    <div>
-                      <Label>What students need to know</Label>
-                      <Textarea
-                        placeholder="List any prerequisites for taking this course..."
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <div>
-                      <Label>Technical requirements</Label>
-                      <Textarea
-                        placeholder="List any technical requirements for the course..."
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="price"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Course Price ($)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="text"
-                              placeholder="e.g. 49.99"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Set a price for your course
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
                 </div>
               </div>
             </TabsContent>
@@ -1402,15 +1081,37 @@ const LessonEditor = ({
   replaceVideoInLesson,
   onReplaceLessonClick,
 }) => {
-  const module = modules.find((m) => m.id === selectedModule);
-  const lesson = module?.lessons.find((l) => l.id === selectedLesson);
-
-  if (!module || !lesson) {
-    return null;
+  // Ensure modules and selectedModule are valid
+  if (!modules || !selectedModule) {
+    return (
+      <div className="p-4 text-center">
+        <p className="text-muted-foreground">No module or lesson selected.</p>
+      </div>
+    );
   }
 
-  const moduleIndex = modules.findIndex((m) => m.id === selectedModule);
-  const lessonIndex = module.lessons.findIndex((l) => l.id === selectedLesson);
+  const module = modules.find((m) => m.id === selectedModule || m._id === selectedModule);
+  if (!module) {
+    return (
+      <div className="p-4 text-center">
+        <p className="text-muted-foreground">Selected module not found.</p>
+      </div>
+    );
+  }
+
+  const lesson = module.lessons?.find((l) => l.id === selectedLesson || l._id === selectedLesson);
+  if (!lesson) {
+    return (
+      <div className="p-4 text-center">
+        <p className="text-muted-foreground">Selected lesson not found.</p>
+      </div>
+    );
+  }
+
+  const moduleIndex = modules.findIndex((m) => m.id === selectedModule || m._id === selectedModule);
+  const lessonIndex = (module.lessons ?? []).findIndex(
+    (l) => l.id === selectedLesson || l._id === selectedLesson
+  );
 
   const assignedVideo = lesson.videoId
     ? videoUploads.find((v) => v.id === lesson.videoId)
@@ -1511,12 +1212,6 @@ const LessonEditor = ({
             className="mt-1"
           />
         </div>
-
-
-
-
-
-
 
         {lesson.type === "video" ? (
           <div>
@@ -1664,7 +1359,7 @@ const LessonEditor = ({
               </div>
             )}
 
-             <div className="mt-4">
+            <div className="mt-4">
               <Label htmlFor="video-description">Description (Optional)</Label>
               <Textarea
                 id="video-description"
@@ -1682,16 +1377,6 @@ const LessonEditor = ({
               />
             </div>
           </div>
-
-
-
-
-
-
-
-
-
-
         ) : (
           <div>
             <Label className="mb-3 block">Quiz Questions</Label>
@@ -1701,7 +1386,7 @@ const LessonEditor = ({
             />
           </div>
         )}
-      </CardContent> 
+      </CardContent>
 
       <CardFooter className="border-t pt-4 flex justify-between">
         <div className="text-sm text-muted-foreground">

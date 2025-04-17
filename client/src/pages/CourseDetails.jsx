@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -23,111 +23,98 @@ import ThemeToggle from "@/components/ui/ThemeToggle";
 
 const CourseDetails = () => {
   const { courseId } = useParams();
-  const [expandedModules, setExpandedModules] = useState([1]);
+  const [course, setCourse] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [expandedModules, setExpandedModules] = useState([]);
 
-  // Mock course data with Ethiopian names
-  const course = {
-    id: courseId || "1",
-    title: "The Complete React Developer Course",
-    instructor: "Selamawit Gebre",
-    level: "Intermediate",
-    category: "Web Development",
-    rating: 4.8,
-    totalRatings: 1245,
-    students: 12500,
-    lastUpdated: "April 2023",
-    language: "English",
-    duration: "24 hours",
-    lessons: 48,
-    description: `
-      Master React and Redux in this comprehensive course. You'll learn React from the ground up and build several real-world projects along the way.
-      
-      This course is perfect for developers looking to level up their front-end skills and create modern, responsive web applications. We'll cover everything from React basics to advanced state management with Redux.
-    `,
-    whatYouWillLearn: [
-      "Build powerful, fast, user-friendly and reactive web apps",
-      "Apply for high-paid jobs or work as a freelancer",
-      "Understand the React ecosystem and concepts like Hooks, Context API, and Redux",
-      "Master the fundamentals and advanced topics of React",
-      "Learn how to use React's most popular libraries and tools",
-      "Develop complex applications with a clean code structure",
-    ],
-    prerequisites: [
-      "Basic JavaScript knowledge is required",
-      "ES6+ knowledge is beneficial but not required",
-      "NO prior React or other framework experience is needed",
-    ],
-    image: "https://placehold.co/800x500/34d399/ffffff.png?text=React+Course&font=Montserrat",
-    price: "5,039 ETB", 
-    discount: "7,279 ETB",  
-    modules: [
-      {
-        id: 1,
-        title: "Getting Started with React",
-        duration: "2h 45m",
-        lessons: [
-          { id: 101, title: "Introduction to the Course", duration: "5:30", type: "video", completed: true },
-          { id: 102, title: "What is React?", duration: "10:15", type: "video", completed: true },
-          { id: 103, title: "Setting Up the Development Environment", duration: "12:20", type: "video", completed: true },
-          { id: 104, title: "Your First React Component", duration: "18:45", type: "video", completed: false },
-          { id: 105, title: "Module Quiz", duration: "15:00", type: "quiz", completed: false },
-        ],
-      },
-      {
-        id: 2,
-        title: "React Fundamentals",
-        duration: "4h 30m",
-        lessons: [
-          { id: 201, title: "JSX Syntax", duration: "14:20", type: "video", completed: false },
-          { id: 202, title: "Props and State", duration: "22:15", type: "video", completed: false },
-          { id: 203, title: "Component Lifecycle", duration: "18:30", type: "video", completed: false },
-          { id: 204, title: "Handling Events", duration: "20:45", type: "video", completed: false },
-          { id: 205, title: "Conditional Rendering", duration: "16:10", type: "video", completed: false },
-          { id: 206, title: "Lists and Keys", duration: "12:55", type: "video", completed: false },
-          { id: 207, title: "Practical Exercise", duration: "30:00", type: "reading", completed: false },
-          { id: 208, title: "Module Quiz", duration: "15:00", type: "quiz", completed: false },
-        ],
-      },
-      {
-        id: 3,
-        title: "Hooks in React",
-        duration: "5h 15m",
-        lessons: [
-          { id: 301, title: "Introduction to Hooks", duration: "12:30", type: "video", completed: false },
-          { id: 302, title: "useState Hook", duration: "18:45", type: "video", completed: false },
-          { id: 303, title: "useEffect Hook", duration: "24:20", type: "video", completed: false },
-          { id: 304, title: "useContext Hook", duration: "15:10", type: "video", completed: false },
-          { id: 305, title: "useReducer Hook", duration: "22:35", type: "video", completed: false },
-          { id: 306, title: "Custom Hooks", duration: "28:15", type: "video", completed: false },
-          { id: 307, title: "Practical Project", duration: "1:15:00", type: "reading", completed: false },
-          { id: 308, title: "Module Quiz", duration: "20:00", type: "quiz", completed: false },
-        ],
-      },
-    ],
-  };
+  useEffect(() => {
+    const fetchCourse = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/api/courses/${courseId}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setCourse(data);
+        // Expand first module by default
+        if (data.modules && data.modules.length > 0) {
+          setExpandedModules([data.modules[0]._id || data.modules[0].id]);
+        }
+      } catch (err) {
+        setError(err.message);
+        console.error("Error fetching course:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourse();
+  }, [courseId]);
+
   const toggleModule = (moduleId) => {
     setExpandedModules((prev) =>
       prev.includes(moduleId) ? prev.filter((id) => id !== moduleId) : [...prev, moduleId]
     );
   };
 
-  const totalCompletedLessons = course.modules.reduce((acc, module) => {
-    return acc + module.lessons.filter((lesson) => lesson.completed).length;
-  }, 0);
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center dark:bg-slate-950">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-fidel-500"></div>
+      </div>
+    );
+  }
 
-  const totalLessons = course.modules.reduce((acc, module) => {
-    return acc + module.lessons.length;
-  }, 0);
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center dark:bg-slate-950">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2 text-red-500">Error loading course</h2>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
+          <Link to="/courses" className="block mt-4 text-fidel-500 hover:underline">
+            Back to Courses
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
-  const progressPercentage = Math.round((totalCompletedLessons / totalLessons) * 100);
+  if (!course) {
+    return (
+      <div className="min-h-screen flex items-center justify-center dark:bg-slate-950">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Course not found</h2>
+          <Link to="/courses" className="text-fidel-500 hover:underline">
+            Back to Courses
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate progress and totals
+  const totalCompletedLessons = course.modules?.reduce((acc, module) => {
+    return acc + (module.lessons?.filter((lesson) => lesson.completed)?.length || 0);
+  }, 0) || 0;
+
+  const totalLessons = course.modules?.reduce((acc, module) => {
+    return acc + (module.lessons?.length || 0);
+  }, 0) || 0;
+
+  const progressPercentage = totalLessons > 0 ? Math.round((totalCompletedLessons / totalLessons) * 100) : 0;
+
+  // Format instructor name
+  const instructorName = typeof course.instructor === 'object' 
+    ? course.instructor.name 
+    : course.instructor || 'Unknown Instructor';
 
   return (
     <div className="min-h-screen flex flex-col dark:bg-slate-950">
-
       {/* Course Header */}
       <div className="bg-fidel-600 text-white py-12">
         <div className="container px-4 md:px-6">
-
           <div className="flex flex-col md:flex-row gap-8 mt-8">
             <div className="flex-1">
               <div className="mb-4">
@@ -139,54 +126,60 @@ const CourseDetails = () => {
 
               <h1 className="text-3xl md:text-4xl font-bold mb-4">{course.title}</h1>
 
-              <p className="text-fidel-100 mb-6">{course.description.split("\n\n")[0]}</p>
+              <p className="text-fidel-100 mb-6">{course.description?.split("\n\n")[0] || course.description}</p>
 
               <div className="flex flex-wrap gap-4 mb-6">
                 <div className="flex items-center">
                   <Star size={18} className="text-yellow-300 fill-yellow-300 mr-1" />
-                  <span className="font-medium">{course.rating}</span>
-                  <span className="text-fidel-200 ml-1">({course.totalRatings} ratings)</span>
+                  <span className="font-medium">{course.rating?.toFixed(1) || 'N/A'}</span>
+                  <span className="text-fidel-200 ml-1">({course.totalRatings?.toLocaleString() || 0} ratings)</span>
                 </div>
 
                 <div className="flex items-center">
                   <Users size={18} className="mr-1" />
-                  <span>{course.students.toLocaleString()} students</span>
+                  <span>{(course.students || 0).toLocaleString()} students</span>
                 </div>
 
                 <div className="flex items-center">
                   <Clock size={18} className="mr-1" />
-                  <span>{course.duration}</span>
+                  <span>{course.duration || 'N/A'}</span>
                 </div>
 
                 <div className="flex items-center">
                   <BookOpen size={18} className="mr-1" />
-                  <span>{course.lessons} lessons</span>
+                  <span>{totalLessons} lessons</span>
                 </div>
               </div>
 
               <div className="flex items-center mb-6">
                 <div className="h-10 w-10 rounded-full bg-white/20 mr-3"></div>
                 <div>
-                  <div className="font-medium">Created by {course.instructor}</div>
-                  <div className="text-sm text-fidel-200">Last updated: {course.lastUpdated}</div>
+                  <div className="font-medium">Created by {instructorName}</div>
+                  <div className="text-sm text-fidel-200">
+                    Last updated: {new Date(course.updatedAt || course.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </div>
                 </div>
               </div>
             </div>
 
             <div className="md:w-96">
               <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-xl">
-                <img src={course.image} alt={course.title} className="w-full h-52 object-cover" />
+                <img 
+                  src={course.thumbnail?.url || "https://placehold.co/800x500/34d399/ffffff.png?text=Course+Image"} 
+                  alt={course.title} 
+                  className="w-full h-52 object-cover" 
+                />
 
                 <div className="p-6">
                   <div className="flex items-baseline mb-4">
-                    <span className="text-2xl font-bold text-green-600 ">{course.price}</span>
-                    <span className="ml-2 text-muted-foreground line-through">{course.discount}</span>
-                    <span className="ml-2 text-sm bg-fidel-100 text-fidel-800 px-2 py-0.5 rounded">30% off</span>
+                    <span className="text-2xl font-bold text-green-600">
+                      ETB {course.price?.toLocaleString() || 'Free'}
+                    </span>
                   </div>
 
                   <Button className="w-full mb-3 bg-fidel-600 hover:bg-fidel-700">Enroll Now</Button>
 
-                  <Button variant="outline" className="w-full mb-6  text-black">
+                  <Button variant="outline" className="w-full mb-6 text-black">
                     Try Free Preview
                   </Button>
 
@@ -195,10 +188,6 @@ const CourseDetails = () => {
                       <Clock size={16} className="mr-2 text-muted-foreground" />
                       <span>Full lifetime access</span>
                     </div>
-                    {/* <div className="flex items-center">
-                      <Download size={16} className="mr-2 text-muted-foreground" />
-                      <span>Downloadable resources</span>
-                    </div> */}
                     <div className="flex items-center">
                       <Award size={16} className="mr-2 text-muted-foreground" />
                       <span>Certificate of completion</span>
@@ -232,18 +221,18 @@ const CourseDetails = () => {
                   <div className="p-4 border-b border-slate-200 dark:border-slate-800">
                     <h3 className="font-semibold">Course Content</h3>
                     <div className="text-sm text-muted-foreground mt-1">
-                      {course.modules.length} modules • {totalLessons} lessons • {course.duration} total length
+                      {course.modules?.length || 0} modules • {totalLessons} lessons • {course.duration || 'N/A'} total length
                     </div>
                   </div>
 
-                  {course.modules.map((module) => (
-                    <div key={module.id} className="border-b border-slate-200 dark:border-slate-800 last:border-b-0">
+                  {course.modules?.map((module) => (
+                    <div key={module._id || module.id} className="border-b border-slate-200 dark:border-slate-800 last:border-b-0">
                       <button
                         className="w-full text-left p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                        onClick={() => toggleModule(module.id)}
+                        onClick={() => toggleModule(module._id || module.id)}
                       >
                         <div className="flex items-center">
-                          {expandedModules.includes(module.id) ? (
+                          {expandedModules.includes(module._id || module.id) ? (
                             <ChevronUp size={18} className="mr-2 text-muted-foreground" />
                           ) : (
                             <ChevronDown size={18} className="mr-2 text-muted-foreground" />
@@ -251,15 +240,15 @@ const CourseDetails = () => {
                           <span className="font-medium">{module.title}</span>
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {module.lessons.length} lessons • {module.duration}
+                          {module.lessons?.length || 0} lessons • {module.duration || 'N/A'}
                         </div>
                       </button>
 
-                      {expandedModules.includes(module.id) && (
+                      {expandedModules.includes(module._id || module.id) && (
                         <div className="bg-slate-50 dark:bg-slate-800/30 divide-y divide-slate-200 dark:divide-slate-800">
-                          {module.lessons.map((lesson) => (
+                          {module.lessons?.map((lesson) => (
                             <div
-                              key={lesson.id}
+                              key={lesson._id || lesson.id}
                               className="flex items-center p-3 pl-10 hover:bg-slate-100 dark:hover:bg-slate-800/50"
                             >
                               {lesson.type === "video" ? (
@@ -277,7 +266,7 @@ const CourseDetails = () => {
                                   </span>
                                   {lesson.completed && <Check size={16} className="ml-2 text-green-500" />}
                                 </div>
-                                <div className="text-xs text-muted-foreground">{lesson.duration}</div>
+                                <div className="text-xs text-muted-foreground">{lesson.duration || 'N/A'}</div>
                               </div>
 
                               <Button variant="ghost" size="sm" className="text-fidel-500">
@@ -316,11 +305,19 @@ const CourseDetails = () => {
                   <div className="mt-6 space-y-4">
                     <div className="border border-slate-200 dark:border-slate-800 rounded-lg p-3">
                       <h4 className="font-medium mb-1">Next Lesson</h4>
-                      <div className="flex items-center text-fidel-600">
-                        <PlayCircle size={16} className="mr-2" />
-                        <span className="text-sm">Your First React Component</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">18:45 minutes</div>
+                      {course.modules?.[0]?.lessons?.[0] ? (
+                        <>
+                          <div className="flex items-center text-fidel-600">
+                            <PlayCircle size={16} className="mr-2" />
+                            <span className="text-sm">{course.modules[0].lessons[0].title}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {course.modules[0].lessons[0].duration || 'N/A'}
+                          </div>
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No lessons available</p>
+                      )}
                     </div>
 
                     <div className="rounded-lg p-3 bg-fidel-50 dark:bg-fidel-900/10 border border-fidel-100 dark:border-fidel-900/20">
@@ -330,7 +327,7 @@ const CourseDetails = () => {
                       </p>
                       <div className="flex items-center">
                         <Award size={16} className="text-fidel-500 mr-1" />
-                        <div className="text-xs font-medium text-fidel-600">React Developer Certificate</div>
+                        <div className="text-xs font-medium text-fidel-600">{course.title} Certificate</div>
                       </div>
                     </div>
                   </div>
@@ -349,29 +346,33 @@ const CourseDetails = () => {
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
-                  <h3 className="text-xl font-semibold mb-4">What You'll Learn</h3>
-                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {course.whatYouWillLearn.map((item, index) => (
-                      <li key={index} className="flex items-start">
-                        <Check size={18} className="mr-2 text-green-500 mt-0.5 shrink-0" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {course.whatYouWillLearn && (
+                  <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+                    <h3 className="text-xl font-semibold mb-4">What You'll Learn</h3>
+                    <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {course.whatYouWillLearn.map((item, index) => (
+                        <li key={index} className="flex items-start">
+                          <Check size={18} className="mr-2 text-green-500 mt-0.5 shrink-0" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
-                <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
-                  <h3 className="text-xl font-semibold mb-4">Prerequisites</h3>
-                  <ul className="space-y-2">
-                    {course.prerequisites.map((item, index) => (
-                      <li key={index} className="flex items-start">
-                        <ChevronRight size={18} className="mr-2 text-fidel-500 mt-0.5" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {course.requirements && (
+                  <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+                    <h3 className="text-xl font-semibold mb-4">Requirements</h3>
+                    <ul className="space-y-2">
+                      {course.requirements.map((item, index) => (
+                        <li key={index} className="flex items-start">
+                          <ChevronRight size={18} className="mr-2 text-fidel-500 mt-0.5" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -381,27 +382,29 @@ const CourseDetails = () => {
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Level</span>
-                      <span className="font-medium">{course.level}</span>
+                      <span className="font-medium">{course.level || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Category</span>
-                      <span className="font-medium">{course.category}</span>
+                      <span className="font-medium">{course.category || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Language</span>
-                      <span className="font-medium">{course.language}</span>
+                      <span className="font-medium">{course.language || 'English'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Last Updated</span>
-                      <span className="font-medium">{course.lastUpdated}</span>
+                      <span className="font-medium">
+                        {new Date(course.updatedAt || course.createdAt).toLocaleDateString()}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Total Duration</span>
-                      <span className="font-medium">{course.duration}</span>
+                      <span className="font-medium">{course.duration || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Total Lessons</span>
-                      <span className="font-medium">{course.lessons}</span>
+                      <span className="font-medium">{totalLessons}</span>
                     </div>
                   </div>
 
@@ -421,16 +424,24 @@ const CourseDetails = () => {
           </TabsContent>
 
           <TabsContent value="instructor">
-            <div className="text-center py-12">
-              <h3 className="text-xl font-semibold">Instructor information coming soon</h3>
-              <p className="text-muted-foreground mt-2">This section is currently being developed</p>
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+              <h3 className="text-xl font-semibold mb-4">About the Instructor</h3>
+              <div className="flex items-start gap-4">
+                <div className="h-16 w-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                  <span className="text-xl font-medium">
+                    {instructorName.split(' ').map(n => n[0]).join('')}
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-semibold">{instructorName}</h4>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    {course.instructor?.bio || 'Expert instructor with years of experience'}
+                  </p>
+                </div>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
-      </div>
-
-      <div className="mt-auto">
-        {/* <Footer /> */}
       </div>
 
       <div className="fixed bottom-6 right-6 z-50">
