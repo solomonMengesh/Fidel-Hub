@@ -17,11 +17,13 @@ import {
   Award,
   MessageSquare,
   X,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import VideoPlayer from "@/components/video-player";
+import QuizView from "../components/Quize/QuizView";
 import {
   Dialog,
   DialogContent,
@@ -29,7 +31,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-// Helper functions for duration handling
 const formatDuration = (duration) => {
   if (!duration && duration !== 0) return 'N/A';
   if (duration === 0) return '00:00';
@@ -139,13 +140,10 @@ const CourseDetails = () => {
     fetchCourse();
   }, [courseId]);
 
-  // Calculate durations and progress
   const totalDuration = useMemo(() => calculateTotalDuration(course?.modules), [course]);
   const { totalCompleted, total, percentage } = useMemo(
     () => calculateProgress(course?.modules),
-    
     [course]
-    
   );
 
   const toggleModule = (moduleId) => {
@@ -204,14 +202,12 @@ const CourseDetails = () => {
     );
   }
 
-  // Format instructor name
   const instructorName = typeof course.instructor === 'object' 
     ? course.instructor.name 
     : course.instructor || 'Unknown Instructor';
 
   return (
     <div className="min-h-screen flex flex-col dark:bg-slate-950">
-      {/* Course Header */}
       <div className="bg-fidel-600 text-white py-12">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col md:flex-row gap-8 mt-8">
@@ -224,7 +220,6 @@ const CourseDetails = () => {
               </div>
 
               <h1 className="text-3xl md:text-4xl font-bold mb-4">{course.title}</h1>
-
               <p className="text-fidel-100 mb-6">{course.description?.split("\n\n")[0] || course.description}</p>
 
               <div className="flex flex-wrap gap-4 mb-6">
@@ -233,17 +228,14 @@ const CourseDetails = () => {
                   <span className="font-medium">{course.rating?.toFixed(1) || 'N/A'}</span>
                   <span className="text-fidel-200 ml-1">({course.totalRatings?.toLocaleString() || 0} ratings)</span>
                 </div>
-
                 <div className="flex items-center">
                   <Users size={18} className="mr-1" />
                   <span>{(course.students || 0).toLocaleString()} students</span>
                 </div>
-
                 <div className="flex items-center">
                   <Clock size={18} className="mr-1" />
                   <span>{course.totalDuration}</span>
                 </div>
-
                 <div className="flex items-center">
                   <BookOpen size={18} className="mr-1" />
                   <span>{total} lessons</span>
@@ -251,14 +243,12 @@ const CourseDetails = () => {
               </div>
 
               <div className="flex items-center mb-6">
-              <div className="h-10 w-10 rounded-full bg-white/20 mr-3 flex items-center justify-center">
-                <span className="text-xl font-medium">
-                  {instructorName.split(' ').map(n => n[0].toUpperCase()).join('')}
-                </span>
-              </div>
-
+                <div className="h-10 w-10 rounded-full bg-white/20 mr-3 flex items-center justify-center">
+                  <span className="text-xl font-medium">
+                    {instructorName.split(' ').map(n => n[0].toUpperCase()).join('')}
+                  </span>
+                </div>
                 <div>
-                  
                   <div className="font-medium">Created by {instructorName}</div>
                   <div className="text-sm text-fidel-200">
                     Last updated: {new Date(course.updatedAt || course.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
@@ -274,20 +264,16 @@ const CourseDetails = () => {
                   alt={course.title} 
                   className="w-full h-52 object-cover" 
                 />
-
                 <div className="p-6">
                   <div className="flex items-baseline mb-4">
                     <span className="text-2xl font-bold text-green-600">
                       ETB {course.price?.toLocaleString() || 'Free'}
                     </span>
                   </div>
-
                   <Button className="w-full mb-3 bg-fidel-600 hover:bg-fidel-700">Enroll Now</Button>
-
                   <Button variant="outline" className="w-full mb-6 text-black">
                     Try Free Preview
                   </Button>
-
                   <div className="text-sm text-slate-700 dark:text-slate-300 space-y-3">
                     <div className="flex items-center">
                       <Clock size={16} className="mr-2 text-muted-foreground" />
@@ -309,7 +295,6 @@ const CourseDetails = () => {
         </div>
       </div>
 
-      {/* Course Content */}
       <div className="container px-4 md:px-6 py-12">
         <Tabs defaultValue="content">
           <TabsList className="mb-8">
@@ -353,15 +338,20 @@ const CourseDetails = () => {
                         <div className="bg-slate-50 dark:bg-slate-800/30 divide-y divide-slate-200 dark:divide-slate-800">
                           {module.lessons?.map((lesson) => {
                             const isVideoLesson = lesson.type === "video";
+                            const isQuizLesson = lesson.type === "quiz";
                             const hasValidVideo = isVideoLesson && lesson.video?._valid;
                             const isDisabled = isVideoLesson && !hasValidVideo;
 
                             return (
                               <div
                                 key={lesson._id}
-                                className="flex items-center p-3 pl-10 hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                                className={`flex items-center p-3 pl-10 hover:bg-slate-100 dark:hover:bg-slate-800/50 ${
+                                  !lesson.free ? 'opacity-75' : ''
+                                }`}
                               >
-                                {isVideoLesson ? (
+                                {!lesson.free ? (
+                                  <Lock size={16} className="mr-3 text-muted-foreground" />
+                                ) : isVideoLesson ? (
                                   lesson.video?.thumbnailUrl ? (
                                     <img 
                                       src={lesson.video.thumbnailUrl} 
@@ -376,14 +366,21 @@ const CourseDetails = () => {
                                   )
                                 ) : lesson.type === "reading" ? (
                                   <FileText size={16} className="mr-3 text-fidel-500" />
-                                ) : (
+                                ) : isQuizLesson ? (
                                   <BarChart size={16} className="mr-3 text-fidel-500" />
+                                ) : (
+                                  <PlayCircle size={16} className="mr-3 text-fidel-500" />
                                 )}
 
                                 <div className="flex-1">
                                   <div className="flex items-center">
                                     <span className={`${lesson.completed ? "text-muted-foreground" : ""}`}>
                                       {lesson.title}
+                                      {!lesson.free && (
+                                        <span className="ml-2 text-xs bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                                          Premium
+                                        </span>
+                                      )}
                                     </span>
                                     {lesson.completed && <Check size={16} className="ml-2 text-green-500" />}
                                   </div>
@@ -393,14 +390,16 @@ const CourseDetails = () => {
                                 <Button 
                                   variant="ghost" 
                                   size="sm" 
-                                  className={`text-fidel-500 ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                  onClick={() => !isDisabled && handlePreviewClick(lesson)}
-                                  disabled={isDisabled || previewLoading}
-                                  aria-disabled={isDisabled}
+                                  className={`text-fidel-500 ${
+                                    isDisabled || !lesson.free ? 'opacity-50 cursor-not-allowed' : ''
+                                  }`}
+                                  onClick={() => !isDisabled && lesson.free && handlePreviewClick(lesson)}
+                                  disabled={isDisabled || !lesson.free || previewLoading}
+                                  aria-disabled={isDisabled || !lesson.free}
                                 >
                                   {lesson.completed ? "Replay" : "Preview"}
-                                  {isDisabled && (
-                                    <span className="sr-only">(disabled - video not available)</span>
+                                  {(isDisabled || !lesson.free) && (
+                                    <span className="sr-only">(disabled - {isDisabled ? 'video not available' : 'premium content'})</span>
                                   )}
                                 </Button>
                               </div>
@@ -416,7 +415,6 @@ const CourseDetails = () => {
               <div>
                 <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 sticky top-4">
                   <h3 className="font-semibold mb-4">Your Progress</h3>
-
                   <div className="mb-6">
                     <div className="flex justify-between text-sm mb-1">
                       <span>{percentage}% complete</span>
@@ -431,16 +429,18 @@ const CourseDetails = () => {
                       ></div>
                     </div>
                   </div>
-
                   <Button className="w-full mb-3">Continue Learning</Button>
-
                   <div className="mt-6 space-y-4">
                     <div className="border border-slate-200 dark:border-slate-800 rounded-lg p-3">
                       <h4 className="font-medium mb-1">Next Lesson</h4>
                       {course.modules?.[0]?.lessons?.[0] ? (
                         <>
                           <div className="flex items-center text-fidel-600">
-                            <PlayCircle size={16} className="mr-2" />
+                            {course.modules[0].lessons[0].type === "quiz" ? (
+                              <BarChart size={16} className="mr-2" />
+                            ) : (
+                              <PlayCircle size={16} className="mr-2" />
+                            )}
                             <span className="text-sm">{course.modules[0].lessons[0].title}</span>
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
@@ -451,7 +451,6 @@ const CourseDetails = () => {
                         <p className="text-sm text-muted-foreground">No lessons available</p>
                       )}
                     </div>
-
                     <div className="rounded-lg p-3 bg-fidel-50 dark:bg-fidel-900/10 border border-fidel-100 dark:border-fidel-900/20">
                       <h4 className="font-medium text-fidel-800 dark:text-fidel-200 mb-1">Get Certified</h4>
                       <p className="text-xs text-fidel-600 dark:text-fidel-300 mb-2">
@@ -510,7 +509,6 @@ const CourseDetails = () => {
               <div>
                 <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 sticky top-4">
                   <h3 className="font-semibold mb-4">Course Details</h3>
-
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Level</span>
@@ -539,7 +537,6 @@ const CourseDetails = () => {
                       <span className="font-medium">{total}</span>
                     </div>
                   </div>
-
                   <div className="border-t border-slate-200 dark:border-slate-800 mt-5 pt-5">
                     <Button className="w-full">Enroll Now</Button>
                   </div>
@@ -576,24 +573,28 @@ const CourseDetails = () => {
         </Tabs>
       </div>
 
-      {/* Video Preview Dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-4xl p-0 overflow-hidden">
           <DialogHeader className="px-6 pt-6 pb-2">
             <div className="flex justify-between items-center">
               <DialogTitle>{currentPreview?.title || 'Lesson Preview'}</DialogTitle>
-              <Button 
+              {/* <Button 
                 variant="ghost" 
                 size="icon" 
                 onClick={() => setPreviewOpen(false)}
               >
                 <X size={20} />
-              </Button>
+              </Button> */}
             </div>
           </DialogHeader>
           
           <div className="p-6 pt-0">
-            {currentPreview?.video?.url ? (
+            {currentPreview?.type === "quiz" ? (
+              <QuizView 
+                lesson_id={currentPreview._id}
+                onComplete={() => setPreviewOpen(false)}
+              />
+            ) : currentPreview?.video?.url ? (
               <div className="rounded-lg overflow-hidden">
                 <VideoPlayer 
                   url={currentPreview.video.url}

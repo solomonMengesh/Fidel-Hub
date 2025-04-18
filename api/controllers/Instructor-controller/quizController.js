@@ -121,3 +121,21 @@ export const deleteQuizQuestion = asyncHandler(async (req, res) => {
   await quizQuestion.deleteOne();
   res.json({ message: 'Question removed' });
 });
+
+// @desc    Get all quiz questions for a lesson
+// @route   GET /api/lessons/:lessonId/questions
+// @access  Private (Instructor or Student)
+export const getQuizQuestionsByLesson = asyncHandler(async (req, res) => {
+  const { lessonId } = req.params;
+
+  const lesson = await Lesson.findById(lessonId).populate({
+    path: 'quizQuestions',
+  });
+
+  if (!lesson) {
+    res.status(404);
+    throw new Error('Lesson not found');
+  }
+
+  res.json(lesson.quizQuestions);
+});
