@@ -75,8 +75,8 @@ export const getCourseById = asyncHandler(async (req, res) => {
       populate: {
         path: 'lessons',
         options: { sort: { position: 1 } },
-        select: 'title type duration free position'
-      }
+        select: 'title type duration free position video quizQuestions',
+      },
     });
 
   if (!course) {
@@ -84,8 +84,47 @@ export const getCourseById = asyncHandler(async (req, res) => {
     throw new Error('Course not found');
   }
 
-  res.json(course);
+ 
+  let totalCourseDurationInSeconds = 0;
+
+  // Convert to object to safely attach new properties
+  const courseObj = course.toObject();
+
+  courseObj.modules = courseObj.modules.map((module, index) => {
+     let moduleDurationInSeconds = 0;
+
+    module.lessons.forEach((lesson) => {
+      const durationInSeconds = parseDuration(lesson.duration);
+      moduleDurationInSeconds += durationInSeconds;
+      totalCourseDurationInSeconds += durationInSeconds;
+    });
+
+    return {
+      ...module,
+      totalDuration: formatTime(moduleDurationInSeconds),
+    };
+  });
+
+  // Attach total course duration
+  courseObj.totalDuration = formatTime(totalCourseDurationInSeconds);
+
+  res.json(courseObj);
 });
+
+// Helper: parse "mm:ss" into seconds
+function parseDuration(duration) {
+  if (!duration) return 0;
+  const [minutes, seconds] = duration.split(':').map(Number);
+  return (minutes || 0) * 60 + (seconds || 0);
+}
+
+// Helper: format seconds into "mm:ss"
+function formatTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
 
 // @desc    Update course
 // @route   PUT /api/courses/:id
