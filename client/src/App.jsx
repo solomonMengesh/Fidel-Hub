@@ -23,6 +23,8 @@ import OTPVerification from "./pages/OTPVerification";
 import OTPSend from "./pages/OTPSend";
 import RegisterOTPSend from "./pages/RegisterOTPSend";
 import VerifyOTP from "./pages/VerifyOTP";
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentFailed from './pages/PaymentFailed';
 
 const MainLayout = ({ children }) => (
   <>
@@ -86,6 +88,9 @@ const App = () => {
         
         {/* Instructor approval */}
         <Route path="/pending-approval" element={<MainLayout><PendingApproval /></MainLayout>} />
+
+        <Route path="/payment/success" element={<PaymentSuccess />} />
+        <Route path="/payment/failed" element={<PaymentFailed />} />
 
         {/* Protected routes without layout */}
         <Route path="/student-dashboard" element={<StudentDashboard />} />

@@ -15,6 +15,9 @@ import User from './models/User.js';
 import userRoutes from './routes/userRoutes/userRoutes.js';
 import otpRoutes from './routes/otp-Routes/otpRoutes.js';
 import routes from './routes/instructor-Routes/index.js';
+
+import paymentRoutes from './routes/PaymentRoutes/paymentRoutes.js';
+
 dotenv.config();
 await connectDB(); // Ensure MongoDB is connected before starting server
 
@@ -97,6 +100,8 @@ app.use('/api/users', adminRoutes); // Adjust as needed
 app.use('/api/users', userRoutes);
 app.use('/api/otp', otpRoutes);
 app.use('/api', routes);
+app.use('/api/payment', paymentRoutes);
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {
