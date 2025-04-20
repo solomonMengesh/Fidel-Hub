@@ -35,6 +35,9 @@
     "nodemailer": "^6.10.0",
     "nodemon": "^3.1.9",
     "passport": "^0.7.0",
+    "pdfkit": "^0.17.0",
+    "pdfkit-table": "^0.1.99",
+    "qrcode": "^1.5.4",
     "resend": "^4.2.0",
     "socket.io": "^4.8.1"
   }

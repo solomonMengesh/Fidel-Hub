@@ -1,13 +1,12 @@
-// routes/paymentRoutes.js
 import express from 'express';
-import { 
-  initializePayment, 
-  verifyPayment 
-} from '../../controllers/paymentController/paymentController.js';
+import { initiatePayment, chapaWebhook ,verifyPayment,generateReceipt } from '../../controllers/paymentController/paymentController.js';
+import { protect } from '../../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.post('/initialize', initializePayment);
-router.post('/verify', verifyPayment);
+router.post('/initiate', protect, initiatePayment);
+router.post('/webhook', express.raw({ type: 'application/json' }), chapaWebhook);
+router.get('/verify-payment/:tx_ref', verifyPayment);
+router.get('/receipt/:tx_ref', protect, generateReceipt);
 
 export default router;

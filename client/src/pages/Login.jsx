@@ -49,6 +49,7 @@ const handleSubmit = async (e) => {
     // Store token if using JWT
     if (response.token) {
       localStorage.setItem("token", response.token);
+      localStorage.setItem("user", JSON.stringify(response.user));  //
     }
     // if (checkTokenExpiry()) {
     //   localStorage.removeItem("token");
