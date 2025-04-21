@@ -259,8 +259,7 @@ const ModuleLessons = ({
 );
 
 const LessonIcon = ({ lesson, isVideoLesson, isQuizLesson, hasAccess }) => {
-  // Show lock icon only if the lesson is not free and the user doesn't have access
-  if (!lesson.free && !hasAccess) {
+   if (!lesson.free && !hasAccess) {
     return <Lock size={16} className="mr-3 text-muted-foreground" />;
   }
 
