@@ -12,13 +12,15 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
+import { toast } from "sonner"; // Make sure to install and import `sonner` or use any toast library
 
 function VideoPlayer({
   width = "100%",
   height = "100%",
   url,
   onProgressUpdate,
-  progressData,
+  courseId,
+  studentId
 }) {
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(0.5);
@@ -27,6 +29,7 @@ function VideoPlayer({
   const [seeking, setSeeking] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [hasCompleted, setHasCompleted] = useState(false);
 
   const playerRef = useRef(null);
   const playerContainerRef = useRef(null);
@@ -97,41 +100,67 @@ function VideoPlayer({
     }
   }, [isFullScreen]);
 
-  function handleMouseMove() {
-    setShowControls(true);
-    clearTimeout(controlsTimeoutRef.current);
-    controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 3000);
-  }
-
   useEffect(() => {
     const handleFullScreenChange = () => {
       setIsFullScreen(document.fullscreenElement);
     };
 
     document.addEventListener("fullscreenchange", handleFullScreenChange);
-
     return () => {
       document.removeEventListener("fullscreenchange", handleFullScreenChange);
     };
   }, []);
 
   useEffect(() => {
-    if (played === 1) {
-      onProgressUpdate({
-        ...progressData,
-        progressValue: played,
-      });
+    if (played >= 0.99 && !hasCompleted) {
+      setHasCompleted(true);
+
+      // Send progress update to backend when video is almost complete
+      const updateProgress = async () => {
+        try {
+          const response = await fetch("http://localhost:5000/api/progress", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              studentId: studentId,  // Correctly using studentId
+              courseId: courseId,    // Correctly using courseId
+              lessonId: courseId.lessonId,    // Ensure lessonId is passed correctly
+            }),
+          });
+          console.log("Response status:", response.status);
+
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.error || "Failed to update progress");
+          }
+
+          toast.success("Lesson marked as completed!");
+          onProgressUpdate({
+            studentId,
+            courseId,
+            lessonId: courseId.lessonId,
+            isCompleted: true,
+            progressValue: played,
+          });
+        } catch (error) {
+          console.error("Error updating progress:", error);
+          // toast.error("Failed to update progress");
+        }
+      };
+
+      updateProgress();
     }
-  }, [played]);
+  }, [played, hasCompleted, studentId, courseId, onProgressUpdate]);
 
   return (
     <div
       ref={playerContainerRef}
       className={`relative bg-gray-900 rounded-lg overflow-hidden shadow-2xl transition-all duration-300 ease-in-out 
-      ${isFullScreen ? "w-screen h-screen" : ""}
-      `}
+      ${isFullScreen ? "w-screen h-screen" : ""}`}
       style={{ width, height }}
-      onMouseMove={handleMouseMove}
+      onMouseMove={() => setShowControls(true)}
       onMouseLeave={() => setShowControls(false)}
     >
       <ReactPlayer
@@ -145,11 +174,16 @@ function VideoPlayer({
         muted={muted}
         onProgress={handleProgress}
       />
+
+      {hasCompleted && (
+        <div className="absolute top-4 right-4 bg-green-600 text-white px-3 py-1 text-sm rounded">
+           Completed
+        </div>
+      )}
+
       {showControls && (
         <div
-          className={`absolute bottom-0 left-0 right-0 bg-gray-800 bg-opacity-75 p-4 transition-opacity duration-300 ${
-            showControls ? "opacity-100" : "opacity-0"
-          }`}
+          className={`absolute bottom-0 left-0 right-0 bg-gray-800 bg-opacity-75 p-4 transition-opacity duration-300`}
         >
           <Slider
             value={[played * 100]}
@@ -167,11 +201,7 @@ function VideoPlayer({
                 onClick={handlePlayAndPause}
                 className="text-white bg-transparent hover:text-white hover:bg-gray-700"
               >
-                {playing ? (
-                  <Pause className="h-6 w-6" />
-                ) : (
-                  <Play className="h-6 w-6" />
-                )}
+                {playing ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
               </Button>
               <Button
                 onClick={handleRewind}
@@ -195,18 +225,14 @@ function VideoPlayer({
                 variant="ghost"
                 size="icon"
               >
-                {muted ? (
-                  <VolumeX className="h-6 w-6" />
-                ) : (
-                  <Volume2 className="h-6 w-6" />
-                )}
+                {muted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
               </Button>
               <Slider
                 value={[volume * 100]}
                 max={100}
                 step={1}
                 onValueChange={(value) => handleVolumeChange([value[0] / 100])}
-                className="w-24 "
+                className="w-24"
               />
             </div>
             <div className="flex items-center space-x-2">

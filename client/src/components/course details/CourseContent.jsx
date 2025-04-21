@@ -105,6 +105,8 @@ export const CourseContent = ({
             handlePreviewClick={openPreviewDialog}
             previewLoading={previewLoading}
             hasAccess={hasAccess}
+            courseId={courseId}  // Pass courseId here
+            studentId={studentId}  // Pass studentId here
           />
         ))}
       </div>
@@ -123,6 +125,8 @@ export const CourseContent = ({
             {currentPreview?.type === "quiz" ? (
               <QuizView
                 lesson_id={currentPreview._id}
+                courseId={courseId}  // Pass courseId here
+                studentId={studentId}  // Pass studentId here
                 onComplete={() => setPreviewOpen(false)}
               />
             ) : currentPreview?.video?.url ? (
@@ -131,6 +135,8 @@ export const CourseContent = ({
                   url={currentPreview.video.url}
                   width="100%"
                   height="450px"
+                  courseId={courseId}  // Pass courseId here
+                  studentId={studentId}  // Pass studentId here
                 />
               </div>
             ) : (
@@ -165,6 +171,8 @@ const ModuleSection = ({
   handlePreviewClick,
   previewLoading,
   hasAccess,
+  courseId,
+  studentId,
 }) => (
   <div className="border-b border-slate-200 dark:border-slate-800 last:border-b-0">
     <button
@@ -190,6 +198,8 @@ const ModuleSection = ({
         handlePreviewClick={handlePreviewClick}
         previewLoading={previewLoading}
         hasAccess={hasAccess}
+        courseId={courseId}  // Pass courseId here
+        studentId={studentId}  // Pass studentId here
       />
     )}
   </div>
@@ -200,6 +210,8 @@ const ModuleLessons = ({
   handlePreviewClick,
   previewLoading,
   hasAccess,
+  courseId,
+  studentId,
 }) => (
   <div className="bg-slate-50 dark:bg-slate-800/30 divide-y divide-slate-200 dark:divide-slate-800">
     {module.lessons?.map((lesson) => {
@@ -259,7 +271,7 @@ const ModuleLessons = ({
 );
 
 const LessonIcon = ({ lesson, isVideoLesson, isQuizLesson, hasAccess }) => {
-   if (!lesson.free && !hasAccess) {
+  if (!lesson.free && !hasAccess) {
     return <Lock size={16} className="mr-3 text-muted-foreground" />;
   }
 
@@ -279,10 +291,9 @@ const LessonIcon = ({ lesson, isVideoLesson, isQuizLesson, hasAccess }) => {
     );
   }
 
-  if (lesson.type === "reading")
+  if (lesson.type === "quiz") {
     return <FileText size={16} className="mr-3 text-fidel-500" />;
-  if (isQuizLesson) return <BarChart size={16} className="mr-3 text-fidel-500" />;
+  }
 
-  return <PlayCircle size={16} className="mr-3 text-fidel-500" />;
+  return <BarChart size={16} className="mr-3 text-fidel-500" />;
 };
-

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const progressSchema = new mongoose.Schema({
   studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -8,4 +8,4 @@ const progressSchema = new mongoose.Schema({
   progressPercentage: { type: Number, default: 0 },  
 }, { timestamps: true });
 
-module.exports = mongoose.model('Progress', progressSchema);
+export default mongoose.model('Progress', progressSchema);
