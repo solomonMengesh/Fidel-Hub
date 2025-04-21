@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { CourseHeader } from "../components/course details/CourseHeader";
 import { CourseContent } from "../components/course details/CourseContent";
 import { CourseProgress } from "../components/course details/CourseProgress";
@@ -7,6 +7,9 @@ import { FreeVideosDialog } from "../components/course details/FreeVideosDialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { formatDuration, calculateTotalDuration, calculateProgress } from "../Helper/utils";
+import VideoPlayer from "@/components/video-player";
+import QuizView from "../components/Quize/QuizView";
+// import Button from "../components/ui/button"; // Assuming Button is imported from your UI components
 
 export const CourseDetails = () => {
   const { courseId } = useParams();
@@ -136,7 +139,7 @@ export const CourseDetails = () => {
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2 text-red-500">Error loading course</h2>
           <p className="text-muted-foreground mb-4">{error}</p>
-          <Button onClick={() => window.location.reload()}>Try Again</Button>
+          {/* <Button onClick={() => window.location.reload()}>Try Again</Button> */}
           <Link to="/courses" className="block mt-4 text-fidel-500 hover:underline">
             Back to Courses
           </Link>
@@ -192,6 +195,8 @@ export const CourseDetails = () => {
                 previewLoading={previewLoading}
                 total={total}
                 totalDuration={totalDuration}
+                VideoPlayer={VideoPlayer} // Pass VideoPlayer here
+                QuizView={QuizView} // Pass QuizView here
               />
 
               <CourseProgress 
@@ -222,4 +227,5 @@ export const CourseDetails = () => {
     </div>
   );
 };
+
 export default CourseDetails;

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 export const initiatePayment = async (req, res) => {
   const { amount, email, fullName, courseId } = req.body;
 
-  const studentId = req.user?._id; // ✅ Grab from authenticated user
+  const studentId = req.user?._id; //  Grab from authenticated user
   const tx_ref = `FIDELHUB-${Date.now()}`;
 
   if (!studentId) {
@@ -36,7 +36,7 @@ export const initiatePayment = async (req, res) => {
         callback_url: `${process.env.BACKEND_URL}/api/payments/webhook`,
         return_url: `${process.env.FRONTEND_URL}/payment-success?course=${courseId}&tx_ref=${tx_ref}`,
         customization: {
-          title: "FidelHub Payment", // ✅ 16 characters or fewer
+          title: "FidelHub Payment",  
           description: "Payment for Course Enrollment",
         },
       },
@@ -110,8 +110,8 @@ export const verifyPayment = async (req, res) => {
   const { course_id } = req.query;
 
   // Log incoming data
-  console.log("👉 Incoming tx_ref:", tx_ref);
-  console.log("👉 Incoming course_id:", course_id);
+  console.log("Incoming tx_ref:", tx_ref);
+  console.log("Incoming course_id:", course_id);
 
   // Validate required data
   if (!tx_ref) {
@@ -137,7 +137,7 @@ export const verifyPayment = async (req, res) => {
 
     // Check chapa verification response
     if (chapaData.status !== 'success') {
-      console.log("❌ Chapa payment verification failed:", chapaData);
+      console.log("Chapa payment verification failed:", chapaData);
       return res.status(400).json({
         error: "Payment not successful",
         details: chapaData
@@ -147,7 +147,7 @@ export const verifyPayment = async (req, res) => {
     // Debug: Find payment before update
     const existingPayment = await Payment.findOne({ tx_ref: tx_ref.trim() });
     if (!existingPayment) {
-      console.log("❌ No payment found in DB for tx_ref:", tx_ref);
+      console.log(" No payment found in DB for tx_ref:", tx_ref);
       const recentPayments = await Payment.find().sort({ createdAt: -1 }).limit(5);
       console.log("📦 Recent Payment Records:", recentPayments);
 
@@ -168,13 +168,13 @@ export const verifyPayment = async (req, res) => {
 
     // Create enrollment
     await Enrollment.create({
-      studentId: existingPayment.studentId, // ✅ Use studentId instead of userId
+      studentId: existingPayment.studentId, 
       courseId: course_id,
       paymentId: updatedPayment._id
     });
     
 
-    console.log("✅ Payment verified & enrollment created.");
+    console.log("  Payment verified & enrollment created.");
 
     return res.status(200).json({
       message: "Payment verified and user enrolled successfully",
@@ -183,7 +183,7 @@ export const verifyPayment = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❗ Error verifying payment:", error.message);
+    console.error(" Error verifying payment:", error.message);
     return res.status(500).json({
       error: "Payment verification failed",
       details: error.response?.data || error.message

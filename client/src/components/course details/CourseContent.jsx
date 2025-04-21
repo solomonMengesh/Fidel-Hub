@@ -1,16 +1,77 @@
-import { ChevronDown, ChevronUp, PlayCircle, FileText, BarChart, Check, Lock } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  X,
+  PlayCircle,
+  ChevronUp,
+  ChevronDown,
+  Lock,
+  Check,
+  FileText,
+  BarChart,
+} from "lucide-react";
+import VideoPlayer from "@/components/video-player";
+import QuizView from "../Quize/QuizView";
+import React, { useState } from "react";
 
-export const CourseContent = ({ 
-  modules, 
-  expandedModules, 
-  toggleModule, 
+export const CourseContent = ({
+  modules,
+  expandedModules,
+  toggleModule,
   handlePreviewClick,
   previewLoading,
   freePreviewMode,
-  total,
-  totalDuration
 }) => {
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [currentPreview, setCurrentPreview] = useState(null);
+
+   let totalLessons = 0;
+let totalDurationCalculated = 0;
+
+ modules?.forEach((module) => {
+  module.lessons?.forEach((lesson) => {
+    const durationStr = lesson.duration || "0";
+
+ 
+     const durationParts = durationStr.split(":");
+    let hours = 0, minutes = 0;
+
+    if (durationParts.length === 2) {
+       hours = parseInt(durationParts[0], 10) || 0;
+      minutes = parseInt(durationParts[1], 10) || 0;
+    } else if (durationParts.length === 1) {
+       minutes = parseInt(durationParts[0], 10) || 0;
+    }
+
+     totalDurationCalculated += hours * 60 + minutes;
+
+     totalLessons += 1;
+
+     console.log('Parsed Hours:', hours, 'Parsed Minutes:', minutes);
+  });
+});
+
+ const totalHours = Math.floor(totalDurationCalculated / 60);
+const totalMinutes = totalDurationCalculated % 60;
+
+// Display in "Xh Ym" format
+const formattedTotalDuration = totalDurationCalculated && !isNaN(totalDurationCalculated)
+  ? `${totalHours}:${totalMinutes}`
+  : "0:0";
+
+
+
+
+  const openPreviewDialog = (lesson) => {
+    setCurrentPreview(lesson);
+    setPreviewOpen(true);
+  };
+
   return (
     <div className="lg:col-span-2">
       <div className="mb-6 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
@@ -19,21 +80,63 @@ export const CourseContent = ({
             {freePreviewMode ? "Free Preview Content" : "Course Content"}
           </h3>
           <div className="text-sm text-muted-foreground mt-1">
-            {modules?.length || 0} modules • {total} lessons • {totalDuration} total length
+            {modules?.length || 0} modules • {totalLessons} lessons • {formattedTotalDuration} total length
           </div>
         </div>
 
         {modules?.map((module) => (
-          <ModuleSection 
+          <ModuleSection
             key={module._id}
             module={module}
             expandedModules={expandedModules}
             toggleModule={toggleModule}
-            handlePreviewClick={handlePreviewClick}
+            handlePreviewClick={openPreviewDialog}
             previewLoading={previewLoading}
           />
         ))}
       </div>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <div className="flex justify-between items-center">
+              <DialogTitle>
+                {currentPreview?.title || "Lesson Preview"}
+              </DialogTitle>
+            </div>
+          </DialogHeader>
+
+          <div className="p-6 pt-0">
+            {currentPreview?.type === "quiz" ? (
+              <QuizView
+                lesson_id={currentPreview._id}
+                onComplete={() => setPreviewOpen(false)}
+              />
+            ) : currentPreview?.video?.url ? (
+              <div className="rounded-lg overflow-hidden">
+                <VideoPlayer url={currentPreview.video.url} width="100%" height="450px" />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-64 bg-slate-100 dark:bg-slate-800 rounded-lg p-4">
+                <PlayCircle size={48} className="text-muted-foreground mb-4" />
+                <p className="text-muted-foreground text-center">
+                  {currentPreview?.video
+                    ? "Video is currently unavailable. Please try again later."
+                    : "This lesson doesn't have a video component."}
+                </p>
+                {currentPreview?.description && (
+                  <div className="mt-4 text-center">
+                    <h4 className="font-medium mb-2">About this lesson</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {currentPreview.description}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -43,7 +146,7 @@ const ModuleSection = ({
   expandedModules,
   toggleModule,
   handlePreviewClick,
-  previewLoading
+  previewLoading,
 }) => {
   return (
     <div className="border-b border-slate-200 dark:border-slate-800 last:border-b-0">
@@ -60,12 +163,12 @@ const ModuleSection = ({
           <span className="font-medium">{module.title}</span>
         </div>
         <div className="text-sm text-muted-foreground">
-          {module.lessons?.length || 0} lessons • {module.totalDuration || 'N/A'}
+          {module.lessons?.length || 0} lessons • {module.totalDuration || "N/A"}
         </div>
       </button>
 
       {expandedModules.includes(module._id) && (
-        <ModuleLessons 
+        <ModuleLessons
           module={module}
           handlePreviewClick={handlePreviewClick}
           previewLoading={previewLoading}
@@ -88,15 +191,15 @@ const ModuleLessons = ({ module, handlePreviewClick, previewLoading }) => {
           <div
             key={lesson._id}
             className={`flex items-center p-3 pl-10 hover:bg-slate-100 dark:hover:bg-slate-800/50 ${
-              !lesson.free ? 'opacity-75' : ''
+              !lesson.free ? "opacity-75" : ""
             }`}
           >
-            <LessonIcon 
-              lesson={lesson} 
-              isVideoLesson={isVideoLesson} 
-              isQuizLesson={isQuizLesson} 
+            <LessonIcon
+              lesson={lesson}
+              isVideoLesson={isVideoLesson}
+              isQuizLesson={isQuizLesson}
             />
-            
+
             <div className="flex-1">
               <div className="flex items-center">
                 <span className={`${lesson.completed ? "text-muted-foreground" : ""}`}>
@@ -109,14 +212,16 @@ const ModuleLessons = ({ module, handlePreviewClick, previewLoading }) => {
                 </span>
                 {lesson.completed && <Check size={16} className="ml-2 text-green-500" />}
               </div>
-              <div className="text-xs text-muted-foreground">{lesson.duration || 'N/A'}</div>
+              <div className="text-xs text-muted-foreground">
+                {lesson.duration || "N/A"}
+              </div>
             </div>
 
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className={`text-fidel-500 ${
-                isDisabled || !lesson.free ? 'opacity-50 cursor-not-allowed' : ''
+                isDisabled || !lesson.free ? "opacity-50 cursor-not-allowed" : ""
               }`}
               onClick={() => !isDisabled && lesson.free && handlePreviewClick(lesson)}
               disabled={isDisabled || !lesson.free || previewLoading}
@@ -124,7 +229,9 @@ const ModuleLessons = ({ module, handlePreviewClick, previewLoading }) => {
             >
               {lesson.completed ? "Replay" : "Preview"}
               {(isDisabled || !lesson.free) && (
-                <span className="sr-only">(disabled - {isDisabled ? 'video not available' : 'premium content'})</span>
+                <span className="sr-only">
+                  (disabled - {isDisabled ? "video not available" : "premium content"})
+                </span>
               )}
             </Button>
           </div>
@@ -136,24 +243,26 @@ const ModuleLessons = ({ module, handlePreviewClick, previewLoading }) => {
 
 const LessonIcon = ({ lesson, isVideoLesson, isQuizLesson }) => {
   if (!lesson.free) return <Lock size={16} className="mr-3 text-muted-foreground" />;
-  
+
   if (isVideoLesson) {
     return lesson.video?.thumbnailUrl ? (
-      <img 
-        src={lesson.video.thumbnailUrl} 
+      <img
+        src={lesson.video.thumbnailUrl}
         alt={lesson.title}
         className="w-16 h-10 object-cover rounded mr-3"
         onError={(e) => {
-          e.currentTarget.src = "https://placehold.co/64x40/3b82f6/ffffff.png?text=Video";
+          e.currentTarget.src =
+            "https://placehold.co/64x40/3b82f6/ffffff.png?text=Video";
         }}
       />
     ) : (
       <PlayCircle size={16} className="mr-3 text-fidel-500" />
     );
   }
-  
-  if (lesson.type === "reading") return <FileText size={16} className="mr-3 text-fidel-500" />;
+
+  if (lesson.type === "reading")
+    return <FileText size={16} className="mr-3 text-fidel-500" />;
   if (isQuizLesson) return <BarChart size={16} className="mr-3 text-fidel-500" />;
-  
+
   return <PlayCircle size={16} className="mr-3 text-fidel-500" />;
 };
