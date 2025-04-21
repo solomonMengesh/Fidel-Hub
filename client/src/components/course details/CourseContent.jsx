@@ -259,8 +259,10 @@ const ModuleLessons = ({
 );
 
 const LessonIcon = ({ lesson, isVideoLesson, isQuizLesson, hasAccess }) => {
-  if (!hasAccess)
-    return <Lock size={16} className="mr-3 text-muted-foreground" />; // Hide lock if access is granted
+  // Show lock icon only if the lesson is not free and the user doesn't have access
+  if (!lesson.free && !hasAccess) {
+    return <Lock size={16} className="mr-3 text-muted-foreground" />;
+  }
 
   if (isVideoLesson) {
     return lesson.video?.thumbnailUrl ? (
@@ -284,3 +286,4 @@ const LessonIcon = ({ lesson, isVideoLesson, isQuizLesson, hasAccess }) => {
 
   return <PlayCircle size={16} className="mr-3 text-fidel-500" />;
 };
+
