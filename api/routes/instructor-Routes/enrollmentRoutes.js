@@ -3,10 +3,7 @@ import { enrollStudent, checkEnrollment } from '../../controllers/Instructor-con
 
 const router = express.Router();
 
-// Enroll a student
 router.post('/', enrollStudent);
-
-// Check if a student is enrolled in a course and has paid
 router.get('/:studentId/:courseId', checkEnrollment);
 
 export default router;

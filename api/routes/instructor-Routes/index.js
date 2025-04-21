@@ -4,6 +4,7 @@ import lessonRoutes from './lessonRoutes.js';
 import moduleRoutes from './moduleRoutes.js';
 import quizRoutes from './quizRoutes.js';
 import mediaRoutes from './mediaRoutes.js';
+import enrollmentRoutes from './enrollmentRoutes.js';
 
 const router = express.Router();
 
@@ -21,5 +22,7 @@ router.use('/quizzes', quizRoutes);
 
 // Route for media
 router.use('/media', mediaRoutes);
+router.use('/enrollments', enrollmentRoutes);
+
 
 export default router;

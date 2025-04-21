@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -17,54 +18,65 @@ import {
 } from "lucide-react";
 import VideoPlayer from "@/components/video-player";
 import QuizView from "../Quize/QuizView";
-import React, { useState } from "react";
+import axios from "axios";
 
 export const CourseContent = ({
   modules,
   expandedModules,
   toggleModule,
-  handlePreviewClick,
   previewLoading,
   freePreviewMode,
+  courseId,
+  studentId,
 }) => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [currentPreview, setCurrentPreview] = useState(null);
+  const [hasAccess, setHasAccess] = useState(false);
 
-   let totalLessons = 0;
-let totalDurationCalculated = 0;
-
- modules?.forEach((module) => {
-  module.lessons?.forEach((lesson) => {
-    const durationStr = lesson.duration || "0";
-
- 
-     const durationParts = durationStr.split(":");
-    let hours = 0, minutes = 0;
-
-    if (durationParts.length === 2) {
-       hours = parseInt(durationParts[0], 10) || 0;
-      minutes = parseInt(durationParts[1], 10) || 0;
-    } else if (durationParts.length === 1) {
-       minutes = parseInt(durationParts[0], 10) || 0;
+  useEffect(() => {
+    if (studentId && courseId) {
+      axios
+        .get(`/api/enrollments/${studentId}/${courseId}`)
+        .then((res) => {
+          console.log("Enrollment response:", res.data);
+          setHasAccess(res.data.access === true); // <- fix applied here
+        })
+        .catch((err) => {
+          console.error("Enrollment check failed", err);
+          setHasAccess(false);
+        });
     }
+  }, [studentId, courseId]);
 
-     totalDurationCalculated += hours * 60 + minutes;
+  let totalLessons = 0;
+  let totalDurationCalculated = 0;
 
-     totalLessons += 1;
+  modules?.forEach((module) => {
+    module.lessons?.forEach((lesson) => {
+      const durationStr = lesson.duration || "0";
+      const durationParts = durationStr.split(":");
+      let hours = 0,
+        minutes = 0;
 
-   });
-});
+      if (durationParts.length === 2) {
+        hours = parseInt(durationParts[0], 10) || 0;
+        minutes = parseInt(durationParts[1], 10) || 0;
+      } else if (durationParts.length === 1) {
+        minutes = parseInt(durationParts[0], 10) || 0;
+      }
 
- const totalHours = Math.floor(totalDurationCalculated / 60);
-const totalMinutes = totalDurationCalculated % 60;
+      totalDurationCalculated += hours * 60 + minutes;
+      totalLessons += 1;
+    });
+  });
 
-// Display in "Xh Ym" format
-const formattedTotalDuration = totalDurationCalculated && !isNaN(totalDurationCalculated)
-  ? `${totalHours}:${totalMinutes}`
-  : "0:0";
+  const totalHours = Math.floor(totalDurationCalculated / 60);
+  const totalMinutes = totalDurationCalculated % 60;
 
-
-
+  const formattedTotalDuration =
+    totalDurationCalculated && !isNaN(totalDurationCalculated)
+      ? `${totalHours}:${totalMinutes}`
+      : "0:0";
 
   const openPreviewDialog = (lesson) => {
     setCurrentPreview(lesson);
@@ -79,7 +91,8 @@ const formattedTotalDuration = totalDurationCalculated && !isNaN(totalDurationCa
             {freePreviewMode ? "Free Preview Content" : "Course Content"}
           </h3>
           <div className="text-sm text-muted-foreground mt-1">
-            {modules?.length || 0} modules • {totalLessons} lessons • {formattedTotalDuration} total length
+            {modules?.length || 0} modules • {totalLessons} lessons •{" "}
+            {formattedTotalDuration} total length
           </div>
         </div>
 
@@ -91,6 +104,7 @@ const formattedTotalDuration = totalDurationCalculated && !isNaN(totalDurationCa
             toggleModule={toggleModule}
             handlePreviewClick={openPreviewDialog}
             previewLoading={previewLoading}
+            hasAccess={hasAccess}
           />
         ))}
       </div>
@@ -113,7 +127,11 @@ const formattedTotalDuration = totalDurationCalculated && !isNaN(totalDurationCa
               />
             ) : currentPreview?.video?.url ? (
               <div className="rounded-lg overflow-hidden">
-                <VideoPlayer url={currentPreview.video.url} width="100%" height="450px" />
+                <VideoPlayer
+                  url={currentPreview.video.url}
+                  width="100%"
+                  height="450px"
+                />
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-64 bg-slate-100 dark:bg-slate-800 rounded-lg p-4">
@@ -146,102 +164,103 @@ const ModuleSection = ({
   toggleModule,
   handlePreviewClick,
   previewLoading,
-}) => {
-  return (
-    <div className="border-b border-slate-200 dark:border-slate-800 last:border-b-0">
-      <button
-        className="w-full text-left p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50"
-        onClick={() => toggleModule(module._id)}
-      >
-        <div className="flex items-center">
-          {expandedModules.includes(module._id) ? (
-            <ChevronUp size={18} className="mr-2 text-muted-foreground" />
-          ) : (
-            <ChevronDown size={18} className="mr-2 text-muted-foreground" />
-          )}
-          <span className="font-medium">{module.title}</span>
-        </div>
-        <div className="text-sm text-muted-foreground">
-          {module.lessons?.length || 0} lessons • {module.totalDuration || "N/A"}
-        </div>
-      </button>
+  hasAccess,
+}) => (
+  <div className="border-b border-slate-200 dark:border-slate-800 last:border-b-0">
+    <button
+      className="w-full text-left p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50"
+      onClick={() => toggleModule(module._id)}
+    >
+      <div className="flex items-center">
+        {expandedModules.includes(module._id) ? (
+          <ChevronUp size={18} className="mr-2 text-muted-foreground" />
+        ) : (
+          <ChevronDown size={18} className="mr-2 text-muted-foreground" />
+        )}
+        <span className="font-medium">{module.title}</span>
+      </div>
+      <div className="text-sm text-muted-foreground">
+        {module.lessons?.length || 0} lessons • {module.totalDuration || "N/A"}
+      </div>
+    </button>
 
-      {expandedModules.includes(module._id) && (
-        <ModuleLessons
-          module={module}
-          handlePreviewClick={handlePreviewClick}
-          previewLoading={previewLoading}
-        />
-      )}
-    </div>
-  );
-};
+    {expandedModules.includes(module._id) && (
+      <ModuleLessons
+        module={module}
+        handlePreviewClick={handlePreviewClick}
+        previewLoading={previewLoading}
+        hasAccess={hasAccess}
+      />
+    )}
+  </div>
+);
 
-const ModuleLessons = ({ module, handlePreviewClick, previewLoading }) => {
-  return (
-    <div className="bg-slate-50 dark:bg-slate-800/30 divide-y divide-slate-200 dark:divide-slate-800">
-      {module.lessons?.map((lesson) => {
-        const isVideoLesson = lesson.type === "video";
-        const isQuizLesson = lesson.type === "quiz";
-        const hasValidVideo = isVideoLesson && lesson.video?._valid;
-        const isDisabled = isVideoLesson && !hasValidVideo;
+const ModuleLessons = ({
+  module,
+  handlePreviewClick,
+  previewLoading,
+  hasAccess,
+}) => (
+  <div className="bg-slate-50 dark:bg-slate-800/30 divide-y divide-slate-200 dark:divide-slate-800">
+    {module.lessons?.map((lesson) => {
+      const isVideoLesson = lesson.type === "video";
+      const isQuizLesson = lesson.type === "quiz";
+      const hasValidVideo = isVideoLesson && lesson.video?._valid;
+      const isDisabled =
+        (isVideoLesson && !hasValidVideo) || (!lesson.free && !hasAccess);
 
-        return (
-          <div
-            key={lesson._id}
-            className={`flex items-center p-3 pl-10 hover:bg-slate-100 dark:hover:bg-slate-800/50 ${
-              !lesson.free ? "opacity-75" : ""
-            }`}
-          >
-            <LessonIcon
-              lesson={lesson}
-              isVideoLesson={isVideoLesson}
-              isQuizLesson={isQuizLesson}
-            />
+      return (
+        <div
+          key={lesson._id}
+          className={`flex items-center p-3 pl-10 hover:bg-slate-100 dark:hover:bg-slate-800/50 ${
+            isDisabled ? "opacity-75" : ""
+          }`}
+        >
+          <LessonIcon
+            lesson={lesson}
+            isVideoLesson={isVideoLesson}
+            isQuizLesson={isQuizLesson}
+            hasAccess={hasAccess} // Add access check here
+          />
 
-            <div className="flex-1">
-              <div className="flex items-center">
-                <span className={`${lesson.completed ? "text-muted-foreground" : ""}`}>
-                  {lesson.title}
-                  {!lesson.free && (
-                    <span className="ml-2 text-xs bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
-                      Premium
-                    </span>
-                  )}
-                </span>
-                {lesson.completed && <Check size={16} className="ml-2 text-green-500" />}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {lesson.duration || "N/A"}
-              </div>
-            </div>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`text-fidel-500 ${
-                isDisabled || !lesson.free ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-              onClick={() => !isDisabled && lesson.free && handlePreviewClick(lesson)}
-              disabled={isDisabled || !lesson.free || previewLoading}
-              aria-disabled={isDisabled || !lesson.free}
-            >
-              {lesson.completed ? "Replay" : "Preview"}
-              {(isDisabled || !lesson.free) && (
-                <span className="sr-only">
-                  (disabled - {isDisabled ? "video not available" : "premium content"})
-                </span>
+          <div className="flex-1">
+            <div className="flex items-center">
+              <span className={`${lesson.completed ? "text-muted-foreground" : ""}`}>
+                {lesson.title}
+                {!lesson.free && !hasAccess && (
+                  <span className="ml-2 text-xs bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                    Premium
+                  </span>
+                )}
+              </span>
+              {lesson.completed && (
+                <Check size={16} className="ml-2 text-green-500" />
               )}
-            </Button>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {lesson.duration || "N/A"}
+            </div>
           </div>
-        );
-      })}
-    </div>
-  );
-};
 
-const LessonIcon = ({ lesson, isVideoLesson, isQuizLesson }) => {
-  if (!lesson.free) return <Lock size={16} className="mr-3 text-muted-foreground" />;
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`text-fidel-500 ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+            onClick={() => !isDisabled && handlePreviewClick(lesson)}
+            disabled={isDisabled || previewLoading}
+            aria-disabled={isDisabled}
+          >
+            {lesson.completed ? "Replay" : "Preview"}
+          </Button>
+        </div>
+      );
+    })}
+  </div>
+);
+
+const LessonIcon = ({ lesson, isVideoLesson, isQuizLesson, hasAccess }) => {
+  if (!hasAccess)
+    return <Lock size={16} className="mr-3 text-muted-foreground" />; // Hide lock if access is granted
 
   if (isVideoLesson) {
     return lesson.video?.thumbnailUrl ? (
