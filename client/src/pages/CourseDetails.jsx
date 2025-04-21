@@ -10,6 +10,9 @@ import { formatDuration, calculateTotalDuration, calculateProgress } from "../He
 import VideoPlayer from "@/components/video-player";
 import QuizView from "../components/Quize/QuizView";
 // import Button from "../components/ui/button"; // Assuming Button is imported from your UI components
+import { OverviewTab } from "../components/course details/OverviewTab";
+import { RatingsTab } from "../components/course details/RatingsTab";
+import { InstructorTab } from "../components/course details/InstructorTab";
 
 export const CourseDetails = () => {
   const { courseId } = useParams();
@@ -208,6 +211,17 @@ export const CourseDetails = () => {
             </div>
           </TabsContent>
 
+          <TabsContent value="overview">
+          <OverviewTab course={course} total={total} />
+        </TabsContent>
+
+        <TabsContent value="reviews">
+          <RatingsTab />
+        </TabsContent>
+
+        <TabsContent value="instructor">
+          <InstructorTab course={course} />
+        </TabsContent>
           {/* Other tabs would go here */}
         </Tabs>
       </div>

@@ -52,8 +52,7 @@ let totalDurationCalculated = 0;
 
      totalLessons += 1;
 
-     console.log('Parsed Hours:', hours, 'Parsed Minutes:', minutes);
-  });
+   });
 });
 
  const totalHours = Math.floor(totalDurationCalculated / 60);
