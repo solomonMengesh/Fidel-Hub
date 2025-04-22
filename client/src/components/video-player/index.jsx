@@ -12,7 +12,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import { toast } from "sonner"; // Make sure to install and import `sonner` or use any toast library
+import { toast } from "sonner";
 
 function VideoPlayer({
   width = "100%",
@@ -20,7 +20,8 @@ function VideoPlayer({
   url,
   onProgressUpdate,
   courseId,
-  studentId
+  studentId,
+  lessonId
 }) {
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(0.5);
@@ -30,15 +31,17 @@ function VideoPlayer({
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [hasCompleted, setHasCompleted] = useState(false);
+  const [isEnrolled, setIsEnrolled] = useState(false);
 
   const playerRef = useRef(null);
   const playerContainerRef = useRef(null);
-  const controlsTimeoutRef = useRef(null);
 
+  // Play/Pause toggle
   function handlePlayAndPause() {
     setPlaying(!playing);
   }
 
+  // Update current time
   function handleProgress(state) {
     if (!seeking) {
       setPlayed(state.played);
@@ -80,12 +83,7 @@ function VideoPlayer({
     const hh = date.getUTCHours();
     const mm = date.getUTCMinutes();
     const ss = pad(date.getUTCSeconds());
-
-    if (hh) {
-      return `${hh}:${pad(mm)}:${ss}`;
-    }
-
-    return `${mm}:${ss}`;
+    return hh ? `${hh}:${pad(mm)}:${ss}` : `${mm}:${ss}`;
   }
 
   const handleFullScreen = useCallback(() => {
@@ -100,6 +98,7 @@ function VideoPlayer({
     }
   }, [isFullScreen]);
 
+  // Fullscreen change listener
   useEffect(() => {
     const handleFullScreenChange = () => {
       setIsFullScreen(document.fullscreenElement);
@@ -111,11 +110,30 @@ function VideoPlayer({
     };
   }, []);
 
+  // 🔍 Check enrollment on mount
   useEffect(() => {
-    if (played >= 0.99 && !hasCompleted) {
+    const checkEnrollment = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:5000/api/enrollments/check?studentId=${studentId}&courseId=${courseId}`
+        );
+        const data = await response.json();
+        setIsEnrolled(data?.isEnrolled || false);
+      } catch (error) {
+        console.error("Error checking enrollment:", error);
+      }
+    };
+
+    if (studentId && courseId) {
+      checkEnrollment();
+    }
+  }, [studentId, courseId]);
+
+  // 🎯 Save progress only if enrolled
+  useEffect(() => {
+    if (played >= 0.99 && !hasCompleted && isEnrolled) {
       setHasCompleted(true);
 
-      // Send progress update to backend when video is almost complete
       const updateProgress = async () => {
         try {
           const response = await fetch("http://localhost:5000/api/progress", {
@@ -124,12 +142,11 @@ function VideoPlayer({
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              studentId: studentId,  // Correctly using studentId
-              courseId: courseId,    // Correctly using courseId
-              lessonId: courseId.lessonId,    // Ensure lessonId is passed correctly
+              studentId,
+              courseId,
+              lessonId,
             }),
           });
-          console.log("Response status:", response.status);
 
           const data = await response.json();
           if (!response.ok) {
@@ -137,22 +154,21 @@ function VideoPlayer({
           }
 
           toast.success("Lesson marked as completed!");
-          onProgressUpdate({
+          onProgressUpdate?.({
             studentId,
             courseId,
-            lessonId: courseId.lessonId,
+            lessonId,
             isCompleted: true,
             progressValue: played,
           });
         } catch (error) {
           console.error("Error updating progress:", error);
-          // toast.error("Failed to update progress");
         }
       };
 
       updateProgress();
     }
-  }, [played, hasCompleted, studentId, courseId, onProgressUpdate]);
+  }, [played, hasCompleted, studentId, courseId, lessonId, isEnrolled, onProgressUpdate]);
 
   return (
     <div
@@ -175,16 +191,20 @@ function VideoPlayer({
         onProgress={handleProgress}
       />
 
-      {hasCompleted && (
+      {hasCompleted && isEnrolled && (
         <div className="absolute top-4 right-4 bg-green-600 text-white px-3 py-1 text-sm rounded">
-           Completed
+          Completed
+        </div>
+      )}
+
+      {!isEnrolled && (
+        <div className="absolute top-4 right-4 bg-yellow-500 text-white px-3 py-1 text-sm rounded">
+          Preview Mode
         </div>
       )}
 
       {showControls && (
-        <div
-          className={`absolute bottom-0 left-0 right-0 bg-gray-800 bg-opacity-75 p-4 transition-opacity duration-300`}
-        >
+        <div className="absolute bottom-0 left-0 right-0 bg-gray-800 bg-opacity-75 p-4">
           <Slider
             value={[played * 100]}
             max={100}
@@ -195,36 +215,16 @@ function VideoPlayer({
           />
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handlePlayAndPause}
-                className="text-white bg-transparent hover:text-white hover:bg-gray-700"
-              >
+              <Button onClick={handlePlayAndPause} variant="ghost" size="icon" className="text-white">
                 {playing ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
               </Button>
-              <Button
-                onClick={handleRewind}
-                className="text-white bg-transparent hover:text-white hover:bg-gray-700"
-                variant="ghost"
-                size="icon"
-              >
+              <Button onClick={handleRewind} variant="ghost" size="icon" className="text-white">
                 <RotateCcw className="h-6 w-6" />
               </Button>
-              <Button
-                onClick={handleForward}
-                className="text-white bg-transparent hover:text-white hover:bg-gray-700"
-                variant="ghost"
-                size="icon"
-              >
+              <Button onClick={handleForward} variant="ghost" size="icon" className="text-white">
                 <RotateCw className="h-6 w-6" />
               </Button>
-              <Button
-                onClick={handleToggleMute}
-                className="text-white bg-transparent hover:text-white hover:bg-gray-700"
-                variant="ghost"
-                size="icon"
-              >
+              <Button onClick={handleToggleMute} variant="ghost" size="icon" className="text-white">
                 {muted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
               </Button>
               <Slider
@@ -240,17 +240,8 @@ function VideoPlayer({
                 {formatTime(played * (playerRef?.current?.getDuration() || 0))}/{" "}
                 {formatTime(playerRef?.current?.getDuration() || 0)}
               </div>
-              <Button
-                className="text-white bg-transparent hover:text-white hover:bg-gray-700"
-                variant="ghost"
-                size="icon"
-                onClick={handleFullScreen}
-              >
-                {isFullScreen ? (
-                  <Minimize className="h-6 w-6" />
-                ) : (
-                  <Maximize className="h-6 w-6" />
-                )}
+              <Button onClick={handleFullScreen} variant="ghost" size="icon" className="text-white">
+                {isFullScreen ? <Minimize className="h-6 w-6" /> : <Maximize className="h-6 w-6" />}
               </Button>
             </div>
           </div>

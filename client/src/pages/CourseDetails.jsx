@@ -216,6 +216,8 @@ export const CourseDetails = () => {
                 totalCompleted={totalCompleted}
                 total={total}
                 course={course}
+                courseId={courseId}
+                studentId={studentId}
               />
             </div>
           </TabsContent>
