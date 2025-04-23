@@ -21,13 +21,7 @@ export const FreeVideosDialog = ({
             <DialogTitle>
               Free Preview ({currentFreeVideoIndex + 1}/{freeVideoLessons.length})
             </DialogTitle>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => onOpenChange(false)}
-            >
-              <X size={20} />
-            </Button>
+             
           </div>
         </DialogHeader>
         

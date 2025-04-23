@@ -15,11 +15,12 @@ import User from './models/User.js';
 import userRoutes from './routes/userRoutes/userRoutes.js';
 import otpRoutes from './routes/otp-Routes/otpRoutes.js';
 import routes from './routes/instructor-Routes/index.js';
+import certificateRoutes from './routes/certificateRoutes/certificateRoutes.js';
 
 import paymentRoutes from './routes/PaymentRoutes/paymentRoutes.js';
 
 dotenv.config();
-await connectDB(); // Ensure MongoDB is connected before starting server
+await connectDB();  
 
 const app = express();
 const server = http.createServer(app);
@@ -30,8 +31,8 @@ const io = new Server(server, {
   }
 });
 
-// Track connected users
-io.on('connection', (socket) => {
+
+ io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
 
   socket.on('registerUser', async (userId) => {
@@ -56,35 +57,30 @@ io.on('connection', (socket) => {
   });
 });
 
-// Middleware setup
-app.use(express.json());
+ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(morgan('dev'));
 app.use(helmet());
 
-// File uploads
-const storage = multer.diskStorage({
+ const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),
   filename: (req, file, cb) =>
     cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname)),
 });
 const upload = multer({ storage });
 
-// File upload route
-app.post('/upload', upload.single('cv'), (req, res) => {
+ app.post('/upload', upload.single('cv'), (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
   res.json({ message: 'File uploaded successfully', file: req.file });
 });
 
-// File download route
-app.get('/download/:filename', (req, res) => {
+ app.get('/download/:filename', (req, res) => {
   const { filename } = req.params;
   const filePath = path.join(__dirname, 'uploads', filename);
 
-  // Check if file exists before attempting to download
-  res.download(filePath, filename, (err) => {
+   res.download(filePath, filename, (err) => {
     if (err) {
       res.status(404).json({ message: 'File not found' });
     }
@@ -93,23 +89,28 @@ app.get('/download/:filename', (req, res) => {
 
 app.use('/uploads', cors(), express.static('uploads'));
 
-// API Routes
+
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/users', adminRoutes); // Adjust as needed
+app.use('/api/users', adminRoutes); 
 app.use('/api/users', userRoutes);
 app.use('/api/otp', otpRoutes);
 app.use('/api', routes);
 app.use('/api/payment', paymentRoutes);
 
 
-// Error handling middleware
+app.use('/certificates', express.static(path.join(process.cwd(), 'certificates')));
+
+
+app.use('/api/certificates', certificateRoutes);
+
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Server error', error: err.message });
 });
 
-// Start server
+
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);

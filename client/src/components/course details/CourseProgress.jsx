@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Award, BarChart, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 // Hook to fetch enrollment data
 const useEnrollment = (studentId, courseId) => {
@@ -93,6 +94,7 @@ export const CourseProgress = ({ studentId, courseId, course }) => {
       </div>
     );
   }
+
   const percentage = progress ? progress.progressPercentage : 0;
   const totalCompleted = progress ? progress.completedLessons.length : 0;
   const total = progress ? progress.totalLessons : 0;
@@ -117,7 +119,7 @@ export const CourseProgress = ({ studentId, courseId, course }) => {
       <Button className="w-full mb-3">Continue Learning</Button>
       <div className="mt-6 space-y-4">
         <NextLesson modules={course.modules} />
-        <CertificationNotice course={course} />
+        <CertificationNotice course={course} studentId={studentId} />
       </div>
     </div>
   );
@@ -150,10 +152,27 @@ const NextLesson = ({ modules }) => {
   );
 };
 
-const CertificationNotice = ({ course }) => {
+const CertificationNotice = ({ course, studentId }) => {
+  const navigate = useNavigate();
+
+  const handleCertificationClick = () => {
+    if (!studentId || !course.id) {
+      console.error("Student ID or Course ID is undefined.");
+      return;
+    }
+
+    navigate(`/get-certified/${course.id}/${studentId}`);
+  };
+
   return (
     <div className="rounded-lg p-3 bg-fidel-50 dark:bg-fidel-900/10 border border-fidel-100 dark:border-fidel-900/20">
-      <h4 className="font-medium text-fidel-800 dark:text-fidel-200 mb-1">Get Certified</h4>
+      {/* Changed header to a button */}
+      <Button
+        className="font-medium text-fidel-800 dark:text-fidel-200 mb-1 w-full text-left"
+        onClick={handleCertificationClick}
+      >
+        Get Certified
+      </Button>
       <p className="text-xs text-fidel-600 dark:text-fidel-300 mb-2">
         Complete this course to earn your certification
       </p>

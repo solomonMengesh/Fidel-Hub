@@ -26,6 +26,8 @@ import VerifyOTP from "./pages/VerifyOTP";
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentFailed from './pages/PaymentFailed';
 import VerifyPayment from './../src/components/Payment/VerifyPayment';
+import GetCertified from "./components/course details/GetCertified";
+
 const MainLayout = ({ children }) => (
   <>
     <Navbar />
@@ -76,11 +78,13 @@ const App = () => {
         <Route path="/signup" element={<MainLayout><Signup /></MainLayout>} />
         <Route path="/about" element={<MainLayout><About /></MainLayout>} />
         <Route path="/contact" element={<MainLayout><Contact /></MainLayout>} />
+
         
         {/* Authentication flow routes */}
         <Route path="/forgot-password" element={<MainLayout><ForgotPassword /></MainLayout>} />
         <Route path="/verify-otp" element={<MainLayout><OTPVerification /></MainLayout>} />
         <Route path="/send-otp" element={<MainLayout><OTPSend /></MainLayout>} />
+         <Route path="/get-certified/:courseId/:studentId" element={<MainLayout><GetCertified /></MainLayout>} />
         
         {/* Registration-specific OTP routes */}
         <Route path="/signup/send-otp-Registration" element={<MainLayout><RegisterOTPSend /></MainLayout>} />
