@@ -108,3 +108,28 @@ export const getProgressData = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+export const getAllStudentsProgress = async (req, res) => {
+  const { courseId } = req.params;
+
+  try {
+    const courseObjectId = new mongoose.Types.ObjectId(courseId);
+
+    // Fetch all progress records for the course
+    const progressData = await Progress.find({ courseId: courseObjectId }).populate('studentId', 'name');
+
+    if (!progressData || progressData.length === 0) {
+      return res.status(404).json({ error: 'No progress data found for this course' });
+    }
+
+    res.json(progressData.map((progress) => ({
+      studentName: progress.studentId.name,
+      completedLessons: progress.completedLessons.length,
+      totalLessons: progress.totalLessons,
+      progressPercentage: progress.progressPercentage
+    })));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

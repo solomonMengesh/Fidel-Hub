@@ -19,9 +19,10 @@ function VideoPlayer({
   height = "100%",
   url,
   onProgressUpdate,
+  onComplete, // Added onComplete prop
   courseId,
   studentId,
-  lessonId
+  lessonId,
 }) {
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(0.5);
@@ -98,7 +99,7 @@ function VideoPlayer({
     }
   }, [isFullScreen]);
 
-  // Fullscreen change listener
+  // fullscreen change listener
   useEffect(() => {
     const handleFullScreenChange = () => {
       setIsFullScreen(document.fullscreenElement);
@@ -110,7 +111,7 @@ function VideoPlayer({
     };
   }, []);
 
-  // 🔍 Check enrollment on mount
+  // Check enrollment on mount
   useEffect(() => {
     const checkEnrollment = async () => {
       try {
@@ -129,7 +130,7 @@ function VideoPlayer({
     }
   }, [studentId, courseId]);
 
-  // 🎯 Save progress only if enrolled
+  // Save progress only if enrolled
   useEffect(() => {
     if (played >= 0.99 && !hasCompleted && isEnrolled) {
       setHasCompleted(true);
@@ -161,14 +162,16 @@ function VideoPlayer({
             isCompleted: true,
             progressValue: played,
           });
+          onComplete?.(); // Call onComplete when lesson is marked as completed
         } catch (error) {
           console.error("Error updating progress:", error);
+          toast.error("Failed to mark lesson as completed.");
         }
       };
 
       updateProgress();
     }
-  }, [played, hasCompleted, studentId, courseId, lessonId, isEnrolled, onProgressUpdate]);
+  }, [played, hasCompleted, studentId, courseId, lessonId, isEnrolled, onProgressUpdate, onComplete]);
 
   return (
     <div

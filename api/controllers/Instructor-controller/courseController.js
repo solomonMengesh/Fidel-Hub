@@ -2,6 +2,8 @@ import Course from '../../models/Course.js';
 import Module from '../../models/Module.js';
 import asyncHandler from 'express-async-handler';
 import { deleteFromCloudinary } from '../../services/cloudStorage.js';
+import Enrollment from '../../models/Enrollment.js';
+
 
 // @desc    Create a new course
 // @route   POST /api/courses
@@ -191,3 +193,18 @@ export const deleteCourse = asyncHandler(async (req, res) => {
   await course.deleteOne();
   res.json({ message: 'Course removed' });
 });
+
+
+
+
+export const getStudentCountForCourse = async (req, res) => {
+  const { courseId } = req.params;
+
+  try {
+    const count = await Enrollment.countDocuments({ courseId });
+    res.status(200).json({ studentCount: count });
+  } catch (error) {
+    console.error('Error counting students:', error);
+    res.status(500).json({ message: 'Failed to count students' });
+  }
+};

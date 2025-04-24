@@ -5,7 +5,8 @@ import {
   getInstructorCourses,
   getCourseById,
   updateCourse,
-  deleteCourse
+  deleteCourse,
+  getStudentCountForCourse
 } from '../../controllers/Instructor-controller/courseController.js';
 import { protect, instructor } from '../../middleware/authMiddleware.js';
 import { upload } from '../../middleware/uploadToCloudinary.js';
@@ -15,6 +16,7 @@ const router = express.Router();
 router.route('/')
   .get(getCourses)
   .post(protect, instructor, upload.single('thumbnail'), createCourse);
+  router.get('/:courseId/student-count', getStudentCountForCourse);
 
 router.route('/instructor')
   .get(protect, instructor, getInstructorCourses);

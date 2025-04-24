@@ -42,6 +42,9 @@ const App = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userId = localStorage.getItem("userId");
+    window.scroll(0,0)
+
+
 
     if (token && userId) {
       // Connect socket and register user

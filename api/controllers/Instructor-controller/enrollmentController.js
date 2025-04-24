@@ -1,4 +1,5 @@
 import Enrollment from '../../models/Enrollment.js';
+import mongoose from 'mongoose';
 
 export const enrollStudent = async (req, res) => {
   const { studentId, courseId } = req.body;
@@ -37,5 +38,44 @@ export const checkEnrollment = async (req, res) => {
   }
 };
 
+
+
+export const getEnrolledCourses = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+
+    const enrollments = await Enrollment.find({ studentId })
+      .populate({
+        path: 'courseId',
+        select: 'title thumbnail category level createdAt updatedAt',
+        populate: {
+          path: 'instructor',
+          select: 'name profilePicture',
+        },
+      })
+      .populate({
+        path: 'paymentId',
+        select: 'status',
+      })
+      .exec();
+
+    const successfulEnrollments = enrollments.filter(enrollment => enrollment.paymentId?.status === 'success');
+
+    if (successfulEnrollments.length === 0) {
+      return res.status(404).json({ message: 'No successful enrollments found for this student.' });
+    }
+
+    const courses = successfulEnrollments.map(enrollment => enrollment.courseId);
+
+    const uniqueCourses = Array.from(new Set(courses.map(course => course._id.toString())))
+      .map(id => courses.find(course => course._id.toString() === id));
+
+    return res.status(200).json(uniqueCourses);
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
 
 

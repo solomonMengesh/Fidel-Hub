@@ -1,10 +1,11 @@
 import express from 'express';
-import { enrollStudent, checkEnrollment } from '../../controllers/Instructor-controller/enrollmentController.js';
+import { enrollStudent, checkEnrollment,getEnrolledCourses } from '../../controllers/Instructor-controller/enrollmentController.js';
 import Enrollment from '../../models/Enrollment.js';
 
 const router = express.Router();
 
 router.post('/', enrollStudent);
+router.get("/:studentId/courses", getEnrolledCourses);
 router.get('/:studentId/:courseId', checkEnrollment);
 
 router.get('/check', async (req, res) => {

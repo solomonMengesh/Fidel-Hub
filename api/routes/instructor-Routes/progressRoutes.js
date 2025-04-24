@@ -1,5 +1,5 @@
 import express from 'express';
-import { updateProgress ,getCompletedLessons ,getProgressData} from '../../controllers/Instructor-controller/progressController.js';
+import { updateProgress ,getCompletedLessons ,getProgressData,getAllStudentsProgress} from '../../controllers/Instructor-controller/progressController.js';
 
 const router = express.Router();
 
@@ -7,5 +7,6 @@ const router = express.Router();
 router.post('/', updateProgress);
 router.get('/:studentId/:courseId/completedLessons', getCompletedLessons);
 router.get('/:studentId/:courseId', getProgressData);
+router.get('/all-progress/:courseId', getAllStudentsProgress);
 
 export default router;

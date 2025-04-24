@@ -3,65 +3,116 @@ import { Award, BarChart, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
-// Hook to fetch enrollment data
+// Improved hook to fetch enrollment data with error handling
 const useEnrollment = (studentId, courseId) => {
-  const [isEnrolled, setIsEnrolled] = useState(false);
-  const [enrollmentLoading, setEnrollmentLoading] = useState(true);
+  const [enrollmentState, setEnrollmentState] = useState({
+    isEnrolled: false,
+    isLoading: true,
+    error: null
+  });
 
   useEffect(() => {
+    if (!studentId || !courseId) {
+      setEnrollmentState(prev => ({ ...prev, isLoading: false }));
+      return;
+    }
+
     const checkEnrollment = async () => {
       try {
         const response = await fetch(
           `http://localhost:5000/api/enrollments/check?studentId=${studentId}&courseId=${courseId}`
         );
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
-        setIsEnrolled(data?.isEnrolled || false);
+        setEnrollmentState({
+          isEnrolled: data?.isEnrolled || false,
+          isLoading: false,
+          error: null
+        });
       } catch (error) {
         console.error("Error checking enrollment:", error);
-      } finally {
-        setEnrollmentLoading(false);
+        setEnrollmentState({
+          isEnrolled: false,
+          isLoading: false,
+          error: error.message
+        });
       }
     };
 
-    if (studentId && courseId) {
-      checkEnrollment();
-    }
+    checkEnrollment();
   }, [studentId, courseId]);
 
-  return { isEnrolled, enrollmentLoading };
+  return enrollmentState;
 };
 
-// Hook to fetch progress data
+// Enhanced progress tracking hook
 const useProgress = (studentId, courseId) => {
-  const [progress, setProgress] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [progressState, setProgressState] = useState({
+    progress: null,
+    isLoading: true,
+    error: null
+  });
 
   useEffect(() => {
+    if (!studentId || !courseId) {
+      setProgressState(prev => ({ ...prev, isLoading: false }));
+      return;
+    }
+
     const fetchProgress = async () => {
       try {
         const res = await fetch(`/api/progress/${studentId}/${courseId}`);
+        
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        
         const data = await res.json();
-        setProgress(data);
+        setProgressState({
+          progress: data,
+          isLoading: false,
+          error: null
+        });
       } catch (err) {
         console.error("Failed to fetch progress:", err);
-      } finally {
-        setLoading(false);
+        setProgressState({
+          progress: null,
+          isLoading: false,
+          error: err.message
+        });
       }
     };
 
-    if (studentId && courseId) {
-      fetchProgress();
-    }
+    fetchProgress();
   }, [studentId, courseId]);
 
-  return { progress, loading };
+  return progressState;
 };
 
 export const CourseProgress = ({ studentId, courseId, course }) => {
-  const { isEnrolled, enrollmentLoading } = useEnrollment(studentId, courseId);
-  const { progress, loading } = useProgress(studentId, courseId);
+  const { isEnrolled, isLoading: enrollmentLoading, error: enrollmentError } = useEnrollment(studentId, courseId);
+  const { progress, isLoading: progressLoading, error: progressError } = useProgress(studentId, courseId);
+  const navigate = useNavigate();
 
-  if (enrollmentLoading || loading) return <p>Loading...</p>; // Show a loading state while fetching progress or enrollment data
+  if (enrollmentLoading || progressLoading) {
+    return (
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 text-center">
+        <p>Loading your progress...</p>
+      </div>
+    );
+  }
+
+  if (enrollmentError || progressError) {
+    return (
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 text-center">
+        <p className="text-red-500">Error loading progress data. Please try again later.</p>
+      </div>
+    );
+  }
 
   if (!isEnrolled) {
     return (
@@ -95,42 +146,84 @@ export const CourseProgress = ({ studentId, courseId, course }) => {
     );
   }
 
-  const percentage = progress ? progress.progressPercentage : 0;
-  const totalCompleted = progress ? progress.completedLessons.length : 0;
-  const total = progress ? progress.totalLessons : 0;
+  const percentage = progress?.progressPercentage || 0;
+  const totalCompleted = progress?.completedLessons?.length || 0;
+  const total = progress?.totalLessons || 0;
+
+  const handleContinueLearning = () => {
+    // Find the first uncompleted lesson
+    let nextLesson = null;
+    for (const module of course.modules) {
+      for (const lesson of module.lessons) {
+        if (!progress?.completedLessons?.includes(lesson.id)) {
+          nextLesson = lesson;
+          break;
+        }
+      }
+      if (nextLesson) break;
+    }
+
+    if (nextLesson) {
+      navigate(`/get-certified/${course.id}/${studentId}`);
+    } else {
+      // All lessons completed, navigate to certification or course completion
+      navigate(`/courses/${courseId}/complete`);
+    }
+  };
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 sticky top-4">
       <h3 className="font-semibold mb-4">Your Progress</h3>
       <div className="mb-6">
         <div className="flex justify-between text-sm mb-1">
-          <span>{percentage}% complete</span>
+          <span>{Math.round(percentage)}% complete</span>
           <span>
             {totalCompleted}/{total} lessons
           </span>
         </div>
         <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
           <div
-            className="h-full bg-fidel-500 rounded-full"
+            className="h-full bg-fidel-500 rounded-full transition-all duration-300"
             style={{ width: `${percentage}%` }}
           ></div>
         </div>
       </div>
-      <Button className="w-full mb-3">Continue Learning</Button>
+      <Button className="w-full mb-3" onClick={handleContinueLearning}>
+        {percentage === 100 ? "View Certificate" : "Continue Learning"}
+      </Button>
       <div className="mt-6 space-y-4">
-        <NextLesson modules={course.modules} />
-        <CertificationNotice course={course} studentId={studentId} />
+        <NextLesson 
+          modules={course.modules} 
+          completedLessons={progress?.completedLessons || []} 
+        />
+        <CertificationNotice 
+          course={course} 
+          studentId={studentId} 
+          isCompleted={percentage === 100} 
+        />
       </div>
     </div>
   );
 };
 
-const NextLesson = ({ modules }) => {
-  const nextLesson = modules?.[0]?.lessons?.[0];
+const NextLesson = ({ modules, completedLessons = [] }) => {
+  // Find the first uncompleted lesson
+  let nextLesson = null;
+  for (const module of modules || []) {
+    for (const lesson of module.lessons || []) {
+      if (!completedLessons.includes(lesson.id)) {
+        nextLesson = lesson;
+        break;
+      }
+    }
+    if (nextLesson) break;
+  }
 
   return (
     <div className="border border-slate-200 dark:border-slate-800 rounded-lg p-3">
-      <h4 className="font-medium mb-1">Next Lesson</h4>
+      <h4 className="font-medium mb-1">
+        {nextLesson ? "Next Lesson" : "Course Completed"}
+      </h4>
       {nextLesson ? (
         <>
           <div className="flex items-center text-fidel-600">
@@ -146,13 +239,13 @@ const NextLesson = ({ modules }) => {
           </div>
         </>
       ) : (
-        <p className="text-sm text-muted-foreground">No lessons available</p>
+        <p className="text-sm text-muted-foreground">All lessons completed!</p>
       )}
     </div>
   );
 };
 
-const CertificationNotice = ({ course, studentId }) => {
+const CertificationNotice = ({ course, studentId, isCompleted }) => {
   const navigate = useNavigate();
 
   const handleCertificationClick = () => {
@@ -165,20 +258,24 @@ const CertificationNotice = ({ course, studentId }) => {
   };
 
   return (
-    <div className="rounded-lg p-3 bg-fidel-50 dark:bg-fidel-900/10 border border-fidel-100 dark:border-fidel-900/20">
-      {/* Changed header to a button */}
+    <div className={`rounded-lg p-3 ${isCompleted ? 'bg-green-50 dark:bg-green-900/10 border border-green-100 dark:border-green-900/20' : 'bg-fidel-50 dark:bg-fidel-900/10 border border-fidel-100 dark:border-fidel-900/20'}`}>
       <Button
-        className="font-medium text-fidel-800 dark:text-fidel-200 mb-1 w-full text-left"
+        className={`font-medium w-full text-left ${isCompleted ? 'text-green-800 dark:text-green-200' : 'text-fidel-800 dark:text-fidel-200'}`}
         onClick={handleCertificationClick}
+        variant={isCompleted ? "success" : "default"}
       >
-        Get Certified
+        {isCompleted ? "Get Your Certificate" : "Get Certified"}
       </Button>
-      <p className="text-xs text-fidel-600 dark:text-fidel-300 mb-2">
-        Complete this course to earn your certification
+      <p className={`text-xs mt-2 ${isCompleted ? 'text-green-600 dark:text-green-300' : 'text-fidel-600 dark:text-fidel-300'}`}>
+        {isCompleted 
+          ? "Congratulations! You've completed this course."
+          : "Complete this course to earn your certification"}
       </p>
-      <div className="flex items-center">
-        <Award size={16} className="text-fidel-500 mr-1" />
-        <div className="text-xs font-medium text-fidel-600">{course.title} Certificate</div>
+      <div className="flex items-center mt-2">
+        <Award size={16} className={`mr-1 ${isCompleted ? 'text-green-500' : 'text-fidel-500'}`} />
+        <div className={`text-xs font-medium ${isCompleted ? 'text-green-600' : 'text-fidel-600'}`}>
+          {course.title} Certificate
+        </div>
       </div>
     </div>
   );

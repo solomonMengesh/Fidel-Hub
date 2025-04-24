@@ -26,13 +26,12 @@ export const CourseHeader = ({
 
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
-
+  const [studentCount, setStudentCount] = useState(0);
   // Check if already enrolled
   useEffect(() => {
     const checkEnrollment = async () => {
       try {
-        console.log("🔍 Checking enrollment for:", user._id, course._id);
-
+ 
         const res = await axios.get(
           `http://localhost:5000/api/enrollments/check?studentId=${user._id}&courseId=${course._id}`,
           {
@@ -41,8 +40,7 @@ export const CourseHeader = ({
             },
           }
         );
-        console.log("✅ Enrollment check response:", res.data);
-
+ 
         // Handle response structure { isEnrolled: true }
         if (res.data?.isEnrolled === true) {
           setIsEnrolled(true);
@@ -93,7 +91,20 @@ export const CourseHeader = ({
       setLoading(false);
     }
   };
+  useEffect(() => {
+    const fetchStudentCount = async () => {
+      try {
+        const res = await axios.get(`/api/courses/${course._id}/student-count`);
+        setStudentCount(res.data.studentCount);
+      } catch (err) {
+        console.error("Failed to fetch student count", err);
+      }
+    };
 
+    if (course._id) {
+      fetchStudentCount();
+    }
+  }, [course._id]);
   return (
     <div className="bg-fidel-600 text-white py-12">
       <div className="container px-4 md:px-6">
@@ -125,9 +136,9 @@ export const CourseHeader = ({
                 </span>
               </div>
               <div className="flex items-center">
-                <Users size={18} className="mr-1" />
-                <span>{(course.students || 0).toLocaleString()} students</span>
-              </div>
+      <Users size={18} className="mr-1" />
+      <span>{studentCount.toLocaleString()} students</span>
+    </div>
               <div className="flex items-center">
                 <Clock size={18} className="mr-1" />
                 <span>{course.totalDuration}</span>
