@@ -3,17 +3,17 @@ import { Award, BarChart, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
-// Improved hook to fetch enrollment data with error handling
+// Improved hook to fetch enrollment data
 const useEnrollment = (studentId, courseId) => {
   const [enrollmentState, setEnrollmentState] = useState({
     isEnrolled: false,
     isLoading: true,
-    error: null
+    error: null,
   });
 
   useEffect(() => {
     if (!studentId || !courseId) {
-      setEnrollmentState(prev => ({ ...prev, isLoading: false }));
+      setEnrollmentState(prev => ({ ...prev, isLoading: false, error: "Missing studentId or courseId" }));
       return;
     }
 
@@ -22,23 +22,21 @@ const useEnrollment = (studentId, courseId) => {
         const response = await fetch(
           `http://localhost:5000/api/enrollments/check?studentId=${studentId}&courseId=${courseId}`
         );
-        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
         const data = await response.json();
         setEnrollmentState({
           isEnrolled: data?.isEnrolled || false,
           isLoading: false,
-          error: null
+          error: null,
         });
       } catch (error) {
         console.error("Error checking enrollment:", error);
         setEnrollmentState({
           isEnrolled: false,
           isLoading: false,
-          error: error.message
+          error: error.message,
         });
       }
     };
@@ -50,66 +48,84 @@ const useEnrollment = (studentId, courseId) => {
 };
 
 // Enhanced progress tracking hook
-const useProgress = (studentId, courseId) => {
+const useProgress = (studentId, courseId, isEnrolled) => {
   const [progressState, setProgressState] = useState({
     progress: null,
     isLoading: true,
-    error: null
+    error: null,
   });
 
   useEffect(() => {
     if (!studentId || !courseId) {
-      setProgressState(prev => ({ ...prev, isLoading: false }));
+      setProgressState(prev => ({ ...prev, isLoading: false, error: "Missing studentId or courseId" }));
+      return;
+    }
+
+    if (!isEnrolled) {
+      setProgressState({
+        progress: null,
+        isLoading: false,
+        error: null, // No error for non-enrolled users
+      });
       return;
     }
 
     const fetchProgress = async () => {
       try {
         const res = await fetch(`/api/progress/${studentId}/${courseId}`);
-        
         if (!res.ok) {
+          // Handle expected errors (e.g., 404 for non-enrolled users)
+          if (res.status === 404) {
+            setProgressState({
+              progress: null,
+              isLoading: false,
+              error: null, // Treat as non-enrolled rather than error
+            });
+            return;
+          }
           throw new Error(`HTTP error! status: ${res.status}`);
         }
-        
         const data = await res.json();
+        console.log("Progress data:", data);
         setProgressState({
           progress: data,
           isLoading: false,
-          error: null
+          error: null,
         });
       } catch (err) {
         console.error("Failed to fetch progress:", err);
         setProgressState({
           progress: null,
           isLoading: false,
-          error: err.message
+          error: err.message,
         });
       }
     };
 
     fetchProgress();
-  }, [studentId, courseId]);
+  }, [studentId, courseId, isEnrolled]);
 
   return progressState;
 };
 
 export const CourseProgress = ({ studentId, courseId, course }) => {
-  const { isEnrolled, isLoading: enrollmentLoading, error: enrollmentError } = useEnrollment(studentId, courseId);
-  const { progress, isLoading: progressLoading, error: progressError } = useProgress(studentId, courseId);
   const navigate = useNavigate();
+  const { isEnrolled, isLoading: enrollmentLoading, error: enrollmentError } = useEnrollment(studentId, courseId);
+  const { progress, isLoading: progressLoading, error: progressError } = useProgress(studentId, courseId, isEnrolled);
+
+  // Early validation for missing props
+  if (!studentId || !courseId || !course) {
+    return (
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 text-center">
+        <p className="text-red-500">Invalid course or user data. Please try again.</p>
+      </div>
+    );
+  }
 
   if (enrollmentLoading || progressLoading) {
     return (
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 text-center">
         <p>Loading your progress...</p>
-      </div>
-    );
-  }
-
-  if (enrollmentError || progressError) {
-    return (
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 text-center">
-        <p className="text-red-500">Error loading progress data. Please try again later.</p>
       </div>
     );
   }
@@ -146,15 +162,28 @@ export const CourseProgress = ({ studentId, courseId, course }) => {
     );
   }
 
+  if (enrollmentError || progressError) {
+    return (
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 text-center">
+        <p className="text-red-500">Error loading progress data. Please try again later.</p>
+        <Button
+          onClick={() => window.location.reload()}
+          className="mt-4 text-sm text-blue-500 hover:text-blue-700"
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
   const percentage = progress?.progressPercentage || 0;
   const totalCompleted = progress?.completedLessons?.length || 0;
   const total = progress?.totalLessons || 0;
 
   const handleContinueLearning = () => {
-    // Find the first uncompleted lesson
     let nextLesson = null;
-    for (const module of course.modules) {
-      for (const lesson of module.lessons) {
+    for (const module of course.modules || []) {
+      for (const lesson of module.lessons || []) {
         if (!progress?.completedLessons?.includes(lesson.id)) {
           nextLesson = lesson;
           break;
@@ -166,7 +195,6 @@ export const CourseProgress = ({ studentId, courseId, course }) => {
     if (nextLesson) {
       navigate(`/get-certified/${course.id}/${studentId}`);
     } else {
-      // All lessons completed, navigate to certification or course completion
       navigate(`/courses/${courseId}/complete`);
     }
   };
@@ -207,7 +235,6 @@ export const CourseProgress = ({ studentId, courseId, course }) => {
 };
 
 const NextLesson = ({ modules, completedLessons = [] }) => {
-  // Find the first uncompleted lesson
   let nextLesson = null;
   for (const module of modules || []) {
     for (const lesson of module.lessons || []) {
@@ -253,7 +280,6 @@ const CertificationNotice = ({ course, studentId, isCompleted }) => {
       console.error("Student ID or Course ID is undefined.");
       return;
     }
-
     navigate(`/get-certified/${course.id}/${studentId}`);
   };
 
