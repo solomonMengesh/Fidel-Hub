@@ -26,7 +26,7 @@ const stats = [
 const courses = [
   {
     id: 1,
-    title: "Introduction to React",
+    title: "ddIntroduction to React",
     students: 125,
     progress: 75,
     lastUpdated: "2 days ago",

@@ -1,12 +1,13 @@
 import express from 'express';
-import { addReview, getCourseReviews } from '../../controllers/Instructor-controller/reviewController.js';
+import { submitReview, getCourseReviews } from '../../controllers/Instructor-controller/reviewController.js';
+import { protect } from '../../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Add a review for a course
-router.post('/', addReview);
+// Submit review
+router.post('/:courseId', protect, submitReview);
 
-// Get reviews for a specific course
+// Get all reviews for a course
 router.get('/:courseId', getCourseReviews);
 
 export default router;

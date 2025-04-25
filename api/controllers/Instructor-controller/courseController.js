@@ -3,8 +3,9 @@ import Module from '../../models/Module.js';
 import asyncHandler from 'express-async-handler';
 import { deleteFromCloudinary } from '../../services/cloudStorage.js';
 import Enrollment from '../../models/Enrollment.js';
-
-
+import mongoose from 'mongoose';  // <-- Add this import
+import Progress from '../../models/Progress.js'; 
+ 
 // @desc    Create a new course
 // @route   POST /api/courses
 // @access  Private/Instructor
@@ -52,18 +53,28 @@ export const getCourses = asyncHandler(async (req, res) => {
 // @desc    Get instructor's courses
 // @route   GET /api/courses/instructor
 // @access  Private/Instructor
-export const getInstructorCourses = asyncHandler(async (req, res) => {
-  const courses = await Course.find({ instructor: req.user._id })
-    .populate({
-      path: 'modules',
-      populate: {
-        path: 'lessons',
-        select: 'title type duration free'
-      }
+export const getInstructorCourses = async (req, res) => {
+  try {
+    const { instructorId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(instructorId)) {
+      return res.status(400).json({ message: "Invalid instructor ID" });
+    }
+
+    const courses = await Course.find({
+      instructor: new mongoose.Types.ObjectId(instructorId),
     });
-  
-  res.json(courses);
-});
+
+    if (!courses || courses.length === 0) {
+      return res.status(404).json({ message: "No courses found for this instructor" });
+    }
+
+    res.status(200).json(courses);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 
 // @desc    Get course by ID
 // @route   GET /api/courses/:id
@@ -206,5 +217,140 @@ export const getStudentCountForCourse = async (req, res) => {
   } catch (error) {
     console.error('Error counting students:', error);
     res.status(500).json({ message: 'Failed to count students' });
+  }
+};
+
+
+export const getInstructorCoursesWithProgress = async (req, res) => {
+  const { instructorId } = req.params;  // Get instructorId from the URL
+
+  // Validate instructorId
+  if (!mongoose.Types.ObjectId.isValid(instructorId)) {
+    return res.status(400).json({ error: 'Invalid instructorId format' });
+  }
+
+  try {
+    // Fetch all courses that belong to the given instructor
+    const courses = await Course.find({ instructor: instructorId });
+
+    if (!courses || courses.length === 0) {
+      return res.status(404).json({ message: 'No courses found for this instructor' });
+    }
+
+    // Fetch progress and enrollment data for each course and its enrolled students
+    const coursesWithProgress = await Promise.all(courses.map(async (course) => {
+      // Fetch progress data for the course's enrolled students
+      const progressRecords = await Progress.find({ courseId: course._id })
+        .populate('studentId', 'name email')  // Populate student details
+        .populate('completedLessons');  // Populate completed lessons
+
+      // Fetch enrollment data for each student
+      const enrollmentRecords = await Enrollment.find({ courseId: course._id })
+        .populate('studentId', 'name email');  // Populate student details
+
+      const studentsProgress = progressRecords.map(record => {
+        const enrollment = enrollmentRecords.find(enroll => enroll.studentId._id.toString() === record.studentId._id.toString());
+
+        return {
+          studentId: record.studentId._id,
+          name: record.studentId.name,
+          email: record.studentId.email,
+          enrolledAt: enrollment ? enrollment.enrolledAt : null,  // Include enrollment date
+          completedLessons: record.completedLessons,  // Include completed lessons
+          progressPercentage: record.progressPercentage,
+        };
+      });
+
+      return {
+        courseId: course._id,
+        title: course.title,
+        category: course.category,
+        enrolledStudents: studentsProgress,
+      };
+    }));
+
+    // Respond with the instructor's courses along with student progress
+    res.json({ instructorId, courses: coursesWithProgress });
+  } catch (err) {
+    console.error('Error fetching instructor courses with progress:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+ 
+ 
+
+export const getCourseAverageProgress = async (req, res) => {
+  try {
+    const { instructorId, courseId } = req.params;
+
+    // Verify the course exists and belongs to the instructor
+    const course = await Course.findOne({
+      _id: courseId,
+      instructor: instructorId,
+    }).select("title");
+
+    if (!course) {
+      return res.status(404).json({ error: "Course not found or not owned by instructor" });
+    }
+
+    // Find all enrollments for the course
+    const enrollments = await Enrollment.find({ courseId }).select("studentId");
+
+    if (!enrollments.length) {
+      return res.json({
+        courseId,
+        courseTitle: course.title,
+        averageProgress: 0,
+        studentCount: 0,
+      });
+    }
+
+    // Get student IDs from enrollments
+    const studentIds = enrollments.map((enrollment) => enrollment.studentId);
+
+    // Fetch progress for all students in the course
+    const progressRecords = await Progress.find({
+      courseId,
+      studentId: { $in: studentIds },
+    }).select("progressPercentage");
+
+    if (!progressRecords.length) {
+      return res.json({
+        courseId,
+        courseTitle: course.title,
+        averageProgress: 0,
+        studentCount: enrollments.length,
+      });
+    }
+
+    // Calculate average progress
+    const totalProgress = progressRecords.reduce(
+      (sum, record) => sum + (record.progressPercentage || 0),
+      0
+    );
+    const averageProgress = Number(
+      (totalProgress / progressRecords.length).toFixed(2)
+    );
+
+    res.json({
+      courseId,
+      courseTitle: course.title,
+      averageProgress,
+      studentCount: enrollments.length,
+    });
+  } catch (error) {
+    console.error("Error fetching course average progress:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };

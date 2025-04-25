@@ -1,6 +1,6 @@
-import mongoose from 'mongoose';
-import Progress from '../../models/Progress.js';
+ import Progress from '../../models/Progress.js';
 import Course from '../../models/Course.js';
+import mongoose from 'mongoose';
 
 export const updateProgress = async (req, res) => {
   const { studentId, courseId, lessonId } = req.body;
@@ -111,25 +111,96 @@ export const getProgressData = async (req, res) => {
 
 
 export const getAllStudentsProgress = async (req, res) => {
-  const { courseId } = req.params;
+  const courseId = String(req.params.courseId).trim();  // Convert and trim courseId
+
+  // Validate courseId format
+  if (!mongoose.Types.ObjectId.isValid(courseId)) {
+    return res.status(400).json({
+      error: 'Invalid courseId format',
+      receivedId: courseId,
+      expectedFormat: '24-character hex string (e.g., 67fccf3fc59ea97cd3159cea)',
+    });
+  }
 
   try {
-    const courseObjectId = new mongoose.Types.ObjectId(courseId);
+    // Convert courseId to ObjectId for querying
+    const validCourseId = mongoose.Types.ObjectId(courseId);
 
-    // Fetch all progress records for the course
-    const progressData = await Progress.find({ courseId: courseObjectId }).populate('studentId', 'name');
+    // Find progress data for the specified courseId
+    const progressData = await Progress.find({ courseId: validCourseId })
+      .populate('studentId', 'name')  // Populate studentId with name field
+      .exec();
 
-    if (!progressData || progressData.length === 0) {
+    // If no progress data is found
+    if (!progressData?.length) {
       return res.status(404).json({ error: 'No progress data found for this course' });
     }
 
-    res.json(progressData.map((progress) => ({
+    // Prepare the response data
+    const formattedData = progressData.map((progress) => ({
       studentName: progress.studentId.name,
       completedLessons: progress.completedLessons.length,
       totalLessons: progress.totalLessons,
-      progressPercentage: progress.progressPercentage
-    })));
+      progressPercentage: progress.progressPercentage,
+    }));
+
+    // Return the formatted data as a JSON response
+    res.json(formattedData);
   } catch (err) {
+    // Handle errors during the process
+    console.error("[ERROR] Exception details:", err);
     res.status(500).json({ error: err.message });
   }
 };
+
+
+
+
+
+
+export const getCourseProgressSummary = async (req, res) => {
+  const { courseId } = req.params;
+
+  console.log('Received courseId:', courseId);   
+
+   if (!mongoose.Types.ObjectId.isValid(courseId)) {
+    console.error('Invalid courseId format:', courseId);   
+    return res.status(400).json({ error: 'Invalid courseId format' });
+  }
+
+  try {
+     console.log('Fetching course data for courseId:', courseId);   
+    const course = await Course.findById(courseId).select('title');
+    
+    if (!course) {
+      console.error(`Course not found for courseId: ${courseId}`);  
+      return res.status(404).json({ error: 'Course not found' });
+    }
+
+     console.log('Fetching progress records for courseId:', courseId);   
+    const progressRecords = await Progress.find({ courseId });
+
+    if (progressRecords.length === 0) {
+      console.log('No progress records found for courseId:', courseId); 
+      return res.status(404).json({ message: 'No progress records found' });
+    }
+
+    const totalProgress = progressRecords.reduce(
+      (sum, record) => sum + record.progressPercentage,
+      0
+    );
+    const averageProgress = (totalProgress / progressRecords.length).toFixed(2);
+
+    console.log('Calculated average progress:', averageProgress);  
+    res.json({
+      course: course.title,
+      students: progressRecords.length,
+      averageProgress: `${averageProgress}%`,
+    });
+  } catch (err) {
+    console.error('Error fetching course progress summary:', err);   
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
