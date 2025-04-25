@@ -17,9 +17,14 @@ import QuizView from "../components/Quize/QuizView";
 import { OverviewTab } from "../components/course details/OverviewTab";
 import { RatingsTab } from "../components/course details/RatingsTab";
 import { InstructorTab } from "../components/course details/InstructorTab";
+import { useAuth } from "../context/AuthContext";
 
 export const CourseDetails = () => {
+  const { user } = useAuth();
+  const studentId = user?._id;
+
   const { courseId } = useParams();
+
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,6 +35,7 @@ export const CourseDetails = () => {
   const [freeVideosDialogOpen, setFreeVideosDialogOpen] = useState(false);
   const [currentFreeVideoIndex, setCurrentFreeVideoIndex] = useState(0);
 
+ 
   useEffect(() => {
     const fetchCourse = async () => {
       try {
@@ -212,7 +218,7 @@ export const CourseDetails = () => {
 
           <TabsContent value="content">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <CourseContent
+              <CourseContent 
                 modules={course.modules}
                 expandedModules={expandedModules}
                 toggleModule={toggleModule}
@@ -229,6 +235,8 @@ export const CourseDetails = () => {
                 totalCompleted={totalCompleted}
                 total={total}
                 course={course}
+                courseId={courseId}
+                studentId={studentId}
               />
             </div>
           </TabsContent>

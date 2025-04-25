@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export const CourseHeader = ({
   course,
@@ -20,67 +20,91 @@ export const CourseHeader = ({
   onTryFreePreview,
   freeVideoLessons
 }) => {
-  const [loading, setLoading] = useState(false); // Initialize loading state
+  const [loading, setLoading] = useState(false);
+  const [isEnrolled, setIsEnrolled] = useState(false);
   const navigate = useNavigate();
 
+  const user = JSON.parse(localStorage.getItem("user"));
+  const token = localStorage.getItem("token");
+  const [studentCount, setStudentCount] = useState(0);
+  // Check if already enrolled
+  useEffect(() => {
+    const checkEnrollment = async () => {
+      try {
+ 
+        const res = await axios.get(
+          `http://localhost:5000/api/enrollments/check?studentId=${user._id}&courseId=${course._id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+ 
+        // Handle response structure { isEnrolled: true }
+        if (res.data?.isEnrolled === true) {
+          setIsEnrolled(true);
+        }
+      } catch (error) {
+        console.error("Enrollment check error:", error?.response?.data || error.message);
+      }
+    };
+
+    if (user && course?._id) {
+      checkEnrollment();
+    }
+  }, [user, course]);
+
   const handleEnroll = async () => {
-    setLoading(true); // Set loading to true when enrollment starts
-  
+    setLoading(true);
+
     try {
-      const token = localStorage.getItem("token");
-      console.log("Token from localStorage:", token);
-      const user = JSON.parse(localStorage.getItem("user"));
-      console.log("User data from localStorage:", user);
-  
-      const email = user?.email;
-      const fullName = user?.name;
-      console.log("Email:", email, "Full Name:", fullName);
-  
-      if (!email || !fullName) {
+      if (!user?.email || !user?.name) {
         alert("Please log in to enroll.");
         return;
       }
-  
+
       const res = await axios.post(
         "http://localhost:5000/api/payment/initiate",
         {
           amount: course.price,
           courseId: course._id,
-          email: email,
-          fullName: fullName,
+          email: user.email,
+          fullName: user.name,
         },
         {
           headers: {
             Authorization: `Bearer ${token}`,
-          }
+          },
         }
       );
-  
-      console.log("Payment initiation response:", res.data);
-  
-      // Corrected: Checking for `checkoutUrl` in response data
-      if (res.data && res.data.checkoutUrl) {
-        // Redirect to Chapa payment checkout page
-        window.location.replace(res.data.checkoutUrl); 
+
+      if (res.data?.checkoutUrl) {
+        window.location.replace(res.data.checkoutUrl);
       } else {
-        alert("Failed to initiate payment. Response data: " + JSON.stringify(res.data));
+        alert("Payment initiation failed.");
       }
     } catch (error) {
-      console.error("Enrollment error:", error.response || error);
-  
-      // Handle error responses with more details
-      if (error.response) {
-        alert(`Error: ${error.response.data.message || error.response.statusText}`);
-        console.error("Error response details:", error.response.data);
-      } else {
-        alert("Something went wrong during enrollment.");
-      }
+      console.error("Enrollment error:", error?.response?.data || error.message);
+      alert("Enrollment failed: " + (error?.response?.data?.message || "Unknown error"));
     } finally {
-      setLoading(false); // Set loading to false once the process completes
+      setLoading(false);
     }
   };
-  
+  useEffect(() => {
+    const fetchStudentCount = async () => {
+      try {
+        const res = await axios.get(`/api/courses/${course._id}/student-count`);
+        setStudentCount(res.data.studentCount);
+      } catch (err) {
+        console.error("Failed to fetch student count", err);
+      }
+    };
 
+    if (course._id) {
+      fetchStudentCount();
+    }
+  }, [course._id]);
   return (
     <div className="bg-fidel-600 text-white py-12">
       <div className="container px-4 md:px-6">
@@ -112,9 +136,9 @@ export const CourseHeader = ({
                 </span>
               </div>
               <div className="flex items-center">
-                <Users size={18} className="mr-1" />
-                <span>{(course.students || 0).toLocaleString()} students</span>
-              </div>
+      <Users size={18} className="mr-1" />
+      <span>{studentCount.toLocaleString()} students</span>
+    </div>
               <div className="flex items-center">
                 <Clock size={18} className="mr-1" />
                 <span>{course.totalDuration}</span>
@@ -147,57 +171,63 @@ export const CourseHeader = ({
             </div>
           </div>
 
-          <div className="md:w-96">
-            <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-xl">
-              <img
-                src={
-                  course.thumbnail?.url ||
-                  "https://placehold.co/800x500/34d399/ffffff.png?text=Course+Image"
-                }
-                alt={course.title}
-                className="w-full h-52 object-cover"
-              />
-              <div className="p-6">
-                <div className="flex items-baseline mb-4">
-                  <span className="text-2xl font-bold text-green-600">
-                    ETB {course.price?.toLocaleString() || "Free"}
-                  </span>
-                </div>
-                <Button
-                  className="w-full mb-3 bg-fidel-600 hover:bg-fidel-700"
-                  onClick={handleEnroll}  // Call handleEnroll to initiate Chapa payment
-                  disabled={loading}  // Disable the button while loading
-                >
-                  {loading ? "Processing..." : "Enroll Now"}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full mb-6 text-black"
-                  onClick={onTryFreePreview}
-                  disabled={freeVideoLessons.length === 0}
-                >
-                  Try Free Preview
-                  {freeVideoLessons.length === 0 && (
-                    <span className="sr-only">(no free videos available)</span>
-                  )}
-                </Button>
-                <div className="text-sm text-slate-700 dark:text-slate-300 space-y-3">
-                  <div className="flex items-center">
-                    <Clock size={16} className="mr-2 text-muted-foreground" />
-                    <span>Full lifetime access</span>
+          {/* Updated to hide the entire section when isEnrolled is true */}
+          {!isEnrolled && (
+            <div className="md:w-96">
+              <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-xl">
+                <img
+                  src={
+                    course.thumbnail?.url ||
+                    "https://placehold.co/800x500/34d399/ffffff.png?text=Course+Image"
+                  }
+                  alt={course.title}
+                  className="w-full h-52 object-cover"
+                />
+                <div className="p-6">
+                  <div className="flex items-baseline mb-4">
+                    <span className="text-2xl font-bold text-green-600">
+                      ETB {course.price?.toLocaleString() || "Free"}
+                    </span>
                   </div>
-                  <div className="flex items-center">
-                    <Award size={16} className="mr-2 text-muted-foreground" />
-                    <span>Certificate of completion</span>
-                  </div>
-                  <div className="flex items-center">
-                    <MessageSquare size={16} className="mr-2 text-muted-foreground" />
-                    <span>Direct instructor support</span>
+
+                  <Button
+                    className="w-full mb-3 bg-fidel-600 hover:bg-fidel-700"
+                    onClick={handleEnroll}
+                    disabled={loading}
+                  >
+                    {loading ? "Processing..." : "Enroll Now"}
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="w-full mb-6 text-black"
+                    onClick={onTryFreePreview}
+                    disabled={freeVideoLessons.length === 0}
+                  >
+                    Try Free Preview
+                    {freeVideoLessons.length === 0 && (
+                      <span className="sr-only">(no free videos available)</span>
+                    )}
+                  </Button>
+
+                  <div className="text-sm text-slate-700 dark:text-slate-300 space-y-3">
+                    <div className="flex items-center">
+                      <Clock size={16} className="mr-2 text-muted-foreground" />
+                      <span>Full lifetime access</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Award size={16} className="mr-2 text-muted-foreground" />
+                      <span>Certificate of completion</span>
+                    </div>
+                    <div className="flex items-center">
+                      <MessageSquare size={16} className="mr-2 text-muted-foreground" />
+                      <span>Direct instructor support</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

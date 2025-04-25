@@ -1,20 +1,20 @@
-// import express from 'express';
-// import http from 'http';
-// import { Server } from 'socket.io';
-// import multer from 'multer';
-// import path from 'path';
-// import dotenv from 'dotenv';
-// import cors from 'cors';
-// import morgan from 'morgan';
-// import helmet from 'helmet';
-// import cookieParser from 'cookie-parser';
-// import connectDB from './config/db.js';
-// import authRoutes from './routes/authRoutes.js';
-// import adminRoutes from './routes/admin-Routes/adminRoutes.js';
-// import User from './models/User.js';
-// import userRoutes from './routes/userRoutes/userRoutes.js';
-// import otpRoutes from './routes/otp-Routes/otpRoutes.js';
-// import routes from './routes/instructor-Routes/index.js';
+import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
+import multer from 'multer';
+import path from 'path';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import morgan from 'morgan';
+import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+import connectDB from './config/db.js';
+import authRoutes from './routes/authRoutes.js';
+import adminRoutes from './routes/admin-Routes/adminRoutes.js';
+import User from './models/User.js';
+import userRoutes from './routes/userRoutes/userRoutes.js';
+import otpRoutes from './routes/otp-Routes/otpRoutes.js';
+import routes from './routes/instructor-Routes/index.js';
 
 // import paymentRoutes from './routes/PaymentRoutes/paymentRoutes.js';
 // // Add these with your other route imports
@@ -200,7 +200,7 @@ import messageRoutes from "./routes/messageRoutes.js";
 
 
 dotenv.config();
-await connectDB();
+await connectDB(); // Ensure MongoDB is connected before starting server
 
 const app = express();
 const server = http.createServer(app);
@@ -212,9 +212,9 @@ const io = new Server(server, {
   },
 });
 
-// Socket.io connection handling
-io.on("connection", (socket) => {
-  console.log("New client connected:", socket.id);
+// Track connected users
+io.on('connection', (socket) => {
+  console.log('New client connected:', socket.id);
 
   // Register user with their socket ID
   socket.on("registerUser", async (userId) => {
@@ -296,61 +296,46 @@ io.on("connection", (socket) => {
   });
 });
 
-// Middleware setup
-app.use(express.json());
+ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(morgan("dev"));
 app.use(helmet());
 
-// File upload setup
-const uploadDir = path.join(process.cwd(), "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
+// File uploads
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + "-" + file.originalname);
-  },
+  destination: (req, file, cb) => cb(null, 'uploads/'),
+  filename: (req, file, cb) =>
+    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname)),
+});
+const upload = multer({ storage });
+
+// File upload route
+app.post('/upload', upload.single('cv'), (req, res) => {
+  if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+  res.json({ message: 'File uploaded successfully', file: req.file });
 });
 
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = [
-    "image/jpeg",
-    "image/png",
-    "image/gif",
-    "application/pdf",
-    "text/plain",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  ];
+// File download route
+app.get('/download/:filename', (req, res) => {
+  const { filename } = req.params;
+  const filePath = path.join(__dirname, 'uploads', filename);
 
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error("Invalid file type"), false);
-  }
-};
-
-export const upload = multer({
-  storage,
-  fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  // Check if file exists before attempting to download
+  res.download(filePath, filename, (err) => {
+    if (err) {
+      res.status(404).json({ message: 'File not found' });
+    }
+  });
 });
 
-// Serve static files
-app.use("/uploads", express.static(uploadDir));
+app.use('/uploads', cors(), express.static('uploads'));
 
-// API Routes
+
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/users', adminRoutes); // Adjust as needed
+app.use('/api/users', adminRoutes); 
 app.use('/api/users', userRoutes);
 app.use('/api/otp', otpRoutes);
 app.use('/api', routes);
@@ -360,12 +345,18 @@ app.use('/api/conversations', conversationRoutes);
 app.use('/api/messages', messageRoutes);
 app.use("/uploads", express.static(path.join(process.cwd(), "config/uploads")));
 
-// Error handling middleware
+app.use('/certificates', express.static(path.join(process.cwd(), 'certificates')));
+
+
+app.use('/api/certificates', certificateRoutes);
+
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: "Server error", error: err.message });
 });
 
+// Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);

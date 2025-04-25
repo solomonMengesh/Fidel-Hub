@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,69 +7,118 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  X,
-  PlayCircle,
   ChevronUp,
   ChevronDown,
   Lock,
   Check,
-  FileText,
   BarChart,
+  Loader2,
+  PlayCircle,
 } from "lucide-react";
 import VideoPlayer from "@/components/video-player";
 import QuizView from "../Quize/QuizView";
-import React, { useState } from "react";
+import axios from "axios";
 
 export const CourseContent = ({
   modules,
   expandedModules,
   toggleModule,
-  handlePreviewClick,
   previewLoading,
   freePreviewMode,
+  courseId,
+  studentId,
 }) => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [currentPreview, setCurrentPreview] = useState(null);
+  const [hasAccess, setHasAccess] = useState(false);
+  const [completedLessons, setCompletedLessons] = useState([]);
+  const [loadingProgress, setLoadingProgress] = useState(true);
+  const [error, setError] = useState(null);
 
-   let totalLessons = 0;
-let totalDurationCalculated = 0;
+  useEffect(() => {
+    const fetchProgressData = async () => {
+      if (!studentId || !courseId) {
+        setLoadingProgress(false);
+        return;
+      }
 
- modules?.forEach((module) => {
-  module.lessons?.forEach((lesson) => {
-    const durationStr = lesson.duration || "0";
+      try {
+        const enrollmentRes = await axios.get(
+          `/api/enrollments/${studentId}/${courseId}`
+        );
+        setHasAccess(enrollmentRes.data.access === true);
 
- 
-     const durationParts = durationStr.split(":");
-    let hours = 0, minutes = 0;
+        const progressRes = await axios.get(
+          `/api/progress/${studentId}/${courseId}/completedLessons`,
+          {
+            validateStatus: (status) => status === 200 || status === 304 || status === 404,
+          }
+        );
 
-    if (durationParts.length === 2) {
-       hours = parseInt(durationParts[0], 10) || 0;
-      minutes = parseInt(durationParts[1], 10) || 0;
-    } else if (durationParts.length === 1) {
-       minutes = parseInt(durationParts[0], 10) || 0;
-    }
+        if (progressRes.status === 200) {
+          const completed = Array.isArray(progressRes.data?.completedLessons)
+            ? progressRes.data.completedLessons.map(id => id.toString())
+            : [];
+          setCompletedLessons(completed);
+        } else if (progressRes.status === 404) {
+          setCompletedLessons([]);
+        }
+      } catch (err) {
+        console.error("Error fetching progress:", err);
+        setError("Failed to load progress data");
+      } finally {
+        setLoadingProgress(false);
+      }
+    };
 
-     totalDurationCalculated += hours * 60 + minutes;
+    fetchProgressData();
+  }, [studentId, courseId]);
 
-     totalLessons += 1;
+  const { totalLessons, formattedTotalDuration } = React.useMemo(() => {
+    let count = 0;
+    let totalMinutes = 0;
 
-   });
-});
+    modules?.forEach((module) => {
+      module.lessons?.forEach((lesson) => {
+        count++;
+        const [hours = 0, mins = 0] = (lesson.duration || "0:0").split(":").map(Number);
+        totalMinutes += hours * 60 + mins;
+      });
+    });
 
- const totalHours = Math.floor(totalDurationCalculated / 60);
-const totalMinutes = totalDurationCalculated % 60;
-
-// Display in "Xh Ym" format
-const formattedTotalDuration = totalDurationCalculated && !isNaN(totalDurationCalculated)
-  ? `${totalHours}:${totalMinutes}`
-  : "0:0";
-
-
-
+    return {
+      totalLessons: count,
+      formattedTotalDuration: `${Math.floor(totalMinutes / 60)}:${String(totalMinutes % 60).padStart(2, '0')}`,
+    };
+  }, [modules]);
 
   const openPreviewDialog = (lesson) => {
     setCurrentPreview(lesson);
     setPreviewOpen(true);
+  };
+
+  const isLessonCompleted = (lessonId) => {
+    if (!lessonId || loadingProgress || !completedLessons) return false;
+    return completedLessons.includes(lessonId.toString());
+  };
+
+  const refreshCompletedLessons = async () => {
+    try {
+      const res = await axios.get(
+        `/api/progress/${studentId}/${courseId}/completedLessons`,
+        {
+          validateStatus: (status) => status === 200 || status === 304 || status === 404,
+        }
+      );
+      
+      if (res.status === 200 && Array.isArray(res.data?.completedLessons)) {
+        setCompletedLessons(res.data.completedLessons.map(id => id.toString()));
+      } else if (res.status === 404) {
+        setCompletedLessons([]);
+      }
+    } catch (err) {
+      console.error("Failed to refresh completed lessons:", err);
+    }
   };
 
   return (
@@ -79,20 +129,31 @@ const formattedTotalDuration = totalDurationCalculated && !isNaN(totalDurationCa
             {freePreviewMode ? "Free Preview Content" : "Course Content"}
           </h3>
           <div className="text-sm text-muted-foreground mt-1">
-            {modules?.length || 0} modules • {totalLessons} lessons • {formattedTotalDuration} total length
+            {modules?.length || 0} modules • {totalLessons} lessons •{" "}
+            {formattedTotalDuration} total length
           </div>
         </div>
 
-        {modules?.map((module) => (
-          <ModuleSection
-            key={module._id}
-            module={module}
-            expandedModules={expandedModules}
-            toggleModule={toggleModule}
-            handlePreviewClick={openPreviewDialog}
-            previewLoading={previewLoading}
-          />
-        ))}
+        {error ? (
+          <div className="p-4 text-center text-red-500">{error}</div>
+        ) : loadingProgress ? (
+          <div className="p-4 flex justify-center">
+            <Loader2 className="animate-spin" />
+          </div>
+        ) : (
+          modules?.map((module) => (
+            <ModuleSection
+              key={module._id}
+              module={module}
+              expandedModules={expandedModules}
+              toggleModule={toggleModule}
+              handlePreviewClick={openPreviewDialog}
+              previewLoading={previewLoading}
+              hasAccess={hasAccess}
+              isLessonCompleted={isLessonCompleted}
+            />
+          ))
+        )}
       </div>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
@@ -109,11 +170,26 @@ const formattedTotalDuration = totalDurationCalculated && !isNaN(totalDurationCa
             {currentPreview?.type === "quiz" ? (
               <QuizView
                 lesson_id={currentPreview._id}
-                onComplete={() => setPreviewOpen(false)}
+                courseId={courseId}
+                studentId={studentId}
+                onComplete={() => {
+                  setPreviewOpen(false);
+                  refreshCompletedLessons();
+                }}
               />
             ) : currentPreview?.video?.url ? (
               <div className="rounded-lg overflow-hidden">
-                <VideoPlayer url={currentPreview.video.url} width="100%" height="450px" />
+                <VideoPlayer
+                  lessonId={currentPreview._id}
+                  url={currentPreview.video.url}
+                  width="100%"
+                  height="450px"
+                  courseId={courseId}
+                  studentId={studentId}
+                  onComplete={() => {
+                    refreshCompletedLessons();
+                  }}
+                />
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-64 bg-slate-100 dark:bg-slate-800 rounded-lg p-4">
@@ -123,14 +199,6 @@ const formattedTotalDuration = totalDurationCalculated && !isNaN(totalDurationCa
                     ? "Video is currently unavailable. Please try again later."
                     : "This lesson doesn't have a video component."}
                 </p>
-                {currentPreview?.description && (
-                  <div className="mt-4 text-center">
-                    <h4 className="font-medium mb-2">About this lesson</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {currentPreview.description}
-                    </p>
-                  </div>
-                )}
               </div>
             )}
           </div>
@@ -146,6 +214,8 @@ const ModuleSection = ({
   toggleModule,
   handlePreviewClick,
   previewLoading,
+  hasAccess,
+  isLessonCompleted,
 }) => {
   return (
     <div className="border-b border-slate-200 dark:border-slate-800 last:border-b-0">
@@ -171,66 +241,95 @@ const ModuleSection = ({
           module={module}
           handlePreviewClick={handlePreviewClick}
           previewLoading={previewLoading}
+          hasAccess={hasAccess}
+          isLessonCompleted={isLessonCompleted}
         />
       )}
     </div>
   );
 };
 
-const ModuleLessons = ({ module, handlePreviewClick, previewLoading }) => {
+const ModuleLessons = ({
+  module,
+  handlePreviewClick,
+  previewLoading,
+  hasAccess,
+  isLessonCompleted,
+}) => {
   return (
     <div className="bg-slate-50 dark:bg-slate-800/30 divide-y divide-slate-200 dark:divide-slate-800">
       {module.lessons?.map((lesson) => {
-        const isVideoLesson = lesson.type === "video";
-        const isQuizLesson = lesson.type === "quiz";
-        const hasValidVideo = isVideoLesson && lesson.video?._valid;
-        const isDisabled = isVideoLesson && !hasValidVideo;
+        const isVideo = lesson.type === "video";
+        const isQuiz = lesson.type === "quiz";
+        const hasVideo = isVideo && lesson.video?.url;
+        const hasThumbnail = isVideo && lesson.video?.thumbnailUrl;
+        const isLocked = (!lesson.free && !hasAccess);
+        const completed = isLessonCompleted(lesson._id);
 
         return (
-          <div
-            key={lesson._id}
-            className={`flex items-center p-3 pl-10 hover:bg-slate-100 dark:hover:bg-slate-800/50 ${
-              !lesson.free ? "opacity-75" : ""
-            }`}
-          >
-            <LessonIcon
-              lesson={lesson}
-              isVideoLesson={isVideoLesson}
-              isQuizLesson={isQuizLesson}
-            />
-
-            <div className="flex-1">
-              <div className="flex items-center">
-                <span className={`${lesson.completed ? "text-muted-foreground" : ""}`}>
-                  {lesson.title}
-                  {!lesson.free && (
-                    <span className="ml-2 text-xs bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
-                      Premium
-                    </span>
-                  )}
-                </span>
-                {lesson.completed && <Check size={16} className="ml-2 text-green-500" />}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {lesson.duration || "N/A"}
-              </div>
+          <div key={lesson._id} className="flex justify-between items-center py-4 px-6">
+            <div className="flex items-center gap-3">
+              {/* Status Indicator */}
+              {completed ? (
+                <Check size={20} className="text-green-500 shrink-0" />
+              ) : isLocked ? (
+                <Lock size={20} className="text-slate-500 shrink-0" />
+              ) : isQuiz ? (
+                <BarChart size={20} className="text-primary-500 shrink-0" />
+              ) : null}
+              
+              {/* Thumbnail - Only show if not locked */}
+              {hasThumbnail && !isLocked && (
+                <div className="w-16 h-10 rounded-md overflow-hidden border border-slate-200 dark:border-slate-700">
+                  <img
+                    src={lesson.video.thumbnailUrl}
+                    alt={`Thumbnail for ${lesson.title}`}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              )}
+              
+              {/* Lesson Title */}
+              <span className={`font-medium ${completed ? "text-muted-foreground" : ""}`}>
+                {isLocked && (
+                  <span className="bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 text-xs px-2 py-0.5 rounded mr-2">
+                    Premium
+                  </span>
+                )}
+                {lesson.title}
+                {lesson.duration && !isLocked && (
+                  <span className="text-xs text-muted-foreground ml-2">
+                    {lesson.duration}
+                  </span>
+                )}
+              </span>
             </div>
 
             <Button
-              variant="ghost"
               size="sm"
-              className={`text-fidel-500 ${
-                isDisabled || !lesson.free ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-              onClick={() => !isDisabled && lesson.free && handlePreviewClick(lesson)}
-              disabled={isDisabled || !lesson.free || previewLoading}
-              aria-disabled={isDisabled || !lesson.free}
+              variant={completed ? "secondary" : "outline"}
+              disabled={isLocked || previewLoading}
+              className="ml-4"
+              onClick={() => handlePreviewClick(lesson)}
             >
-              {lesson.completed ? "Replay" : "Preview"}
-              {(isDisabled || !lesson.free) && (
-                <span className="sr-only">
-                  (disabled - {isDisabled ? "video not available" : "premium content"})
-                </span>
+              {previewLoading ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : isQuiz ? (
+                <>
+                  <BarChart size={16} className="mr-1" />
+                  {completed ? "Retake Quiz" : "Start Quiz"}
+                </>
+              ) : completed ? (
+                <>
+                  <PlayCircle size={16} className="mr-1" />
+                  Replay
+                </>
+              ) : (
+                <>
+                  <PlayCircle size={16} className="mr-1" />
+                  Preview
+                </>
               )}
             </Button>
           </div>
@@ -238,30 +337,4 @@ const ModuleLessons = ({ module, handlePreviewClick, previewLoading }) => {
       })}
     </div>
   );
-};
-
-const LessonIcon = ({ lesson, isVideoLesson, isQuizLesson }) => {
-  if (!lesson.free) return <Lock size={16} className="mr-3 text-muted-foreground" />;
-
-  if (isVideoLesson) {
-    return lesson.video?.thumbnailUrl ? (
-      <img
-        src={lesson.video.thumbnailUrl}
-        alt={lesson.title}
-        className="w-16 h-10 object-cover rounded mr-3"
-        onError={(e) => {
-          e.currentTarget.src =
-            "https://placehold.co/64x40/3b82f6/ffffff.png?text=Video";
-        }}
-      />
-    ) : (
-      <PlayCircle size={16} className="mr-3 text-fidel-500" />
-    );
-  }
-
-  if (lesson.type === "reading")
-    return <FileText size={16} className="mr-3 text-fidel-500" />;
-  if (isQuizLesson) return <BarChart size={16} className="mr-3 text-fidel-500" />;
-
-  return <PlayCircle size={16} className="mr-3 text-fidel-500" />;
 };

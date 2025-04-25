@@ -1,7 +1,80 @@
- import { Check, ChevronRight } from "lucide-react";
- import { Button } from "@/components/ui/button";
+import { Check, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import axios from "axios";
+import { useState, useEffect } from "react";
 
 export const OverviewTab = ({ course, total }) => {
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const user = JSON.parse(localStorage.getItem("user"));
+  const token = localStorage.getItem("token");
+
+  // Check if already enrolled
+  useEffect(() => {
+    const checkEnrollment = async () => {
+      try {
+        console.log("🔍 Checking enrollment for:", user._id, course._id);
+
+        const res = await axios.get(
+          `http://localhost:5000/api/enrollments/check?studentId=${user._id}&courseId=${course._id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        console.log("✅ Enrollment check response:", res.data);
+
+        // Handle response structure { isEnrolled: true }
+        if (res.data?.isEnrolled === true) {
+          setIsEnrolled(true);
+        }
+      } catch (error) {
+        console.error("Enrollment check error:", error?.response?.data || error.message);
+      }
+    };
+
+    if (user && course?._id) {
+      checkEnrollment();
+    }
+  }, [user, course]);
+
+  // Handle enrollment payment
+  const handleEnroll = async () => {
+    setLoading(true);
+    try {
+      if (!user?.email || !user?.name) {
+        alert("Please log in to enroll.");
+        return;
+      }
+      const res = await axios.post(
+        "http://localhost:5000/api/payment/initiate",
+        {
+          amount: course.price,
+          courseId: course._id,
+          email: user.email,
+          fullName: user.name,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (res.data?.checkoutUrl) {
+        window.location.replace(res.data.checkoutUrl);
+      } else {
+        alert("Payment initiation failed.");
+      }
+    } catch (error) {
+      console.error("Enrollment error:", error?.response?.data || error.message);
+      alert("Enrollment failed: " + (error?.response?.data?.message || "Unknown error"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2 space-y-8">
@@ -47,15 +120,15 @@ export const OverviewTab = ({ course, total }) => {
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Level</span>
-              <span className="font-medium">{course.level || 'N/A'}</span>
+              <span className="font-medium">{course.level || "N/A"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Category</span>
-              <span className="font-medium">{course.category || 'N/A'}</span>
+              <span className="font-medium">{course.category || "N/A"}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Language</span>
-              <span className="font-medium">{course.language || 'English'}</span>
+              <span className="text-muted-foreground">Price</span>
+              <span className="font-medium">ETB {course.price?.toLocaleString() || "Free"}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Last Updated</span>
@@ -72,9 +145,17 @@ export const OverviewTab = ({ course, total }) => {
               <span className="font-medium">{total}</span>
             </div>
           </div>
-          <div className="border-t border-slate-200 dark:border-slate-800 mt-5 pt-5">
-            <Button className="w-full">Enroll Now</Button>
-          </div>
+          {!isEnrolled && (
+            <div className="border-t border-slate-200 dark:border-slate-800 mt-5 pt-5">
+              <Button
+                className="w-full"
+                onClick={handleEnroll}
+                disabled={loading}
+              >
+                {loading ? "Processing..." : "Enroll Now"}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>
