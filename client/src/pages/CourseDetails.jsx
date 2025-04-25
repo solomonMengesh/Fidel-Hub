@@ -6,7 +6,11 @@ import { CourseProgress } from "../components/course details/CourseProgress";
 import { FreeVideosDialog } from "../components/course details/FreeVideosDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ThemeToggle from "@/components/ui/ThemeToggle";
-import { formatDuration, calculateTotalDuration, calculateProgress } from "../Helper/utils";
+import {
+  formatDuration,
+  calculateTotalDuration,
+  calculateProgress,
+} from "../Helper/utils";
 import VideoPlayer from "@/components/video-player";
 import QuizView from "../components/Quize/QuizView";
 // import Button from "../components/ui/button"; // Assuming Button is imported from your UI components
@@ -29,61 +33,71 @@ export const CourseDetails = () => {
   useEffect(() => {
     const fetchCourse = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/courses/${courseId}`);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        
+        const response = await fetch(
+          `http://localhost:5000/api/courses/${courseId}`
+        );
+        if (!response.ok)
+          throw new Error(`HTTP error! status: ${response.status}`);
+
         const data = await response.json();
-  
+
         const processedData = {
           ...data,
-          modules: data.modules?.map(module => ({
-            ...module,
-            duration: formatDuration(module.duration),
-            lessons: module.lessons?.map(lesson => {
-              const videoData = lesson.video || {};
-              const hasValidUrl = !!videoData.url;
-              return {
-                ...lesson,
-                duration: formatDuration(lesson.duration),
-                video: {
-                  url: videoData.url || null,
-                  thumbnailUrl: videoData.thumbnailUrl || null,
-                  publicId: videoData.publicId || null,
-                  _valid: hasValidUrl
-                }
-              };
-            }) || []
-          })) || []
+          modules:
+            data.modules?.map((module) => ({
+              ...module,
+              duration: formatDuration(module.duration),
+              lessons:
+                module.lessons?.map((lesson) => {
+                  const videoData = lesson.video || {};
+                  const hasValidUrl = !!videoData.url;
+                  return {
+                    ...lesson,
+                    duration: formatDuration(lesson.duration),
+                    video: {
+                      url: videoData.url || null,
+                      thumbnailUrl: videoData.thumbnailUrl || null,
+                      publicId: videoData.publicId || null,
+                      _valid: hasValidUrl,
+                    },
+                  };
+                }) || [],
+            })) || [],
         };
- 
+
         setCourse(processedData);
-  
+
         if (processedData.modules?.length > 0) {
           const firstModuleId = processedData.modules[0]._id;
           setExpandedModules([firstModuleId]);
         }
       } catch (err) {
-        console.error('[ERROR] Failed to fetch course:', err);
+        console.error("[ERROR] Failed to fetch course:", err);
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
-  
+
     fetchCourse();
   }, [courseId]);
 
   const freeVideoLessons = useMemo(() => {
     if (!course?.modules) return [];
-    
-    return course.modules.flatMap(module => 
-      module.lessons?.filter(lesson => 
-        lesson.free && lesson.type === "video" && lesson.video?._valid
-      ) || []
+
+    return course.modules.flatMap(
+      (module) =>
+        module.lessons?.filter(
+          (lesson) =>
+            lesson.free && lesson.type === "video" && lesson.video?._valid
+        ) || []
     );
   }, [course]);
 
-  const totalDuration = useMemo(() => calculateTotalDuration(course?.modules), [course]);
+  const totalDuration = useMemo(
+    () => calculateTotalDuration(course?.modules),
+    [course]
+  );
   const { totalCompleted, total, percentage } = useMemo(
     () => calculateProgress(course?.modules),
     [course]
@@ -91,12 +105,14 @@ export const CourseDetails = () => {
 
   const toggleModule = (moduleId) => {
     setExpandedModules((prev) =>
-      prev.includes(moduleId) ? prev.filter((id) => id !== moduleId) : [...prev, moduleId]
+      prev.includes(moduleId)
+        ? prev.filter((id) => id !== moduleId)
+        : [...prev, moduleId]
     );
   };
 
   const handlePreviewClick = async (lesson) => {
-    if (lesson.type === 'video' && !lesson.video?._valid) {
+    if (lesson.type === "video" && !lesson.video?._valid) {
       return;
     }
 
@@ -117,13 +133,13 @@ export const CourseDetails = () => {
   };
 
   const handleNextFreeVideo = () => {
-    setCurrentFreeVideoIndex(prev => 
+    setCurrentFreeVideoIndex((prev) =>
       prev < freeVideoLessons.length - 1 ? prev + 1 : 0
     );
   };
 
   const handlePrevFreeVideo = () => {
-    setCurrentFreeVideoIndex(prev => 
+    setCurrentFreeVideoIndex((prev) =>
       prev > 0 ? prev - 1 : freeVideoLessons.length - 1
     );
   };
@@ -140,10 +156,15 @@ export const CourseDetails = () => {
     return (
       <div className="min-h-screen flex items-center justify-center dark:bg-slate-950">
         <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2 text-red-500">Error loading course</h2>
+          <h2 className="text-xl font-semibold mb-2 text-red-500">
+            Error loading course
+          </h2>
           <p className="text-muted-foreground mb-4">{error}</p>
           {/* <Button onClick={() => window.location.reload()}>Try Again</Button> */}
-          <Link to="/courses" className="block mt-4 text-fidel-500 hover:underline">
+          <Link
+            to="/courses"
+            className="block mt-4 text-fidel-500 hover:underline"
+          >
             Back to Courses
           </Link>
         </div>
@@ -164,13 +185,14 @@ export const CourseDetails = () => {
     );
   }
 
-  const instructorName = typeof course.instructor === 'object' 
-    ? course.instructor.name 
-    : course.instructor || 'Unknown Instructor';
+  const instructorName =
+    typeof course.instructor === "object"
+      ? course.instructor.name
+      : course.instructor || "Unknown Instructor";
 
   return (
     <div className="min-h-screen flex flex-col dark:bg-slate-950">
-      <CourseHeader 
+      <CourseHeader
         course={course}
         instructorName={instructorName}
         total={total}
@@ -190,7 +212,7 @@ export const CourseDetails = () => {
 
           <TabsContent value="content">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <CourseContent 
+              <CourseContent
                 modules={course.modules}
                 expandedModules={expandedModules}
                 toggleModule={toggleModule}
@@ -202,7 +224,7 @@ export const CourseDetails = () => {
                 QuizView={QuizView} // Pass QuizView here
               />
 
-              <CourseProgress 
+              <CourseProgress
                 percentage={percentage}
                 totalCompleted={totalCompleted}
                 total={total}
@@ -212,16 +234,16 @@ export const CourseDetails = () => {
           </TabsContent>
 
           <TabsContent value="overview">
-          <OverviewTab course={course} total={total} />
-        </TabsContent>
+            <OverviewTab course={course} total={total} />
+          </TabsContent>
 
-        <TabsContent value="reviews">
-          <RatingsTab />
-        </TabsContent>
+          <TabsContent value="reviews">
+            <RatingsTab />
+          </TabsContent>
 
-        <TabsContent value="instructor">
-          <InstructorTab course={course} />
-        </TabsContent>
+          <TabsContent value="instructor">
+            <InstructorTab course={course} />
+          </TabsContent>
           {/* Other tabs would go here */}
         </Tabs>
       </div>

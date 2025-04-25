@@ -89,7 +89,7 @@ const StudentDashboard = () => {
             </button>
           ))}
         </nav>
- 
+
         <div className="absolute bottom-5 left-5 right-5">
           <div className="flex items-center space-x-2 p-2 rounded-lg bg-slate-100 dark:bg-slate-800">
             <div className="h-8 w-8 rounded-full bg-fidel-100 dark:bg-fidel-900/30 flex items-center justify-center text-fidel-600 dark:text-fidel-400 font-medium">
@@ -156,7 +156,9 @@ const StudentDashboard = () => {
             {activeTab === "overview" && <OverviewTab />}
             {activeTab === "courses" && <CoursesTab />}
             {activeTab === "schedule" && <ScheduleTab />}
-            {activeTab === "messages" && <MessagesTab />}
+            {activeTab === "messages" && (
+              <MessagesTab currentUserType="student" />
+            )}
             {activeTab === "instructors" && <InstructorsTab />}
             {activeTab === "settings" && <PlatformSettings />}
           </motion.div>

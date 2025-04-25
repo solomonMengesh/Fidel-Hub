@@ -11,4 +11,4 @@ router.post('/login', loginUser);
 router.post('/logout', logoutUser);
 router.get('/me', protect, getMe); // Get current user info (protected route)
 
-export default router;
+export default router; 

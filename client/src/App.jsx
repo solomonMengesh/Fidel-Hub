@@ -26,6 +26,7 @@ import VerifyOTP from "./pages/VerifyOTP";
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentFailed from './pages/PaymentFailed';
 import VerifyPayment from './../src/components/Payment/VerifyPayment';
+import MessagesTab from "./components/student-dashboard/MessagesTab";
 const MainLayout = ({ children }) => (
   <>
     <Navbar />
@@ -99,6 +100,8 @@ const App = () => {
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/users/:userId" element={<UserDetails />} />
+        <Route path="/courses/:courseId/messages" element={<MessagesTab />} />
+          <Route path="/messages" element={<MessagesTab />} />
       </Routes>
 
       <Toaster />

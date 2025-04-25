@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Logo from "../components/layout/Logo";
+import { MessagesTab } from "../components/student-dashboard/MessagesTab";
 
 const StudentManagement = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -676,7 +677,8 @@ const InstructorDashboard = () => {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <InstructorStudentChat />
+              {/* <InstructorStudentChat /> */}
+              <MessagesTab currentUserType="instructor" />
             </motion.div>
           )}
 

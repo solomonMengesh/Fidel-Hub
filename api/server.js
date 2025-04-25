@@ -17,7 +17,9 @@ import otpRoutes from './routes/otp-Routes/otpRoutes.js';
 import routes from './routes/instructor-Routes/index.js';
 
 import paymentRoutes from './routes/PaymentRoutes/paymentRoutes.js';
-
+// Add these with your other route imports
+import conversationRoutes from './routes/conversationRoutes.js';
+import messageRoutes from './routes/messageRoutes.js';
 dotenv.config();
 await connectDB(); // Ensure MongoDB is connected before starting server
 
@@ -30,10 +32,36 @@ const io = new Server(server, {
   }
 });
 
-// Track connected users
+// // Track connected users
+// io.on('connection', (socket) => {
+//   console.log('New client connected:', socket.id);
+
+//   socket.on('registerUser', async (userId) => {
+//     try {
+//       await User.findByIdAndUpdate(userId, { socketId: socket.id });
+//       console.log(`User ${userId} registered with socket ${socket.id}`);
+//     } catch (error) {
+//       console.error('Error registering user socket:', error);
+//     }
+//   });
+
+//   socket.on('disconnect', async () => {
+//     try {
+//       await User.findOneAndUpdate(
+//         { socketId: socket.id },
+//         { $set: { socketId: null } }
+//       );
+//       console.log(`Client disconnected: ${socket.id}`);
+//     } catch (error) {
+//       console.error('Error handling disconnect:', error);
+//     }
+//   });
+// });
+// Track connected users and messaging
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
 
+  // 1. Your existing user registration handler
   socket.on('registerUser', async (userId) => {
     try {
       await User.findByIdAndUpdate(userId, { socketId: socket.id });
@@ -43,6 +71,26 @@ io.on('connection', (socket) => {
     }
   });
 
+  // 2. New messaging handlers
+  socket.on('joinConversation', (conversationId) => {
+    socket.join(conversationId);
+    console.log(`User joined conversation: ${conversationId}`);
+  });
+
+  socket.on('leaveConversation', (conversationId) => {
+    socket.leave(conversationId);
+    console.log(`User left conversation: ${conversationId}`);
+  });
+
+  socket.on('typing', (data) => {
+    const { conversationId, userId } = data;
+    socket.to(conversationId).emit('userTyping', { 
+      userId,
+      isTyping: true 
+    });
+  });
+
+  // 3. Your existing disconnect handler
   socket.on('disconnect', async () => {
     try {
       await User.findOneAndUpdate(
@@ -55,7 +103,6 @@ io.on('connection', (socket) => {
     }
   });
 });
-
 // Middleware setup
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -63,7 +110,14 @@ app.use(cookieParser());
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(morgan('dev'));
 app.use(helmet());
-
+// import path from "path";
+import fs from "fs";
+const uploadDir = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+// Serve static files from uploads directory
+app.use("/uploads", express.static(uploadDir));
 // File uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),
@@ -101,7 +155,10 @@ app.use('/api/users', userRoutes);
 app.use('/api/otp', otpRoutes);
 app.use('/api', routes);
 app.use('/api/payment', paymentRoutes);
-
+// Add these with your other route middleware
+app.use('/api/conversations', conversationRoutes);
+app.use('/api/messages', messageRoutes);
+app.use("/uploads", express.static(path.join(process.cwd(), "config/uploads")));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
