@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import InstructorAnalyticsDashboard from "@/components/instructor/analytics/InstructorAnalyticsDashboard";
 import {
   Users,
   BookOpen,

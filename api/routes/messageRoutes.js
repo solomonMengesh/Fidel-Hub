@@ -29,16 +29,14 @@ import {
   getMessages,
   updateMessage,
   deleteMessage,
-  upload,
 } from "../controllers/messageController.js";
 import { protect } from "../middleware/authMiddleware.js";
+import upload from "../utils/fileUpload.js";
 
 const router = express.Router();
 
-// Protect all routes
 router.use(protect);
 
-// Message routes
 router.post("/", upload.single("file"), sendMessage);
 router.get("/:conversationId", getMessages);
 router.put("/:id", updateMessage);

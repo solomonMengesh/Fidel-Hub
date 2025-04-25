@@ -871,7 +871,644 @@
 //     </div>
 //   );
 // };
+
+// export default MessagesTab;
+
+// import { useState, useEffect, useRef } from "react";
+// import {
+//   Send,
+//   Upload,
+//   FileText,
+//   Image,
+//   Download,
+//   Ban,
+//   AlertCircle,
+//   Edit,
+//   Trash,
+//   X,
+//   Check,
+// } from "lucide-react";
+// import axios from "axios";
+// import { useAuth } from "../../context/AuthContext";
+
+// export const MessagesTab = ({ courseId, instructorId }) => {
+//   const { user } = useAuth();
+//   const [activeConversation, setActiveConversation] = useState(null);
+//   const [conversations, setConversations] = useState([]);
+//   const [messages, setMessages] = useState([]);
+//   const [newMessage, setNewMessage] = useState("");
+//   const [file, setFile] = useState(null);
+//   const [editingMessageId, setEditingMessageId] = useState(null);
+//   const [editMessageContent, setEditMessageContent] = useState("");
+//   const [isLoading, setIsLoading] = useState(false);
+//   const fileInputRef = useRef(null);
+//   const messagesEndRef = useRef(null);
+//   const editInputRef = useRef(null);
+
+//   // Helper to get the other participant
+//   const getOtherParticipant = (conversation) => {
+//     if (!conversation || !conversation.participants || !user) return null;
+//     return conversation.participants.find((p) => p._id !== user.id);
+//   };
+
+//   // Fetch conversations
+//   useEffect(() => {
+//     const fetchConversations = async () => {
+//       try {
+//         setIsLoading(true);
+//         const res = await axios.get("/api/conversations", {
+//           headers: { Authorization: `Bearer ${user.token}` },
+//         });
+//         setConversations(res.data);
+
+//         // Set initial active conversation
+//         if (courseId) {
+//           const initialConv = res.data.find(
+//             (c) => c.course._id === courseId || c._id === courseId
+//           );
+//           if (initialConv) setActiveConversation(initialConv);
+//         } else if (res.data.length > 0) {
+//           setActiveConversation(res.data[0]);
+//         }
+//       } catch (err) {
+//         console.error("Error fetching conversations:", err);
+//       } finally {
+//         setIsLoading(false);
+//       }
+//     };
+
+//     fetchConversations();
+//   }, [courseId, user.token]);
+
+//   // Fetch messages when active conversation changes
+//   useEffect(() => {
+//     const fetchMessages = async () => {
+//       if (!activeConversation) return;
+
+//       try {
+//         setIsLoading(true);
+//         const res = await axios.get(`/api/messages/${activeConversation._id}`, {
+//           headers: { Authorization: `Bearer ${user.token}` },
+//         });
+
+//         // Process messages to include sender identification
+//         const processedMessages = res.data.map((message) => ({
+//           ...message,
+//           isCurrentUser: message.sender._id === user.id,
+//         }));
+
+//         setMessages(processedMessages);
+//       } catch (err) {
+//         console.error("Error fetching messages:", err);
+//       } finally {
+//         setIsLoading(false);
+//       }
+//     };
+
+//     fetchMessages();
+//   }, [activeConversation, user]); // Added user to dependencies
+
+//   // Auto-scroll to bottom
+//   useEffect(() => {
+//     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+//   }, [messages, editingMessageId]);
+
+//   // Focus edit input when editing
+//   useEffect(() => {
+//     if (editingMessageId && editInputRef.current) {
+//       editInputRef.current.focus();
+//     }
+//   }, [editingMessageId]);
+
+//   const handleSendMessage = async () => {
+//     if (
+//       (!newMessage.trim() && !file) ||
+//       !activeConversation ||
+//       activeConversation.isBlocked
+//     )
+//       return;
+
+//     try {
+//       setIsLoading(true);
+
+//       const formData = new FormData();
+//       formData.append("conversationId", activeConversation._id);
+//       if (newMessage.trim()) formData.append("content", newMessage);
+//       if (file) formData.append("file", file);
+
+//       const res = await axios.post("/api/messages", formData, {
+//         headers: {
+//           Authorization: `Bearer ${user.token}`,
+//           "Content-Type": "multipart/form-data",
+//         },
+//       });
+
+//       // Add isCurrentUser flag to new message
+//       const newMsg = {
+//         ...res.data,
+//         isCurrentUser: true,
+//       };
+
+//       setMessages([...messages, newMsg]);
+//       setNewMessage("");
+//       setFile(null);
+
+//       // Update conversation list
+//       setConversations(
+//         conversations.map((conv) =>
+//           conv._id === activeConversation._id
+//             ? { ...conv, lastMessage: newMsg }
+//             : conv
+//         )
+//       );
+//     } catch (err) {
+//       console.error("Error sending message:", err);
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   const handleFileChange = (e) => {
+//     if (e.target.files && e.target.files[0]) {
+//       const selectedFile = e.target.files[0];
+//       const validTypes = [
+//         "image/jpeg",
+//         "image/png",
+//         "application/pdf",
+//         "application/msword",
+//         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+//       ];
+//       const maxSize = 10 * 1024 * 1024; // 10MB
+
+//       if (!validTypes.includes(selectedFile.type)) {
+//         alert("Please select a valid file type (JPEG, PNG, PDF, DOC, DOCX)");
+//         return;
+//       }
+
+//       if (selectedFile.size > maxSize) {
+//         alert("File size exceeds 10MB limit");
+//         return;
+//       }
+
+//       setFile(selectedFile);
+//     }
+//   };
+
+//   const triggerFileInput = () => {
+//     fileInputRef.current?.click();
+//   };
+
+//   const toggleBlockConversation = async () => {
+//     if (!activeConversation) return;
+
+//     try {
+//       setIsLoading(true);
+//       const res = await axios.put(
+//         `/api/conversations/${activeConversation._id}/block`,
+//         { isBlocked: !activeConversation.isBlocked },
+//         { headers: { Authorization: `Bearer ${user.token}` } }
+//       );
+
+//       setActiveConversation(res.data);
+//       setConversations(
+//         conversations.map((conv) =>
+//           conv._id === activeConversation._id ? res.data : conv
+//         )
+//       );
+//     } catch (err) {
+//       console.error("Error blocking conversation:", err);
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   const handleUpdateMessage = async () => {
+//     if (!editMessageContent.trim() || !editingMessageId) return;
+
+//     try {
+//       setIsLoading(true);
+//       const res = await axios.put(
+//         `/api/messages/${editingMessageId}`,
+//         { content: editMessageContent },
+//         { headers: { Authorization: `Bearer ${user.token}` } }
+//       );
+
+//       setMessages(
+//         messages.map((msg) =>
+//           msg._id === editingMessageId
+//             ? { ...res.data, isCurrentUser: msg.isCurrentUser }
+//             : msg
+//         )
+//       );
+//       setEditingMessageId(null);
+//       setEditMessageContent("");
+//     } catch (err) {
+//       console.error("Error updating message:", err);
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   const handleDeleteMessage = async (messageId) => {
+//     try {
+//       setIsLoading(true);
+//       await axios.delete(`/api/messages/${messageId}`, {
+//         headers: { Authorization: `Bearer ${user.token}` },
+//       });
+
+//       setMessages(messages.filter((msg) => msg._id !== messageId));
+//       if (editingMessageId === messageId) {
+//         setEditingMessageId(null);
+//       }
+//     } catch (err) {
+//       console.error("Error deleting message:", err);
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   // Helper functions
+//   const formatFileSize = (bytes) => {
+//     if (bytes < 1024) return `${bytes} B`;
+//     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+//     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+//   };
+
+//   const getFileIcon = (type) => {
+//     if (type?.startsWith("image/")) return <Image size={16} className="mr-2" />;
+//     if (type === "application/pdf")
+//       return <FileText size={16} className="mr-2" />;
+//     return <FileText size={16} className="mr-2" />;
+//   };
+
+//   const formatTime = (dateString) => {
+//     const date = new Date(dateString);
+//     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+//   };
+
+//   return (
+//     <div className="h-full flex flex-col">
+//       <div className="flex h-[calc(100vh-160px)] bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
+//         {/* Conversations sidebar */}
+//         <div className="w-72 border-r border-slate-200 dark:border-slate-700 overflow-y-auto">
+//           <div className="p-3 border-b border-slate-200 dark:border-slate-700">
+//             <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+//               Recent Conversations
+//             </h3>
+//           </div>
+
+//           {isLoading && !conversations.length ? (
+//             <div className="p-4 text-center">Loading conversations...</div>
+//           ) : (
+//             conversations.map((conversation) => (
+//               <div
+//                 key={conversation._id}
+//                 onClick={() => setActiveConversation(conversation)}
+//                 className={`p-3 flex items-start hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors duration-200 ${
+//                   activeConversation?._id === conversation._id
+//                     ? "bg-slate-50 dark:bg-slate-700"
+//                     : ""
+//                 } ${
+//                   conversation.isBlocked ? "opacity-70 cursor-not-allowed" : ""
+//                 }`}
+//               >
+//                 <div className="relative">
+//                   <div
+//                     className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
+//                       conversation.unreadCount > 0
+//                         ? "bg-fidel-100 dark:bg-fidel-900/30 text-fidel-600 dark:text-fidel-400"
+//                         : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+//                     }`}
+//                   >
+//                     {getOtherParticipant(conversation)?.name?.charAt(0) || "U"}
+//                   </div>
+//                 </div>
+//                 <div className="ml-3 flex-1 min-w-0">
+//                   <div className="flex justify-between items-baseline">
+//                     <h4 className="text-sm font-medium text-slate-900 dark:text-white truncate">
+//                       {getOtherParticipant(conversation)?.name ||
+//                         "Unknown User"}
+//                     </h4>
+//                     {conversation.updatedAt && (
+//                       <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+//                         {formatTime(conversation.updatedAt)}
+//                       </span>
+//                     )}
+//                   </div>
+//                   <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+//                     {conversation.course?.title || "Course"}
+//                   </p>
+//                   <p
+//                     className={`text-xs mt-1 truncate ${
+//                       conversation.unreadCount > 0
+//                         ? "font-medium text-slate-900 dark:text-white"
+//                         : "text-slate-500 dark:text-slate-400"
+//                     }`}
+//                   >
+//                     {conversation.lastMessage?.content || "No messages yet"}
+//                   </p>
+//                   {conversation.isBlocked && (
+//                     <div className="flex items-center text-xs text-red-500 dark:text-red-400 mt-1">
+//                       <Ban size={14} className="mr-1" />
+//                       <span>Messaging blocked</span>
+//                     </div>
+//                   )}
+//                 </div>
+//                 {conversation.unreadCount > 0 && !conversation.isBlocked && (
+//                   <div className="ml-2 min-w-[18px] h-[18px] rounded-full bg-fidel-500 text-white text-xs flex items-center justify-center">
+//                     {conversation.unreadCount}
+//                   </div>
+//                 )}
+//               </div>
+//             ))
+//           )}
+//         </div>
+
+//         {/* Chat area */}
+//         <div className="flex-1 flex flex-col">
+//           {activeConversation ? (
+//             <>
+//               <div className="p-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-800 z-10">
+//                 <div className="flex items-center">
+//                   <div className="relative">
+//                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+//                       {getOtherParticipant(activeConversation)?.name?.charAt(
+//                         0
+//                       ) || "U"}
+//                     </div>
+//                     {getOtherParticipant(activeConversation)?.online && (
+//                       <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-white dark:border-slate-800"></div>
+//                     )}
+//                   </div>
+//                   <div className="ml-3">
+//                     <h3 className="text-sm font-medium text-slate-900 dark:text-white">
+//                       {getOtherParticipant(activeConversation)?.name ||
+//                         "Unknown User"}
+//                     </h3>
+//                     <p className="text-xs text-slate-500 dark:text-slate-400">
+//                       {activeConversation.course?.title || "Course"}
+//                     </p>
+//                   </div>
+//                 </div>
+//                 {user.type === "instructor" && (
+//                   <button
+//                     onClick={toggleBlockConversation}
+//                     className={`p-2 rounded-full ${
+//                       activeConversation.isBlocked
+//                         ? "bg-green-100 text-green-600 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
+//                         : "bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+//                     } transition-colors duration-200`}
+//                     title={
+//                       activeConversation.isBlocked
+//                         ? "Unblock student"
+//                         : "Block student"
+//                     }
+//                     disabled={isLoading}
+//                   >
+//                     <Ban size={18} />
+//                   </button>
+//                 )}
+//                 {user.type === "student" && activeConversation.isBlocked && (
+//                   <div className="flex items-center text-sm text-red-500 dark:text-red-400 px-3 py-1 bg-red-50 dark:bg-red-900/20 rounded-full">
+//                     <Ban size={16} className="mr-1" />
+//                     <span>Blocked</span>
+//                   </div>
+//                 )}
+//               </div>
+
+//               <div className="flex-1 overflow-y-auto p-4 space-y-4">
+//                 {isLoading && !messages.length ? (
+//                   <div className="text-center py-4">Loading messages...</div>
+//                 ) : messages.length === 0 ? (
+//                   <div className="text-center py-4 text-slate-500 dark:text-slate-400">
+//                     No messages yet. Start the conversation!
+//                   </div>
+//                 ) : (
+//                   messages.map((message) => (
+//                     <div
+//                       key={message._id}
+//                       className={`flex ${
+//                         message.isCurrentUser ? "justify-end" : "justify-start"
+//                       }`}
+//                     >
+//                       <div
+//                         className={`relative rounded-lg px-4 py-2 max-w-[70%] ${
+//                           message.isCurrentUser
+//                             ? "bg-fidel-100 dark:bg-fidel-900/30 text-fidel-800 dark:text-fidel-300 rounded-tr-none"
+//                             : "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-tl-none"
+//                         } ${message.type === "file" ? "w-full max-w-md" : ""}`}
+//                       >
+//                         {editingMessageId === message._id ? (
+//                           <div className="flex flex-col">
+//                             <textarea
+//                               ref={editInputRef}
+//                               value={editMessageContent}
+//                               onChange={(e) =>
+//                                 setEditMessageContent(e.target.value)
+//                               }
+//                               className="w-full bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-600 rounded p-2 mb-2 focus:outline-none focus:ring-1 focus:ring-fidel-500"
+//                               rows={3}
+//                             />
+//                             <div className="flex justify-end space-x-2">
+//                               <button
+//                                 onClick={() => setEditingMessageId(null)}
+//                                 className="p-1 rounded-full text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600"
+//                               >
+//                                 <X size={16} />
+//                               </button>
+//                               <button
+//                                 onClick={handleUpdateMessage}
+//                                 className="p-1 rounded-full bg-fidel-500 text-white hover:bg-fidel-600"
+//                                 disabled={isLoading}
+//                               >
+//                                 <Check size={16} />
+//                               </button>
+//                             </div>
+//                           </div>
+//                         ) : (
+//                           <>
+//                             {message.type === "text" ? (
+//                               <p className="text-sm">{message.content}</p>
+//                             ) : (
+//                               <div className="flex items-center justify-between p-2 bg-white/50 dark:bg-slate-800/50 rounded">
+//                                 <div className="flex items-center">
+//                                   {getFileIcon(message.fileInfo?.type)}
+//                                   <div>
+//                                     <p className="text-sm font-medium truncate max-w-[180px]">
+//                                       {message.fileInfo?.name}
+//                                     </p>
+//                                     <p className="text-xs text-slate-500 dark:text-slate-400">
+//                                       {formatFileSize(message.fileInfo?.size)}
+//                                     </p>
+//                                   </div>
+//                                 </div>
+//                                 <div className="flex items-center">
+//                                   <a
+//                                     href={message.fileInfo?.url}
+//                                     download={message.fileInfo?.name}
+//                                     className="ml-2 p-1 text-fidel-500 hover:text-fidel-600 dark:hover:text-fidel-400"
+//                                   >
+//                                     <Download size={16} />
+//                                   </a>
+//                                 </div>
+//                               </div>
+//                             )}
+//                             <div
+//                               className={`flex items-center mt-1 ${
+//                                 message.isCurrentUser
+//                                   ? "justify-end"
+//                                   : "justify-start"
+//                               } space-x-2`}
+//                             >
+//                               <p
+//                                 className={`text-xs ${
+//                                   message.isCurrentUser
+//                                     ? "text-fidel-600/70 dark:text-fidel-400/70"
+//                                     : "text-slate-500 dark:text-slate-400"
+//                                 }`}
+//                               >
+//                                 {formatTime(message.createdAt)}
+//                               </p>
+//                               {message.isCurrentUser && (
+//                                 <>
+//                                   <button
+//                                     onClick={() =>
+//                                       handleDeleteMessage(message._id)
+//                                     }
+//                                     className="p-1 text-slate-400 hover:text-red-500"
+//                                     disabled={isLoading}
+//                                   >
+//                                     <Trash size={14} />
+//                                   </button>
+//                                   {message.type === "text" &&
+//                                     !activeConversation.isBlocked && (
+//                                       <button
+//                                         onClick={() => {
+//                                           setEditingMessageId(message._id);
+//                                           setEditMessageContent(
+//                                             message.content
+//                                           );
+//                                         }}
+//                                         className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+//                                       >
+//                                         <Edit size={14} />
+//                                       </button>
+//                                     )}
+//                                 </>
+//                               )}
+//                             </div>
+//                           </>
+//                         )}
+//                       </div>
+//                     </div>
+//                   ))
+//                 )}
+//                 <div ref={messagesEndRef} />
+//               </div>
+
+//               {activeConversation.isBlocked ? (
+//                 <div className="p-3 border-t border-slate-200 dark:border-slate-700 bg-red-50 dark:bg-red-900/20">
+//                   <div className="text-center text-red-500 dark:text-red-400 text-sm">
+//                     <AlertCircle className="inline mr-2" size={16} />
+//                     {user.type === "instructor"
+//                       ? "You have blocked this student from messaging"
+//                       : "You have been blocked from messaging by the instructor"}
+//                   </div>
+//                 </div>
+//               ) : (
+//                 <div className="p-3 border-t border-slate-200 dark:border-slate-700">
+//                   {file && (
+//                     <div className="flex items-center justify-between mb-2 p-2 bg-slate-100 dark:bg-slate-700 rounded-lg">
+//                       <div className="flex items-center">
+//                         {getFileIcon(file.type)}
+//                         <span className="text-sm truncate max-w-[200px]">
+//                           {file.name}
+//                         </span>
+//                       </div>
+//                       <button
+//                         onClick={() => setFile(null)}
+//                         className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+//                       >
+//                         ×
+//                       </button>
+//                     </div>
+//                   )}
+//                   <div className="flex items-end gap-3">
+//                     <input
+//                       type="file"
+//                       ref={fileInputRef}
+//                       onChange={handleFileChange}
+//                       className="hidden"
+//                       accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+//                     />
+//                     <button
+//                       onClick={triggerFileInput}
+//                       className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200"
+//                       title="Attach file"
+//                       disabled={isLoading}
+//                     >
+//                       <Upload size={18} />
+//                     </button>
+//                     <div className="flex-1 relative">
+//                       <textarea
+//                         placeholder="Type a message..."
+//                         rows={1}
+//                         value={newMessage}
+//                         onChange={(e) => setNewMessage(e.target.value)}
+//                         onKeyDown={(e) => {
+//                           if (e.key === "Enter" && !e.shiftKey) {
+//                             e.preventDefault();
+//                             handleSendMessage();
+//                           }
+//                         }}
+//                         className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-fidel-500 dark:focus:ring-fidel-400 focus:border-transparent"
+//                         disabled={isLoading}
+//                       />
+//                     </div>
+//                     <button
+//                       onClick={handleSendMessage}
+//                       disabled={(!newMessage.trim() && !file) || isLoading}
+//                       className={`p-2.5 rounded-lg transition-colors duration-200 shadow-sm ${
+//                         (newMessage.trim() || file) && !isLoading
+//                           ? "bg-fidel-500 text-white hover:bg-fidel-600"
+//                           : "bg-slate-200 text-slate-400 dark:bg-slate-700 dark:text-slate-500 cursor-not-allowed"
+//                       }`}
+//                     >
+//                       <Send size={18} />
+//                     </button>
+//                   </div>
+//                 </div>
+//               )}
+//             </>
+//           ) : (
+//             <div className="flex-1 flex items-center justify-center">
+//               <div className="text-center p-6">
+//                 <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-700 mb-4">
+//                   <FileText className="h-6 w-6 text-slate-500 dark:text-slate-400" />
+//                 </div>
+//                 <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-1">
+//                   {conversations.length === 0
+//                     ? "No conversations"
+//                     : "No conversation selected"}
+//                 </h3>
+//                 <p className="text-xs text-slate-500 dark:text-slate-400">
+//                   {conversations.length === 0
+//                     ? "You don't have any conversations yet"
+//                     : "Select a conversation from the list to start messaging"}
+//                 </p>
+//               </div>
+//             </div>
+//           )}
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+// export default MessagesTab;
+
 import { useState, useEffect, useRef } from "react";
+import { useSocket } from "../../context/SocketContext";
+import { useAuth } from "../../context/AuthContext";
 import {
   Send,
   Upload,
@@ -886,89 +1523,113 @@ import {
   Check,
 } from "lucide-react";
 import axios from "axios";
-import { useAuth } from "../../context/AuthContext";
 
-export const MessagesTab = ({ courseId, instructorId }) => {
+export const MessagesTab = ({ courseId, instructorId, currentUserType }) => {
   const { user } = useAuth();
-  const [activeConversation, setActiveConversation] = useState(null);
-  const [conversations, setConversations] = useState([]);
+  const socket = useSocket();
+  const [activeCourse, setActiveCourse] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [file, setFile] = useState(null);
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editMessageContent, setEditMessageContent] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUser, setTypingUser] = useState(null);
+  const [conversations, setConversations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
   const editInputRef = useRef(null);
 
-  // Helper to get the other participant
-  const getOtherParticipant = (conversation) => {
-    if (!conversation || !conversation.participants || !user) return null;
-    return conversation.participants.find((p) => p._id !== user.id);
+  // Safe access to conversation data
+  const getInstructorInitial = (conversation) => {
+    if (!conversation?.instructor?.name) return "?";
+    return conversation.instructor.name.charAt(0).toUpperCase();
+  };
+
+  const getInstructorName = (conversation) => {
+    return conversation?.instructor?.name || "Unknown Instructor";
+  };
+
+  const isInstructorOnline = (conversation) => {
+    return conversation?.instructor?.online || false;
   };
 
   // Fetch conversations
   useEffect(() => {
     const fetchConversations = async () => {
       try {
-        setIsLoading(true);
-        const res = await axios.get("/api/conversations", {
-          headers: { Authorization: `Bearer ${user.token}` },
+        const response = await axios.get("/api/conversations", {
+          withCredentials: true,
         });
-        setConversations(res.data);
-
-        // Set initial active conversation
-        if (courseId) {
-          const initialConv = res.data.find(
-            (c) => c.course._id === courseId || c._id === courseId
-          );
-          if (initialConv) setActiveConversation(initialConv);
-        } else if (res.data.length > 0) {
-          setActiveConversation(res.data[0]);
-        }
+        setConversations(response.data || []);
       } catch (err) {
-        console.error("Error fetching conversations:", err);
+        setError("Failed to load conversations");
+        console.error(err);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
     fetchConversations();
-  }, [courseId, user.token]);
+  }, []);
 
-  // Fetch messages when active conversation changes
+  // Fetch messages when active course changes
   useEffect(() => {
+    if (!activeCourse) return;
+
     const fetchMessages = async () => {
-      if (!activeConversation) return;
-
       try {
-        setIsLoading(true);
-        const res = await axios.get(`/api/messages/${activeConversation._id}`, {
-          headers: { Authorization: `Bearer ${user.token}` },
+        const response = await axios.get(`/api/messages/${activeCourse.id}`, {
+          withCredentials: true,
         });
-
-        // Process messages to include sender identification
-        const processedMessages = res.data.map((message) => ({
-          ...message,
-          isCurrentUser: message.sender._id === user.id,
-        }));
-
-        setMessages(processedMessages);
+        setMessages(response.data);
       } catch (err) {
-        console.error("Error fetching messages:", err);
-      } finally {
-        setIsLoading(false);
+        console.error("Failed to load messages:", err);
       }
     };
 
     fetchMessages();
-  }, [activeConversation, user]); // Added user to dependencies
+  }, [activeCourse]);
 
-  // Auto-scroll to bottom
+  // Socket.io real-time setup
+  useEffect(() => {
+    if (!socket || !activeCourse) return;
+
+    const roomId = `${activeCourse.id}_${activeCourse.instructor.id}`;
+    socket.emit("joinConversation", roomId);
+
+    // Register user with socket
+    socket.emit("registerUser", user._id);
+
+    // Listen for new messages
+    socket.on("receiveMessage", (message) => {
+      if (message.conversation === roomId) {
+        setMessages((prev) => [...prev, message]);
+      }
+    });
+
+    // Listen for typing indicators
+    socket.on("userTyping", ({ userId, isTyping }) => {
+      if (userId !== user._id) {
+        setIsTyping(isTyping);
+        setTypingUser(userId);
+      }
+    });
+
+    return () => {
+      socket.off("receiveMessage");
+      socket.off("userTyping");
+      socket.emit("leaveConversation", roomId);
+    };
+  }, [socket, activeCourse, user]);
+
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, editingMessageId]);
+  }, [messages]);
 
   // Focus edit input when editing
   useEffect(() => {
@@ -980,49 +1641,68 @@ export const MessagesTab = ({ courseId, instructorId }) => {
   const handleSendMessage = async () => {
     if (
       (!newMessage.trim() && !file) ||
-      !activeConversation ||
-      activeConversation.isBlocked
+      !activeCourse ||
+      activeCourse.isBlocked
     )
       return;
 
     try {
-      setIsLoading(true);
-
-      const formData = new FormData();
-      formData.append("conversationId", activeConversation._id);
-      if (newMessage.trim()) formData.append("content", newMessage);
-      if (file) formData.append("file", file);
-
-      const res = await axios.post("/api/messages", formData, {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      // Add isCurrentUser flag to new message
-      const newMsg = {
-        ...res.data,
-        isCurrentUser: true,
+      let messageData = {
+        conversationId: activeCourse.id,
+        content: newMessage,
       };
 
-      setMessages([...messages, newMsg]);
+      if (file) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("conversationId", activeCourse.id);
+
+        const response = await axios.post("/api/messages", formData, {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+
+        messageData = response.data;
+      } else {
+        await axios.post(
+          "/api/messages",
+          { conversationId: activeCourse.id, content: newMessage },
+          { withCredentials: true }
+        );
+      }
+
       setNewMessage("");
       setFile(null);
-
-      // Update conversation list
-      setConversations(
-        conversations.map((conv) =>
-          conv._id === activeConversation._id
-            ? { ...conv, lastMessage: newMsg }
-            : conv
-        )
-      );
     } catch (err) {
       console.error("Error sending message:", err);
-    } finally {
-      setIsLoading(false);
     }
+  };
+
+  const handleTyping = () => {
+    if (!socket || !activeCourse) return;
+
+    // Emit typing start
+    socket.emit("typing", {
+      conversationId: `${activeCourse.id}_${activeCourse.instructor.id}`,
+      userId: user._id,
+      isTyping: true,
+    });
+
+    // Clear any existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Set timeout to stop typing indicator after 2 seconds
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit("typing", {
+        conversationId: `${activeCourse.id}_${activeCourse.instructor.id}`,
+        userId: user._id,
+        isTyping: false,
+      });
+    }, 2000);
   };
 
   const handleFileChange = (e) => {
@@ -1055,76 +1735,28 @@ export const MessagesTab = ({ courseId, instructorId }) => {
     fileInputRef.current?.click();
   };
 
-  const toggleBlockConversation = async () => {
-    if (!activeConversation) return;
+  const handleConversationSelect = (conversation) => {
+    setActiveCourse(conversation);
+    setEditingMessageId(null);
+  };
 
+  const toggleBlockStudent = async (courseId) => {
     try {
-      setIsLoading(true);
-      const res = await axios.put(
-        `/api/conversations/${activeConversation._id}/block`,
-        { isBlocked: !activeConversation.isBlocked },
-        { headers: { Authorization: `Bearer ${user.token}` } }
+      await axios.put(
+        `/api/conversations/${courseId}/block`,
+        {},
+        { withCredentials: true }
       );
-
-      setActiveConversation(res.data);
-      setConversations(
-        conversations.map((conv) =>
-          conv._id === activeConversation._id ? res.data : conv
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv.id === courseId ? { ...conv, isBlocked: !conv.isBlocked } : conv
         )
       );
     } catch (err) {
-      console.error("Error blocking conversation:", err);
-    } finally {
-      setIsLoading(false);
+      console.error("Error toggling block:", err);
     }
   };
 
-  const handleUpdateMessage = async () => {
-    if (!editMessageContent.trim() || !editingMessageId) return;
-
-    try {
-      setIsLoading(true);
-      const res = await axios.put(
-        `/api/messages/${editingMessageId}`,
-        { content: editMessageContent },
-        { headers: { Authorization: `Bearer ${user.token}` } }
-      );
-
-      setMessages(
-        messages.map((msg) =>
-          msg._id === editingMessageId
-            ? { ...res.data, isCurrentUser: msg.isCurrentUser }
-            : msg
-        )
-      );
-      setEditingMessageId(null);
-      setEditMessageContent("");
-    } catch (err) {
-      console.error("Error updating message:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDeleteMessage = async (messageId) => {
-    try {
-      setIsLoading(true);
-      await axios.delete(`/api/messages/${messageId}`, {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
-
-      setMessages(messages.filter((msg) => msg._id !== messageId));
-      if (editingMessageId === messageId) {
-        setEditingMessageId(null);
-      }
-    } catch (err) {
-      console.error("Error deleting message:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Helper functions
   const formatFileSize = (bytes) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -1132,16 +1764,77 @@ export const MessagesTab = ({ courseId, instructorId }) => {
   };
 
   const getFileIcon = (type) => {
-    if (type?.startsWith("image/")) return <Image size={16} className="mr-2" />;
+    if (type.startsWith("image/")) return <Image size={16} className="mr-2" />;
     if (type === "application/pdf")
       return <FileText size={16} className="mr-2" />;
     return <FileText size={16} className="mr-2" />;
   };
 
-  const formatTime = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const formatTime = (date) => {
+    return new Date(date).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
+
+  const handleStartEditing = (message) => {
+    if (
+      message.sender._id !== user._id ||
+      message.type === "file" ||
+      activeCourse.isBlocked
+    ) {
+      return;
+    }
+
+    setEditingMessageId(message._id);
+    setEditMessageContent(message.content);
+  };
+
+  const handleCancelEditing = () => {
+    setEditingMessageId(null);
+    setEditMessageContent("");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editMessageContent.trim()) return;
+
+    try {
+      await axios.put(
+        `/api/messages/${editingMessageId}`,
+        { content: editMessageContent },
+        { withCredentials: true }
+      );
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === editingMessageId
+            ? { ...msg, content: editMessageContent }
+            : msg
+        )
+      );
+      setEditingMessageId(null);
+    } catch (err) {
+      console.error("Error updating message:", err);
+    }
+  };
+
+  const handleDeleteMessage = async (messageId) => {
+    try {
+      await axios.delete(`/api/messages/${messageId}`, {
+        withCredentials: true,
+      });
+
+      setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
+      if (editingMessageId === messageId) {
+        setEditingMessageId(null);
+      }
+    } catch (err) {
+      console.error("Error deleting message:", err);
+    }
+  };
+
+  if (loading) return <div>Loading conversations...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
     <div className="h-full flex flex-col">
@@ -1154,15 +1847,19 @@ export const MessagesTab = ({ courseId, instructorId }) => {
             </h3>
           </div>
 
-          {isLoading && !conversations.length ? (
+          {loading ? (
             <div className="p-4 text-center">Loading conversations...</div>
+          ) : error ? (
+            <div className="p-4 text-red-500">{error}</div>
+          ) : conversations.length === 0 ? (
+            <div className="p-4 text-center">No conversations found</div>
           ) : (
             conversations.map((conversation) => (
               <div
-                key={conversation._id}
-                onClick={() => setActiveConversation(conversation)}
+                key={conversation.id}
+                onClick={() => handleConversationSelect(conversation)}
                 className={`p-3 flex items-start hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors duration-200 ${
-                  activeConversation?._id === conversation._id
+                  activeCourse?.id === conversation.id
                     ? "bg-slate-50 dark:bg-slate-700"
                     : ""
                 } ${
@@ -1177,23 +1874,25 @@ export const MessagesTab = ({ courseId, instructorId }) => {
                         : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
                     }`}
                   >
-                    {getOtherParticipant(conversation)?.name?.charAt(0) || "U"}
+                    {getInstructorInitial(conversation)}
                   </div>
+                  {isInstructorOnline(conversation) && (
+                    <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-white dark:border-slate-800"></div>
+                  )}
                 </div>
                 <div className="ml-3 flex-1 min-w-0">
                   <div className="flex justify-between items-baseline">
                     <h4 className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                      {getOtherParticipant(conversation)?.name ||
-                        "Unknown User"}
+                      {getInstructorName(conversation)}
                     </h4>
-                    {conversation.updatedAt && (
+                    {conversation.lastMessageTime && (
                       <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                        {formatTime(conversation.updatedAt)}
+                        {formatTime(conversation.lastMessageTime)}
                       </span>
                     )}
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                    {conversation.course?.title || "Course"}
+                    {conversation.title || "Untitled Conversation"}
                   </p>
                   <p
                     className={`text-xs mt-1 truncate ${
@@ -1202,7 +1901,7 @@ export const MessagesTab = ({ courseId, instructorId }) => {
                         : "text-slate-500 dark:text-slate-400"
                     }`}
                   >
-                    {conversation.lastMessage?.content || "No messages yet"}
+                    {conversation.lastMessage || "No messages yet"}
                   </p>
                   {conversation.isBlocked && (
                     <div className="flex items-center text-xs text-red-500 dark:text-red-400 mt-1">
@@ -1223,49 +1922,45 @@ export const MessagesTab = ({ courseId, instructorId }) => {
 
         {/* Chat area */}
         <div className="flex-1 flex flex-col">
-          {activeConversation ? (
+          {activeCourse ? (
             <>
-              <div className="p-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-800 z-10">
+              <div className="p-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                 <div className="flex items-center">
                   <div className="relative">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                      {getOtherParticipant(activeConversation)?.name?.charAt(
-                        0
-                      ) || "U"}
+                      {activeCourse.instructor.name.charAt(0)}
                     </div>
-                    {getOtherParticipant(activeConversation)?.online && (
+                    {activeCourse.instructor.online && (
                       <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-white dark:border-slate-800"></div>
                     )}
                   </div>
                   <div className="ml-3">
                     <h3 className="text-sm font-medium text-slate-900 dark:text-white">
-                      {getOtherParticipant(activeConversation)?.name ||
-                        "Unknown User"}
+                      {activeCourse.instructor.name}
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {activeConversation.course?.title || "Course"}
+                      {activeCourse.title}
                     </p>
                   </div>
                 </div>
-                {user.type === "instructor" && (
+                {currentUserType === "instructor" && (
                   <button
-                    onClick={toggleBlockConversation}
+                    onClick={() => toggleBlockStudent(activeCourse.id)}
                     className={`p-2 rounded-full ${
-                      activeConversation.isBlocked
+                      activeCourse.isBlocked
                         ? "bg-green-100 text-green-600 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
                         : "bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
                     } transition-colors duration-200`}
                     title={
-                      activeConversation.isBlocked
+                      activeCourse.isBlocked
                         ? "Unblock student"
                         : "Block student"
                     }
-                    disabled={isLoading}
                   >
                     <Ban size={18} />
                   </button>
                 )}
-                {user.type === "student" && activeConversation.isBlocked && (
+                {currentUserType === "student" && activeCourse.isBlocked && (
                   <div className="flex items-center text-sm text-red-500 dark:text-red-400 px-3 py-1 bg-red-50 dark:bg-red-900/20 rounded-full">
                     <Ban size={16} className="mr-1" />
                     <span>Blocked</span>
@@ -1274,140 +1969,127 @@ export const MessagesTab = ({ courseId, instructorId }) => {
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {isLoading && !messages.length ? (
-                  <div className="text-center py-4">Loading messages...</div>
-                ) : messages.length === 0 ? (
-                  <div className="text-center py-4 text-slate-500 dark:text-slate-400">
-                    No messages yet. Start the conversation!
-                  </div>
-                ) : (
-                  messages.map((message) => (
+                {messages.map((message) => (
+                  <div
+                    key={message._id}
+                    className={`flex ${
+                      message.sender._id === user._id
+                        ? "justify-end"
+                        : "justify-start"
+                    }`}
+                  >
                     <div
-                      key={message._id}
-                      className={`flex ${
-                        message.isCurrentUser ? "justify-end" : "justify-start"
-                      }`}
+                      className={`relative rounded-lg px-4 py-2 max-w-[70%] ${
+                        message.sender._id === user._id
+                          ? "bg-fidel-100 dark:bg-fidel-900/30 text-fidel-800 dark:text-fidel-300 rounded-tr-none"
+                          : "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-tl-none"
+                      } ${message.type === "file" ? "w-full max-w-md" : ""}`}
                     >
-                      <div
-                        className={`relative rounded-lg px-4 py-2 max-w-[70%] ${
-                          message.isCurrentUser
-                            ? "bg-fidel-100 dark:bg-fidel-900/30 text-fidel-800 dark:text-fidel-300 rounded-tr-none"
-                            : "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-tl-none"
-                        } ${message.type === "file" ? "w-full max-w-md" : ""}`}
-                      >
-                        {editingMessageId === message._id ? (
-                          <div className="flex flex-col">
-                            <textarea
-                              ref={editInputRef}
-                              value={editMessageContent}
-                              onChange={(e) =>
-                                setEditMessageContent(e.target.value)
-                              }
-                              className="w-full bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-600 rounded p-2 mb-2 focus:outline-none focus:ring-1 focus:ring-fidel-500"
-                              rows={3}
-                            />
-                            <div className="flex justify-end space-x-2">
-                              <button
-                                onClick={() => setEditingMessageId(null)}
-                                className="p-1 rounded-full text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600"
-                              >
-                                <X size={16} />
-                              </button>
-                              <button
-                                onClick={handleUpdateMessage}
-                                className="p-1 rounded-full bg-fidel-500 text-white hover:bg-fidel-600"
-                                disabled={isLoading}
-                              >
-                                <Check size={16} />
-                              </button>
-                            </div>
+                      {editingMessageId === message._id ? (
+                        <div className="flex flex-col">
+                          <textarea
+                            ref={editInputRef}
+                            value={editMessageContent}
+                            onChange={(e) =>
+                              setEditMessageContent(e.target.value)
+                            }
+                            className="w-full bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-600 rounded p-2 mb-2 focus:outline-none focus:ring-1 focus:ring-fidel-500"
+                            rows={3}
+                          />
+                          <div className="flex justify-end space-x-2">
+                            <button
+                              onClick={handleCancelEditing}
+                              className="p-1 rounded-full text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600"
+                            >
+                              <X size={16} />
+                            </button>
+                            <button
+                              onClick={handleSaveEdit}
+                              className="p-1 rounded-full bg-fidel-500 text-white hover:bg-fidel-600"
+                            >
+                              <Check size={16} />
+                            </button>
                           </div>
-                        ) : (
-                          <>
-                            {message.type === "text" ? (
-                              <p className="text-sm">{message.content}</p>
-                            ) : (
-                              <div className="flex items-center justify-between p-2 bg-white/50 dark:bg-slate-800/50 rounded">
-                                <div className="flex items-center">
-                                  {getFileIcon(message.fileInfo?.type)}
-                                  <div>
-                                    <p className="text-sm font-medium truncate max-w-[180px]">
-                                      {message.fileInfo?.name}
-                                    </p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                                      {formatFileSize(message.fileInfo?.size)}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center">
-                                  <a
-                                    href={message.fileInfo?.url}
-                                    download={message.fileInfo?.name}
-                                    className="ml-2 p-1 text-fidel-500 hover:text-fidel-600 dark:hover:text-fidel-400"
-                                  >
-                                    <Download size={16} />
-                                  </a>
+                        </div>
+                      ) : (
+                        <>
+                          {message.type === "text" ? (
+                            <p className="text-sm">{message.content}</p>
+                          ) : (
+                            <div className="flex items-center justify-between p-2 bg-white/50 dark:bg-slate-800/50 rounded">
+                              <div className="flex items-center">
+                                {getFileIcon(message.fileInfo?.type || "")}
+                                <div>
+                                  <p className="text-sm font-medium truncate max-w-[180px]">
+                                    {message.fileInfo?.name}
+                                  </p>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                                    {formatFileSize(
+                                      message.fileInfo?.size || 0
+                                    )}
+                                  </p>
                                 </div>
                               </div>
-                            )}
-                            <div
-                              className={`flex items-center mt-1 ${
-                                message.isCurrentUser
-                                  ? "justify-end"
-                                  : "justify-start"
-                              } space-x-2`}
-                            >
-                              <p
-                                className={`text-xs ${
-                                  message.isCurrentUser
-                                    ? "text-fidel-600/70 dark:text-fidel-400/70"
-                                    : "text-slate-500 dark:text-slate-400"
-                                }`}
-                              >
-                                {formatTime(message.createdAt)}
-                              </p>
-                              {message.isCurrentUser && (
-                                <>
-                                  <button
-                                    onClick={() =>
-                                      handleDeleteMessage(message._id)
-                                    }
-                                    className="p-1 text-slate-400 hover:text-red-500"
-                                    disabled={isLoading}
-                                  >
-                                    <Trash size={14} />
-                                  </button>
-                                  {message.type === "text" &&
-                                    !activeConversation.isBlocked && (
-                                      <button
-                                        onClick={() => {
-                                          setEditingMessageId(message._id);
-                                          setEditMessageContent(
-                                            message.content
-                                          );
-                                        }}
-                                        className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                                      >
-                                        <Edit size={14} />
-                                      </button>
-                                    )}
-                                </>
-                              )}
+                              <div className="flex items-center">
+                                <a
+                                  href={message.fileInfo?.url}
+                                  download={message.fileInfo?.name}
+                                  className="ml-2 p-1 text-fidel-500 hover:text-fidel-600 dark:hover:text-fidel-400"
+                                >
+                                  <Download size={16} />
+                                </a>
+                              </div>
                             </div>
-                          </>
-                        )}
-                      </div>
+                          )}
+                          <div className="flex items-center justify-end space-x-2 mt-1">
+                            <p
+                              className={`text-xs ${
+                                message.sender._id === user._id
+                                  ? "text-fidel-600/70 dark:text-fidel-400/70"
+                                  : "text-slate-500 dark:text-slate-400"
+                              }`}
+                            >
+                              {formatTime(message.createdAt)}
+                            </p>
+                            {message.sender._id === user._id && (
+                              <button
+                                onClick={() => handleDeleteMessage(message._id)}
+                                className="p-1 text-slate-400 hover:text-red-500"
+                              >
+                                <Trash size={14} />
+                              </button>
+                            )}
+                            {message.sender._id === user._id &&
+                              message.type === "text" &&
+                              !activeCourse.isBlocked && (
+                                <button
+                                  onClick={() => handleStartEditing(message)}
+                                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                >
+                                  <Edit size={14} />
+                                </button>
+                              )}
+                          </div>
+                        </>
+                      )}
                     </div>
-                  ))
+                  </div>
+                ))}
+                {isTyping && (
+                  <div className="flex justify-start">
+                    <div className="bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-lg px-4 py-2 rounded-tl-none max-w-[70%]">
+                      <p className="text-sm italic">Typing...</p>
+                    </div>
+                  </div>
                 )}
                 <div ref={messagesEndRef} />
               </div>
 
-              {activeConversation.isBlocked ? (
+              {activeCourse.isBlocked ? (
                 <div className="p-3 border-t border-slate-200 dark:border-slate-700 bg-red-50 dark:bg-red-900/20">
                   <div className="text-center text-red-500 dark:text-red-400 text-sm">
                     <AlertCircle className="inline mr-2" size={16} />
-                    {user.type === "instructor"
+                    {currentUserType === "instructor"
                       ? "You have blocked this student from messaging"
                       : "You have been blocked from messaging by the instructor"}
                   </div>
@@ -1442,7 +2124,6 @@ export const MessagesTab = ({ courseId, instructorId }) => {
                       onClick={triggerFileInput}
                       className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200"
                       title="Attach file"
-                      disabled={isLoading}
                     >
                       <Upload size={18} />
                     </button>
@@ -1451,7 +2132,10 @@ export const MessagesTab = ({ courseId, instructorId }) => {
                         placeholder="Type a message..."
                         rows={1}
                         value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
+                        onChange={(e) => {
+                          setNewMessage(e.target.value);
+                          handleTyping();
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && !e.shiftKey) {
                             e.preventDefault();
@@ -1459,14 +2143,13 @@ export const MessagesTab = ({ courseId, instructorId }) => {
                           }
                         }}
                         className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-fidel-500 dark:focus:ring-fidel-400 focus:border-transparent"
-                        disabled={isLoading}
                       />
                     </div>
                     <button
                       onClick={handleSendMessage}
-                      disabled={(!newMessage.trim() && !file) || isLoading}
+                      disabled={!newMessage.trim() && !file}
                       className={`p-2.5 rounded-lg transition-colors duration-200 shadow-sm ${
-                        (newMessage.trim() || file) && !isLoading
+                        newMessage.trim() || file
                           ? "bg-fidel-500 text-white hover:bg-fidel-600"
                           : "bg-slate-200 text-slate-400 dark:bg-slate-700 dark:text-slate-500 cursor-not-allowed"
                       }`}
@@ -1484,14 +2167,10 @@ export const MessagesTab = ({ courseId, instructorId }) => {
                   <FileText className="h-6 w-6 text-slate-500 dark:text-slate-400" />
                 </div>
                 <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-1">
-                  {conversations.length === 0
-                    ? "No conversations"
-                    : "No conversation selected"}
+                  No conversation selected
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {conversations.length === 0
-                    ? "You don't have any conversations yet"
-                    : "Select a conversation from the list to start messaging"}
+                  Select a conversation from the list to start messaging
                 </p>
               </div>
             </div>
@@ -1501,4 +2180,5 @@ export const MessagesTab = ({ courseId, instructorId }) => {
     </div>
   );
 };
+
 export default MessagesTab;

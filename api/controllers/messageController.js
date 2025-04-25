@@ -164,79 +164,29 @@
 // };
 import Message from "../models/Message.js";
 import Conversation from "../models/Conversation.js";
-import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { io } from "../server.js";
+import upload from "../utils/fileUpload.js";
 
-// Configure file storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(process.cwd(), "uploads");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + "-" + file.originalname);
-  },
-});
-
-// File filter to accept only certain types
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = [
-    "image/jpeg",
-    "image/png",
-    "image/gif",
-    "application/pdf",
-    "text/plain",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  ];
-
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(
-      new Error(
-        "Invalid file type. Only images, PDFs and documents are allowed."
-      ),
-      false
-    );
-  }
-};
-
-// Initialize multer
-export const upload = multer({
-  storage,
-  fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-});
-
-// Send message controller
 export const sendMessage = async (req, res) => {
   try {
     const { content, conversationId } = req.body;
     const file = req.file;
 
-    // Validate required fields
     if (!conversationId) {
       if (file) {
-        // Clean up uploaded file if validation fails
         fs.unlinkSync(path.join(process.cwd(), "uploads", file.filename));
       }
       return res.status(400).json({ message: "Conversation ID is required" });
     }
 
-    // Prepare message data
     const messageData = {
       conversation: conversationId,
       sender: req.user._id,
       type: file ? "file" : "text",
     };
 
-    // Add file info if file exists
     if (file) {
       messageData.fileInfo = {
         name: file.originalname,
@@ -252,20 +202,23 @@ export const sendMessage = async (req, res) => {
         .json({ message: "Message content or file is required" });
     }
 
-    // Save message
     const message = new Message(messageData);
     await message.save();
 
-    // Update conversation's last message
     await Conversation.findByIdAndUpdate(conversationId, {
       lastMessage: message._id,
     });
 
-    res.status(201).json(message);
+    const populatedMessage = await Message.populate(message, {
+      path: "sender",
+      select: "name profilePic",
+    });
+
+    io.to(conversationId.toString()).emit("receiveMessage", populatedMessage);
+
+    res.status(201).json(populatedMessage);
   } catch (err) {
     console.error("Error sending message:", err);
-
-    // Clean up file if error occurs
     if (req.file) {
       try {
         fs.unlinkSync(path.join(process.cwd(), "uploads", req.file.filename));
@@ -273,7 +226,6 @@ export const sendMessage = async (req, res) => {
         console.error("Error cleaning up file:", cleanupErr);
       }
     }
-
     res.status(500).json({
       message: "Failed to send message",
       error: err.message,
