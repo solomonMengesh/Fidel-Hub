@@ -17,15 +17,21 @@ import PendingApproval from "./components/instructor/PendingApproval";
 import UserDetails from "./pages/Userdetails";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "react-toastify";
-import { connectSocket, listenForForceLogout, disconnectSocket } from "./socket";
+import {
+  connectSocket,
+  listenForForceLogout,
+  disconnectSocket,
+} from "./socket";
 import ForgotPassword from "./pages/ForgotPassword";
 import OTPVerification from "./pages/OTPVerification";
 import OTPSend from "./pages/OTPSend";
 import RegisterOTPSend from "./pages/RegisterOTPSend";
 import VerifyOTP from "./pages/VerifyOTP";
-import PaymentSuccess from './pages/PaymentSuccess';
-import PaymentFailed from './pages/PaymentFailed';
-import VerifyPayment from './../src/components/Payment/VerifyPayment';
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentFailed from "./pages/PaymentFailed";
+import VerifyPayment from "./../src/components/Payment/VerifyPayment";
+import GetCertified from "./components/course details/GetCertified";
+
 const MainLayout = ({ children }) => (
   <>
     <Navbar />
@@ -40,20 +46,18 @@ const App = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userId = localStorage.getItem("userId");
-    window.scroll(0,0)
-
-
+    window.scroll(0, 0);
 
     if (token && userId) {
       // Connect socket and register user
       connectSocket(userId);
-      
+
       // Listen for force logout events (like when admin blocks user)
       listenForForceLogout((data) => {
         toast.error(data.message || "You have been logged out");
         localStorage.removeItem("token");
         localStorage.removeItem("userId");
-        
+
         if (data.reason === "blocked") {
           navigate("/login?blocked=true", { replace: true });
         } else {
@@ -72,27 +76,124 @@ const App = () => {
     <>
       <Routes>
         {/* Public routes with layout */}
-        <Route path="/" element={<MainLayout><Index /></MainLayout>} />
-        <Route path="/courses" element={<MainLayout><Courses /></MainLayout>} />
-        <Route path="/courses/:courseId" element={<MainLayout><CourseDetails /></MainLayout>} />
-        <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
-        <Route path="/signup" element={<MainLayout><Signup /></MainLayout>} />
-        <Route path="/about" element={<MainLayout><About /></MainLayout>} />
-        <Route path="/contact" element={<MainLayout><Contact /></MainLayout>} />
+        <Route
+          path="/"
+          element={
+            <MainLayout>
+              <Index />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/courses"
+          element={
+            <MainLayout>
+              <Courses />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/courses/:courseId"
+          element={
+            <MainLayout>
+              <CourseDetails />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <MainLayout>
+              <Login />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <MainLayout>
+              <Signup />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/about"
+          element={
+            <MainLayout>
+              <About />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/contact"
+          element={
+            <MainLayout>
+              <Contact />
+            </MainLayout>
+          }
+        />
 
-        
         {/* Authentication flow routes */}
-        <Route path="/forgot-password" element={<MainLayout><ForgotPassword /></MainLayout>} />
-        <Route path="/verify-otp" element={<MainLayout><OTPVerification /></MainLayout>} />
-        <Route path="/send-otp" element={<MainLayout><OTPSend /></MainLayout>} />
-         <Route path="/get-certified/:courseId/:studentId" element={<MainLayout><GetCertified /></MainLayout>} />
-        
+        <Route
+          path="/forgot-password"
+          element={
+            <MainLayout>
+              <ForgotPassword />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/verify-otp"
+          element={
+            <MainLayout>
+              <OTPVerification />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/send-otp"
+          element={
+            <MainLayout>
+              <OTPSend />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/get-certified/:courseId/:studentId"
+          element={
+            <MainLayout>
+              <GetCertified />
+            </MainLayout>
+          }
+        />
+
         {/* Registration-specific OTP routes */}
-        <Route path="/signup/send-otp-Registration" element={<MainLayout><RegisterOTPSend /></MainLayout>} />
-        <Route path="/signup/verify-otp" element={<MainLayout><VerifyOTP /></MainLayout>} />
-        
+        <Route
+          path="/signup/send-otp-Registration"
+          element={
+            <MainLayout>
+              <RegisterOTPSend />
+            </MainLayout>
+          }
+        />
+        <Route
+          path="/signup/verify-otp"
+          element={
+            <MainLayout>
+              <VerifyOTP />
+            </MainLayout>
+          }
+        />
+
         {/* Instructor approval */}
-        <Route path="/pending-approval" element={<MainLayout><PendingApproval /></MainLayout>} />
+        <Route
+          path="/pending-approval"
+          element={
+            <MainLayout>
+              <PendingApproval />
+            </MainLayout>
+          }
+        />
 
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/payment/failed" element={<PaymentFailed />} />
@@ -104,8 +205,6 @@ const App = () => {
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/users/:userId" element={<UserDetails />} />
-        <Route path="/courses/:courseId/messages" element={<MessagesTab />} />
-          <Route path="/messages" element={<MessagesTab />} />
       </Routes>
 
       <Toaster />
