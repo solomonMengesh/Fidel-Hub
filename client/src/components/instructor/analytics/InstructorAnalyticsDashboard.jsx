@@ -81,33 +81,9 @@ const InstructorAnalyticsDashboard = () => {
       <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <h2 className="text-2xl font-bold">Instructor Analytics Dashboard</h2>
-
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Payment Method" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="chapa">Chapa</SelectItem>
-                <SelectItem value="telebirr">TeleBirr</SelectItem>
-                <SelectItem value="all">All Methods</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <div className="flex space-x-2">
-              {["Week", "Month", "Quarter", "Year"].map((range) => (
-                <Button
-                  key={range}
-                  variant={selectedTimeRange === range ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedTimeRange(range)}
-                >
-                  {range}
-                </Button>
-              ))}
-            </div>
-          </div>
         </div>
+
+
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
