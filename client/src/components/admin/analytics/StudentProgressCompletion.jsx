@@ -61,7 +61,7 @@ const StudentProgressCompletion = () => {
                 fill="#06b6d4"
                 radius={[0, 4, 4, 0]}
                 barSize={20}
-              >
+              >    
                 {courseCompletionData.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}

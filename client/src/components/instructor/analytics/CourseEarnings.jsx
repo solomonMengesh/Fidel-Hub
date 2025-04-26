@@ -62,7 +62,7 @@ const CourseEarnings = ({ data, paymentMethod, timeRange }) => {
                 }}
               />
               <Line
-                type="monotone"
+                type="monotone"  
                 dataKey="value"
                 stroke="#0D9488"
                 strokeWidth={3}

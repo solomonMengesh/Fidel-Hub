@@ -81,7 +81,7 @@ const CourseEarnings = ({ paymentMethod }) => {
                       style={{ backgroundColor: COLORS[index % COLORS.length] }}
                     ></div>
                     <span>{item.name}</span>
-                  </div>
+                  </div>   
                   <div className="font-medium">
                     ETB {item.amount.toLocaleString()}
                   </div>

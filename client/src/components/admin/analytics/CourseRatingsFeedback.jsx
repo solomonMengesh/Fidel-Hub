@@ -74,7 +74,7 @@ const CourseRatingsFeedback = () => {
                 fill="#82ca9d"
                 radius={[4, 4, 0, 0]}
               >
-                {feedbackData.map((entry, index) => (
+                {feedbackData.map((entry, index) => (    
                   <Cell
                     key={`cell-${index}`}
                     fill={`rgba(130, 202, 157, ${0.5 + index * 0.1})`}

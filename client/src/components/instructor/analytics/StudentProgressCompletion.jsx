@@ -61,7 +61,7 @@ const StudentProgressCompletion = ({ data, timeRange }) => {
                   return null;
                 }}
               />
-            </PieChart>
+            </PieChart>  
           </ResponsiveContainer>
         </div>
       </CardContent>

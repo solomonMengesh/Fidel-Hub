@@ -52,7 +52,7 @@ const StudentEnrollmentsPerCourse = () => {
                 labelFormatter={(label) => `Course: ${label}`}
               />
               <Legend />
-              <Bar
+              <Bar    
                 dataKey="enrollments"
                 name="Number of Enrollments"
                 fill="#8884d8"

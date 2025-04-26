@@ -71,7 +71,7 @@ const CourseRatingsFeedback = ({ ratingData, feedbackData }) => {
                 <div className="flex items-center mb-2">
                   <span className="text-xs text-muted-foreground mr-2">
                     {feedback.course}
-                  </span>
+                  </span>   
                   {renderStars(feedback.rating)}
                 </div>
                 <p className="text-sm text-slate-700 dark:text-slate-300">

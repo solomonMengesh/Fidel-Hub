@@ -50,6 +50,7 @@ const StudentEnrollmentsPerCourse = ({ data, timeRange }) => {
                     );
                   }
                   return null;
+                  
                 }}
               />
               <Bar dataKey="value" fill="#10B981" radius={[4, 4, 0, 0]} />

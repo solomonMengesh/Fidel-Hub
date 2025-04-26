@@ -127,7 +127,7 @@ const App = () => {
         <Route
           path="/contact"
           element={
-            <MainLayout>
+            <MainLayout>   
               <Contact />
             </MainLayout>
           }

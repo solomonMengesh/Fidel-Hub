@@ -229,7 +229,7 @@ const InstructorDashboard = () => {
                             courses={courses}
                             onViewAll={() => setActiveTab("courses")}
                           />
-                        </div>
+                        </div>   
                       </div>
                     </motion.div>
                   </TabsContent>
