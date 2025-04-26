@@ -227,7 +227,9 @@ export const CourseDetails = () => {
         </TabsContent>
 
         <TabsContent value="reviews">
-          <RatingsTab />
+          <RatingsTab
+           courseId={courseId}
+          />
         </TabsContent>
 
         <TabsContent value="instructor">

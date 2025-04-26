@@ -4,6 +4,7 @@ import CourseCard from "@/components/home/CourseCard";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import axios from "axios";
 
 const categories = [
   "All",
@@ -29,6 +30,7 @@ const Courses = () => {
   const [sortBy, setSortBy] = useState("popular");
   const [sortDirection, setSortDirection] = useState("desc");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -36,13 +38,67 @@ const Courses = () => {
   }, []);
 
   const fetchCourses = async () => {
+    setLoading(true);
+    setError(null);
     try {
+      // Fetch course list
       const response = await fetch("http://localhost:5000/api/courses");
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data = await response.json();
-      setCourses(data);
+      const courseData = await response.json();
+
+      // Fetch review stats and student count for each course
+      const coursesWithData = await Promise.all(
+        courseData.map(async (course) => {
+          const courseId = course.id || course._id;
+          let avgRating = "N/A";
+          let totalReviews = 0;
+          let studentCount = 0;
+
+          // Fetch review stats
+          try {
+            const reviewResponse = await axios.get(
+              `http://localhost:5000/api/review/${courseId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+                withCredentials: true,
+              }
+            );
+            avgRating = reviewResponse.data.reviewStats?.avgRating || "N/A";
+            totalReviews = reviewResponse.data.reviewStats?.totalReviews || 0;
+          } catch (error) {
+            console.error(`Failed to fetch review stats for course ${courseId}:`, error);
+          }
+
+          // Fetch student count
+          try {
+            const studentResponse = await axios.get(
+              `http://localhost:5000/api/courses/${courseId}/student-count`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+                withCredentials: true,
+              }
+            );
+            studentCount = studentResponse.data.studentCount || 0;
+          } catch (error) {
+            console.error(`Failed to fetch student count for course ${courseId}:`, error);
+          }
+
+          return {
+            ...course,
+            avgRating,
+            totalReviews,
+            students: studentCount,
+          };
+        })
+      );
+
+      setCourses(coursesWithData);
     } catch (err) {
       setError(err.message);
       console.error("Error fetching courses:", err);
@@ -52,46 +108,46 @@ const Courses = () => {
   };
 
   // Filter and sort courses
-  // Filter and sort courses
-const filteredCourses = courses
-.filter((course) => {
-  const matchesSearch =
-    course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (typeof course.instructor === 'object' 
-      ? course.instructor.name.toLowerCase().includes(searchQuery.toLowerCase())
-      : course.instructor.toLowerCase().includes(searchQuery.toLowerCase()));
-  const matchesCategory =
-    selectedCategory === "All" || course.category === selectedCategory;
-  const matchesLevel =
-    selectedLevel === "All Levels" || course.level === selectedLevel;
+  const filteredCourses = courses
+    .filter((course) => {
+      const matchesSearch =
+        course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (typeof course.instructor === 'object'
+          ? course.instructor.name.toLowerCase().includes(searchQuery.toLowerCase())
+          : course.instructor.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesCategory =
+        selectedCategory === "All" || course.category === selectedCategory;
+      const matchesLevel =
+        selectedLevel === "All Levels" || course.level === selectedLevel;
 
-  return matchesSearch && matchesCategory && matchesLevel;
-})
-.sort((a, b) => {
-  let comparison = 0;
+      return matchesSearch && matchesCategory && matchesLevel;
+    })
+    .sort((a, b) => {
+      let comparison = 0;
 
-  switch (sortBy) {
-    case "popular":
-      comparison = (a.students || 0) - (b.students || 0);
-      break;
-    case "rating":
-      comparison = (a.rating || 0) - (b.rating || 0);
-      break;
-    case "title":
-      comparison = a.title.localeCompare(b.title);
-      break;
-    case "price":
-      // Handle both number and string prices safely
-      const priceA = typeof a.price === 'number' ? a.price : parseFloat(a.price || 0);
-      const priceB = typeof b.price === 'number' ? b.price : parseFloat(b.price || 0);
-      comparison = priceA - priceB;
-      break;
-    default:
-      comparison = 0;
-  }
+      switch (sortBy) {
+        case "popular":
+          comparison = (a.students || 0) - (b.students || 0);
+          break;
+        case "rating":
+          const ratingA = a.avgRating === "N/A" ? 0 : parseFloat(a.avgRating);
+          const ratingB = b.avgRating === "N/A" ? 0 : parseFloat(b.avgRating);
+          comparison = ratingA - ratingB;
+          break;
+        case "title":
+          comparison = a.title.localeCompare(b.title);
+          break;
+        case "price":
+          const priceA = typeof a.price === "number" ? a.price : parseFloat(a.price || 0);
+          const priceB = typeof b.price === "number" ? b.price : parseFloat(b.price || 0);
+          comparison = priceA - priceB;
+          break;
+        default:
+          comparison = 0;
+      }
 
-  return sortDirection === "asc" ? comparison : -comparison;
-});
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
 
   if (loading) {
     return (
@@ -173,7 +229,7 @@ const filteredCourses = courses
                       onClick={() => setSelectedCategory("All")}
                       className="ml-1 hover:text-fidel-800 dark:hover:text-fidel-300"
                     >
-                      &times;
+                      ×
                     </button>
                   </div>
                 )}
@@ -185,7 +241,7 @@ const filteredCourses = courses
                       onClick={() => setSelectedLevel("All Levels")}
                       className="ml-1 hover:text-purple-800 dark:hover:text-purple-300"
                     >
-                      &times;
+                      ×
                     </button>
                   </div>
                 )}
@@ -264,7 +320,21 @@ const filteredCourses = courses
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredCourses.length > 0 ? (
               filteredCourses.map((course) => (
-                <CourseCard key={course.id} {...course} />
+                <CourseCard
+                  key={course.id || course._id}
+                  id={course.id || course._id}
+                  title={course.title}
+                  instructor={course.instructor}
+                  category={course.category}
+                  level={course.level}
+                  price={course.price}
+                  thumbnail={course.thumbnail}
+                  modules={course.modules}
+                  avgRating={course.avgRating}
+                  totalReviews={course.totalReviews}
+                  students={course.students}
+                  featured={course.featured}
+                />
               ))
             ) : (
               <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
@@ -284,7 +354,7 @@ const filteredCourses = courses
             <div className="mt-12 flex justify-center">
               <nav className="flex items-center space-x-2">
                 <button className="w-10 h-10 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                  &laquo;
+                  «
                 </button>
                 {[1, 2, 3].map((page) => (
                   <button
@@ -300,7 +370,7 @@ const filteredCourses = courses
                   </button>
                 ))}
                 <button className="w-10 h-10 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                  &raquo;
+                  »
                 </button>
               </nav>
             </div>
