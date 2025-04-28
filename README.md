@@ -115,7 +115,7 @@ npm run dev
 
 | Dashboard | Course Details | Payment |
 |-----------|----------------|---------|
-| ![Dashboard](https://res.cloudinary.com/daabibwh2/image/upload/v1745869599/git/ocqkwmbw0g9bklcxdzav.png)) | ![Course Detail](https://res.cloudinary.com/daabibwh2/image/upload/v1745869598/git/prevnymbgebf7ibyum6s.png)) | ![Payment]((https://res.cloudinary.com/daabibwh2/image/upload/v1745869598/git/npbwvlm5wso7ygcvyg2k.png)) |
+| ![Dashboard](https://res.cloudinary.com/daabibwh2/image/upload/v1745869599/git/ocqkwmbw0g9bklcxdzav.png)) | ![Course Detail](https://res.cloudinary.com/daabibwh2/image/upload/v1745869598/git/prevnymbgebf7ibyum6s.png)) | ![Payment](https://res.cloudinary.com/daabibwh2/image/upload/v1745869598/git/npbwvlm5wso7ygcvyg2k.png)) |
 
 ---
 
