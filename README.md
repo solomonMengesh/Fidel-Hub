@@ -5,7 +5,7 @@
 > **Fidel-Hub** is a modern, scalable Learning Management System (LMS) built for educational institutions, instructors, and students.  
 > It provides seamless course creation, enrollment, video lessons, quizzes, real-time messaging, and secure online payments.
 
-![Fidel-Hub LMS Banner](https://your-image-link-if-you-have-one.com)
+![Fidel-Hub LMS Banner](https://res.cloudinary.com/daabibwh2/image/upload/v1745870190/git/y53muvsbey7nyuwuqcse.png)
 
 ---
 
