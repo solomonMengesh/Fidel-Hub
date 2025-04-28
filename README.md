@@ -68,7 +68,7 @@ fidel-hub/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/fidel-hub.git
+git clone https://github.com/solomonMengesh/fidel-hub.git
 cd fidel-hub
 ```
 
@@ -158,9 +158,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📬 Contact
 
-- Project Owner: [Your Name]  
-- Email: your.email@example.com  
-- GitHub: [@yourusername](https://github.com/yourusername)
+
 
 ---
 
