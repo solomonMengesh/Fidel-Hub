@@ -71,7 +71,7 @@ cd fidel-hub
 
 ```bash
 # For backend
-cd server
+cd api
 npm install
 
 # For frontend
@@ -101,7 +101,7 @@ VITE_BACKEND_URL=http://localhost:5000
 
 ```bash
 # Start backend
-cd server
+cd api
 npm run dev
 
 # Start frontend
