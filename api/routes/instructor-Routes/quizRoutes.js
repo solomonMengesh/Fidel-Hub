@@ -2,7 +2,8 @@ import express from 'express';
 import {
   addQuizQuestion,
   updateQuizQuestion,
-  deleteQuizQuestion
+  deleteQuizQuestion,
+  getQuizQuestionsByLesson
 } from '../../controllers/Instructor-controller/quizController.js';
 import { protect, instructor } from '../../middleware/authMiddleware.js';
 
@@ -14,5 +15,8 @@ router.route('/:lessonId/questions')
 router.route('/questions/:questionId')
   .put(protect, instructor, updateQuizQuestion)
   .delete(protect, instructor, deleteQuizQuestion);
+
+  router.get('/:lessonId/questions', protect, getQuizQuestionsByLesson);
+
 
 export default router; 

@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import CourseCard from "./CourseCard";
 import AnimatedButton from "../ui/AnimatedButton ";
 import { motion } from "framer-motion";
+import axios from "axios";
 
 const categories = [
   "All",
@@ -22,16 +23,71 @@ const PopularCourses = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [sortBy, setSortBy] = useState("popular");
   const [sortDirection, setSortDirection] = useState("desc");
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     const fetchCourses = async () => {
+      setLoading(true);
+      setError(null);
       try {
+        // Fetch course list
         const response = await fetch("http://localhost:5000/api/courses");
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data = await response.json();
-        setCourses(data);
+        const courseData = await response.json();
+
+        // Fetch review stats and student count for each course
+        const coursesWithData = await Promise.all(
+          courseData.map(async (course) => {
+            const courseId = course.id || course._id;
+            let avgRating = "N/A";
+            let totalReviews = 0;
+            let studentCount = 0;
+
+            // Fetch review stats
+            try {
+              const reviewResponse = await axios.get(
+                `http://localhost:5000/api/review/${courseId}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                  withCredentials: true,
+                }
+              );
+              avgRating = reviewResponse.data.reviewStats?.avgRating || "N/A";
+              totalReviews = reviewResponse.data.reviewStats?.totalReviews || 0;
+            } catch (error) {
+              console.error(`Failed to fetch review stats for course ${courseId}:`, error);
+            }
+
+            // Fetch student count
+            try {
+              const studentResponse = await axios.get(
+                `http://localhost:5000/api/courses/${courseId}/student-count`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                  withCredentials: true,
+                }
+              );
+              studentCount = studentResponse.data.studentCount || 0;
+            } catch (error) {
+              console.error(`Failed to fetch student count for course ${courseId}:`, error);
+            }
+
+            return {
+              ...course,
+              avgRating,
+              totalReviews,
+              students: studentCount,
+            };
+          })
+        );
+
+        setCourses(coursesWithData);
       } catch (err) {
         setError(err.message);
         console.error("Error fetching courses:", err);
@@ -54,7 +110,9 @@ const PopularCourses = () => {
           comparison = (a.students || 0) - (b.students || 0);
           break;
         case "rating":
-          comparison = (a.rating || 0) - (b.rating || 0);
+          const ratingA = a.avgRating === "N/A" ? 0 : parseFloat(a.avgRating);
+          const ratingB = b.avgRating === "N/A" ? 0 : parseFloat(b.avgRating);
+          comparison = ratingA - ratingB;
           break;
         case "price":
           comparison = (a.price || 0) - (b.price || 0);
@@ -154,8 +212,8 @@ const PopularCourses = () => {
           >
             {filteredCourses.map((course) => (
               <CourseCard 
-                key={course._id || course.id}
-                id={course._id || course.id}
+                key={course.id || course._id}
+                id={course.id || course._id}
                 title={course.title}
                 instructor={course.instructor}
                 category={course.category}
@@ -163,7 +221,8 @@ const PopularCourses = () => {
                 price={course.price}
                 thumbnail={course.thumbnail}
                 modules={course.modules}
-                rating={course.rating}
+                avgRating={course.avgRating}
+                totalReviews={course.totalReviews}
                 students={course.students}
                 featured={course.featured}
               />

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Card, 
   CardContent, 
@@ -22,74 +22,40 @@ import { toast } from "sonner";
 
 const CourseModeration = () => {
   const [activeTab, setActiveTab] = useState("pending");
-  
-  // Mock course data
-  const courses = [
-    { 
-      id: 1, 
-      title: "Introduction to React", 
-      instructor: "David Chen", 
-      category: "Web Development", 
-      submittedDate: "2023-05-15", 
-      status: "pending",
-      lessons: 12,
-      duration: "6 hours"
-    },
-    { 
-      id: 2, 
-      title: "Advanced JavaScript Patterns", 
-      instructor: "Lisa Wang", 
-      category: "Programming", 
-      submittedDate: "2023-05-10", 
-      status: "approved",
-      lessons: 8,
-      duration: "4.5 hours"
-    },
-    { 
-      id: 3, 
-      title: "UX Design Fundamentals", 
-      instructor: "Emily Rodriguez", 
-      category: "Design", 
-      submittedDate: "2023-05-12", 
-      status: "pending",
-      lessons: 10,
-      duration: "5 hours"
-    },
-    { 
-      id: 4, 
-      title: "Python for Data Science", 
-      instructor: "Michael Brown", 
-      category: "Data Science", 
-      submittedDate: "2023-05-08", 
-      status: "rejected",
-      lessons: 15,
-      duration: "8 hours"
-    },
-    { 
-      id: 5, 
-      title: "Digital Marketing Strategy", 
-      instructor: "Sarah Williams", 
-      category: "Marketing", 
-      submittedDate: "2023-05-05", 
-      status: "approved",
-      lessons: 9,
-      duration: "4 hours"
-    },
-  ];
-  
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/courses");
+        const data = await res.json();
+        setCourses(data);
+      } catch (error) {
+        toast.error("Failed to fetch courses");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
   const filteredCourses = courses.filter(course => {
     if (activeTab === "all") return true;
     return course.status === activeTab;
   });
-  
+
   const handleApproveCourse = (courseId) => {
     toast.success(`Course #${courseId} has been approved`);
+    // Optionally update state here
   };
-  
+
   const handleRejectCourse = (courseId) => {
     toast.error(`Course #${courseId} has been rejected`);
+    // Optionally update state here
   };
-  
+
   const getStatusBadge = (status) => {
     switch (status) {
       case "approved":
@@ -131,65 +97,69 @@ const CourseModeration = () => {
             <TabsTrigger value="approved">Approved</TabsTrigger>
             <TabsTrigger value="all">All Courses</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value={activeTab} className="mt-0">
             <div className="rounded-md border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Course Title</TableHead>
-                    <TableHead>Instructor</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Lessons</TableHead>
-                    <TableHead>Submitted</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCourses.map((course) => (
-                    <TableRow key={course.id}>
-                      <TableCell>#{course.id}</TableCell>
-                      <TableCell className="font-medium">{course.title}</TableCell>
-                      <TableCell>{course.instructor}</TableCell>
-                      <TableCell>{course.category}</TableCell>
-                      <TableCell>{course.lessons} ({course.duration})</TableCell>
-                      <TableCell>{course.submittedDate}</TableCell>
-                      <TableCell>{getStatusBadge(course.status)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm" className="h-8">
-                            <Eye size={14} className="mr-1" />
-                            View
-                          </Button>
-                          
-                          {course.status === "pending" && (
-                            <>
-                              <Button 
-                                variant="default" 
-                                size="sm" 
-                                className="h-8 bg-green-600 hover:bg-green-700"
-                                onClick={() => handleApproveCourse(course.id)}
-                              >
-                                Approve
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-8 text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-950/30"
-                                onClick={() => handleRejectCourse(course.id)}
-                              >
-                                Reject
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
+              {loading ? (
+                <div className="p-4 text-center text-muted-foreground">Loading courses...</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Course Title</TableHead>
+                      <TableHead>Instructor</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Lessons</TableHead>
+                      <TableHead>Submitted</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCourses.map((course) => (
+                      <TableRow key={course._id}>
+                        <TableCell>#{course._id.slice(-5)}</TableCell>
+                        <TableCell className="font-medium">{course.title}</TableCell>
+                        <TableCell>{course.instructor?.name || "N/A"}</TableCell>
+                        <TableCell>{course.category || "N/A"}</TableCell>
+                        <TableCell>{course.total || 0} ({course.totalDuration || "N/A"})</TableCell>
+                        <TableCell>{new Date(course.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>{getStatusBadge(course.status)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" className="h-8">
+                              <Eye size={14} className="mr-1" />
+                              View
+                            </Button>
+
+                            {course.status === "pending" && (
+                              <>
+                                <Button 
+                                  variant="default" 
+                                  size="sm" 
+                                  className="h-8 bg-green-600 hover:bg-green-700"
+                                  onClick={() => handleApproveCourse(course._id)}
+                                >
+                                  Approve
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="h-8 text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-950/30"
+                                  onClick={() => handleRejectCourse(course._id)}
+                                >
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </div>
           </TabsContent>
         </Tabs>

@@ -23,6 +23,10 @@ import OTPVerification from "./pages/OTPVerification";
 import OTPSend from "./pages/OTPSend";
 import RegisterOTPSend from "./pages/RegisterOTPSend";
 import VerifyOTP from "./pages/VerifyOTP";
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentFailed from './pages/PaymentFailed';
+import VerifyPayment from './../src/components/Payment/VerifyPayment';
+import GetCertified from "./components/course details/GetCertified";
 
 const MainLayout = ({ children }) => (
   <>
@@ -38,6 +42,9 @@ const App = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userId = localStorage.getItem("userId");
+    window.scroll(0,0)
+
+
 
     if (token && userId) {
       // Connect socket and register user
@@ -74,11 +81,13 @@ const App = () => {
         <Route path="/signup" element={<MainLayout><Signup /></MainLayout>} />
         <Route path="/about" element={<MainLayout><About /></MainLayout>} />
         <Route path="/contact" element={<MainLayout><Contact /></MainLayout>} />
+
         
         {/* Authentication flow routes */}
         <Route path="/forgot-password" element={<MainLayout><ForgotPassword /></MainLayout>} />
         <Route path="/verify-otp" element={<MainLayout><OTPVerification /></MainLayout>} />
         <Route path="/send-otp" element={<MainLayout><OTPSend /></MainLayout>} />
+         <Route path="/get-certified/:courseId/:studentId" element={<MainLayout><GetCertified /></MainLayout>} />
         
         {/* Registration-specific OTP routes */}
         <Route path="/signup/send-otp-Registration" element={<MainLayout><RegisterOTPSend /></MainLayout>} />
@@ -86,6 +95,10 @@ const App = () => {
         
         {/* Instructor approval */}
         <Route path="/pending-approval" element={<MainLayout><PendingApproval /></MainLayout>} />
+
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/payment/failed" element={<PaymentFailed />} />
+        <Route path="/verify-payment/:tx_ref" element={<VerifyPayment />} />
 
         {/* Protected routes without layout */}
         <Route path="/student-dashboard" element={<StudentDashboard />} />

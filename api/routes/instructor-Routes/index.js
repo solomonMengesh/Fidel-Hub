@@ -4,6 +4,9 @@ import lessonRoutes from './lessonRoutes.js';
 import moduleRoutes from './moduleRoutes.js';
 import quizRoutes from './quizRoutes.js';
 import mediaRoutes from './mediaRoutes.js';
+import enrollmentRoutes from './enrollmentRoutes.js';
+import progressRoutes from './progressRoutes.js';
+import reviewRoutes from './reviewRoutes.js';
 
 const router = express.Router();
 
@@ -21,5 +24,10 @@ router.use('/quizzes', quizRoutes);
 
 // Route for media
 router.use('/media', mediaRoutes);
+router.use('/enrollments', enrollmentRoutes);
+// Route for progress
+router.use('/progress', progressRoutes);
+router.use('/review', reviewRoutes);
+
 
 export default router;
