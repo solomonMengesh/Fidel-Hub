@@ -232,7 +232,7 @@ const QuizView = ({ lesson_id, onComplete, studentId, courseId }) => {
       </div>
 
       {/* Questions Container */}
-      <div className="space-y-4 md:space-y-6 overflow-y-auto" style={{ maxHeight: "calc(100vh - 220px)" }}>
+      <div className="space-y-4 md:space-y-6 overflow-y-auto" style={{ maxHeight: "50vh" }}>
         {questions.map((question, qIndex) => {
           const questionResult = getQuestionResult(question._id);
           const answer = answers.find((a) => a.questionId === question._id);

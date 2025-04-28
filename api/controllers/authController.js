@@ -55,18 +55,18 @@ export const registerUser = async (req, res) => {
 export const loginUser = async (req, res) => {
   const { email, password, otp } = req.body; // Include OTP in the body for verification
 
-  console.log("Login attempt:", { email });
+   
 
   try {
     const user = await User.findOne({ email });
-    console.log("User found:", user ? user._id : "No user found");
+     
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     const isMatch = await user.comparePassword(password);
-    console.log("Password match:", isMatch);
+     
 
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid email or password" });
@@ -99,12 +99,12 @@ export const loginUser = async (req, res) => {
     }
 
     if (user.role === "instructor" && !user.isApproved) {
-      console.log("Instructor approval status:", user.isApproved);
+       
       return res.status(403).json({ message: "Your account is pending approval by an admin." });
     }
 
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
-    console.log("JWT Token generated:", token);
+     
 
     // ✅ Set the token as an HTTP-only cookie
     res.cookie("token", token, {
@@ -139,7 +139,7 @@ export const logoutUser = (req, res) => {
 
 export const getMe = async (req, res) => {
   try {
-    console.log("Decoded User:", req.user); // Check if req.user contains the expected user ID
+    
 
     // If you are storing the user ID in the JWT token, you can get it from req.user
     const user = await User.findById(req.user.id); // Find the user by ID from the decoded JWT

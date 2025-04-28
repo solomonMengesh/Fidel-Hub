@@ -83,7 +83,7 @@ const InstructorAnalyticsDashboard = () => {
           <h2 className="text-2xl font-bold">Instructor Analytics Dashboard</h2>
 
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+            {/* <Select value={paymentMethod} onValueChange={setPaymentMethod}>
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Payment Method" />
               </SelectTrigger>
@@ -92,9 +92,9 @@ const InstructorAnalyticsDashboard = () => {
                 <SelectItem value="telebirr">TeleBirr</SelectItem>
                 <SelectItem value="all">All Methods</SelectItem>
               </SelectContent>
-            </Select>
+            </Select> */}
 
-            <div className="flex space-x-2">
+            {/* <div className="flex space-x-2">
               {["Week", "Month", "Quarter", "Year"].map((range) => (
                 <Button
                   key={range}
@@ -105,7 +105,7 @@ const InstructorAnalyticsDashboard = () => {
                   {range}
                 </Button>
               ))}
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
