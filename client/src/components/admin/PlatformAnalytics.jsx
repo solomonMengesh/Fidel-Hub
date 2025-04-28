@@ -270,6 +270,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+<<<<<<< HEAD
 import {
   Select,
   SelectContent,
@@ -283,6 +284,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+=======
+
+>>>>>>> d1f6c4b020c701144d6cf2bca5c410e71745af98
 import {
   ResponsiveContainer,
   AreaChart,
@@ -371,6 +375,7 @@ const PlatformAnalytics = () => {
               </CardDescription>
             </div>
 
+<<<<<<< HEAD
            {/* <div className="flex flex-col sm:flex-row gap-3">
                <Popover>
                 <PopoverTrigger asChild>
@@ -439,6 +444,9 @@ const PlatformAnalytics = () => {
                 </TabsList>
               </Tabs>
             </div> */}
+=======
+       
+>>>>>>> d1f6c4b020c701144d6cf2bca5c410e71745af98
           </div>
         </CardHeader>  
         <CardContent>

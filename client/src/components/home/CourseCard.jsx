@@ -14,9 +14,10 @@ const CourseCard = ({
   price = 0,
   thumbnail = {},
   modules = [],
-  rating = 0,
+  avgRating = "N/A",
+  totalReviews = 0,
   students = 0,
-  featured = false
+  featured = false,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -113,9 +114,12 @@ const CourseCard = ({
               
               <div className="flex items-center space-x-3 mb-4">
                 <div className="flex items-center">
-                  <Star size={14} className="text-amber-400 fill-amber-400" />
-                  <span className="ml-1 text-sm font-medium">
-                    {rating.toFixed(1)}
+                  <Star size={14} className="text-yellow-300 fill-yellow-300 mr-1" />
+                  <span className="text-sm font-medium text-slate-900 dark:text-white">
+                    {avgRating === "N/A" ? "N/A" : parseFloat(avgRating).toFixed(1)}
+                  </span>
+                  <span className="text-sm text-muted-foreground ml-1">
+                    ({totalReviews.toLocaleString()} ratings)
                   </span>
                 </div>
                 <div className="flex items-center text-muted-foreground">
@@ -133,7 +137,7 @@ const CourseCard = ({
               </div>
             </div>
             
-            <div className="pt-3 mt-auto flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
+            <div className="pt-3 mt-auto flex items-center justify-between border-t border-slate-200 dark:border-slate-800">
               <div className="text-sm text-muted-foreground">
                 <BookOpen size={14} className="inline mr-1" /> {totalLessons} lessons
               </div>
@@ -168,7 +172,8 @@ CourseCard.propTypes = {
       lessons: PropTypes.array
     })
   ),
-  rating: PropTypes.number,
+  avgRating: PropTypes.string,
+  totalReviews: PropTypes.number,
   students: PropTypes.number,
   featured: PropTypes.bool
 };

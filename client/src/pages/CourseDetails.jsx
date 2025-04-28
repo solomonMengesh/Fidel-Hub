@@ -245,9 +245,17 @@ export const CourseDetails = () => {
             <OverviewTab course={course} total={total} />
           </TabsContent>
 
+<<<<<<< HEAD
           <TabsContent value="reviews">
             <RatingsTab />
           </TabsContent>
+=======
+        <TabsContent value="reviews">
+          <RatingsTab
+           courseId={courseId}
+          />
+        </TabsContent>
+>>>>>>> d1f6c4b020c701144d6cf2bca5c410e71745af98
 
           <TabsContent value="instructor">
             <InstructorTab course={course} />

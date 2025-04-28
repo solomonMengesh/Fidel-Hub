@@ -34,7 +34,7 @@ export const initiatePayment = async (req, res) => {
         first_name: fullName,
         tx_ref,
         callback_url: `${process.env.BACKEND_URL}/api/payments/webhook`,
-        return_url: `${process.env.FRONTEND_URL}/payment-success?course=${courseId}&tx_ref=${tx_ref}`,
+        // return_url: `${process.env.FRONTEND_URL}/payment-success?course=${courseId}&tx_ref=${tx_ref}`,
         customization: {
           title: "FidelHub Payment",  
           description: "Payment for Course Enrollment",

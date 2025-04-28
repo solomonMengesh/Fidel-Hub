@@ -7,7 +7,7 @@ import mediaRoutes from './mediaRoutes.js';
 import enrollmentRoutes from './enrollmentRoutes.js';
 import progressRoutes from './progressRoutes.js';
 import reviewRoutes from './reviewRoutes.js';
-
+import graphRoutes from './graphs.js';
 const router = express.Router();
 
 // Route for courses
@@ -28,6 +28,8 @@ router.use('/enrollments', enrollmentRoutes);
 // Route for progress
 router.use('/progress', progressRoutes);
 router.use('/review', reviewRoutes);
+// Route for graphs
+router.use('/graphs', graphRoutes);
 
 
 export default router;

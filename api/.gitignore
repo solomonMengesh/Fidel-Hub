@@ -15,6 +15,14 @@ coverage
 *.local
 uploads/
 
+# Test coverage
+coverage/
+
+# Local environment files
+*.local
+.env
+.env.* 
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -25,3 +33,5 @@ uploads/
 *.njsproj
 *.sln
 *.sw?
+
+

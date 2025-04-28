@@ -383,6 +383,7 @@ import routes from './routes/instructor-Routes/index.js';
 import certificateRoutes from './routes/certificateRoutes/certificateRoutes.js';
 
 import paymentRoutes from './routes/PaymentRoutes/paymentRoutes.js';
+import adminGraphRoutes from './routes/admin-Routes/graphs.js';
 
 dotenv.config();
 await connectDB();  
@@ -398,12 +399,12 @@ const io = new Server(server, {
 
 
  io.on('connection', (socket) => {
-  console.log('New client connected:', socket.id);
+   
 
   socket.on('registerUser', async (userId) => {
     try {
       await User.findByIdAndUpdate(userId, { socketId: socket.id });
-      console.log(`User ${userId} registered with socket ${socket.id}`);
+       
     } catch (error) {
       console.error('Error registering user socket:', error);
     }
@@ -468,6 +469,7 @@ app.use('/certificates', express.static(path.join(process.cwd(), 'certificates')
 
 
 app.use('/api/certificates', certificateRoutes);
+app.use('/api/admin/graphs', adminGraphRoutes);
 
 
 app.use((err, req, res, next) => {

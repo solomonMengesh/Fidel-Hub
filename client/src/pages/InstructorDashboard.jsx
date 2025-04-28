@@ -182,7 +182,7 @@ const InstructorDashboard = () => {
         handleCreateCourse={handleCreateCourse}
         user={user}
       />
-      <div className="flex-1 flex flex-col overflow-auto">
+      <div className="flex-1 flex flex-col overflow-auto md:ml-64">
         <Header activeTab={activeTab} />
         <div className="p-5">
           {loading.overall ? (

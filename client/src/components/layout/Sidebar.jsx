@@ -1,5 +1,5 @@
-import { Menu, Plus } from "lucide-react"; // Import icons you need
-import { BarChart, BookOpen, Users, MessageSquare, CreditCard, Award, Calendar, Settings } from "lucide-react"; // Import icons directly
+import { Menu, Plus } from "lucide-react";
+import { BarChart, BookOpen, Users, MessageSquare, CreditCard, Award, Calendar, Settings } from "lucide-react";
 import Logo from "./Logo";
 
 const Sidebar = ({
@@ -16,8 +16,8 @@ const Sidebar = ({
     { id: "students", label: "Students", icon: Users },
     { id: "messages", label: "Messages", icon: MessageSquare },
     { id: "payments", label: "Payments", icon: CreditCard },
-    { id: "certificates", label: "Certificates", icon: Award },
-    { id: "calendar", label: "Calendar", icon: Calendar },
+    // { id: "certificates", label: "Certificates", icon: Award },
+    // { id: "calendar", label: "Calendar", icon: Calendar },
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
@@ -27,16 +27,19 @@ const Sidebar = ({
 
   return (
     <>
+      {/* Mobile toggle button */}
       <button
         className="fixed top-5 left-5 z-50 md:hidden p-2 rounded-full bg-fidel-500 text-white"
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
       >
         <Menu size={20} />
       </button>
+
+      {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-5 transform transition-transform duration-300 ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 md:relative md:block overflow-hidden`}
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-5 transition-opacity duration-300 md:opacity-100 md:block ${
+          isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none md:opacity-100 md:pointer-events-auto"
+        }`}
       >
         <div className="flex flex-col h-full">
           <div className="flex items-center space-x-2 mb-8">
@@ -88,6 +91,14 @@ const Sidebar = ({
           </div>
         </div>
       </div>
+
+      {/* Overlay for mobile when sidebar is open */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        ></div>
+      )}
     </>
   );
 };

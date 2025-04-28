@@ -62,8 +62,13 @@ const CourseTable = ({ courses = [], onViewAll, onCreate, showStatus = false, sh
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {course.lastUpdated}
-                  </TableCell>
+  {new Date(course.updatedAt).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+     
+  })}
+</TableCell>
                   {showStatus && (
                     <TableCell className="hidden sm:table-cell">
                       <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs">

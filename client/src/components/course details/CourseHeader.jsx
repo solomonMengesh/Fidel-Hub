@@ -5,7 +5,7 @@ import {
   Clock,
   BookOpen,
   Award,
-  MessageSquare
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
@@ -18,20 +18,22 @@ export const CourseHeader = ({
   total,
   totalDuration,
   onTryFreePreview,
-  freeVideoLessons
+  freeVideoLessons,
 }) => {
   const [loading, setLoading] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [studentCount, setStudentCount] = useState(0);
+  const [reviewStats, setReviewStats] = useState({ totalReviews: 0, avgRating: "N/A" });
+  const [reviewError, setReviewError] = useState(null);
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
-  const [studentCount, setStudentCount] = useState(0);
+
   // Check if already enrolled
   useEffect(() => {
     const checkEnrollment = async () => {
       try {
- 
         const res = await axios.get(
           `http://localhost:5000/api/enrollments/check?studentId=${user._id}&courseId=${course._id}`,
           {
@@ -40,8 +42,7 @@ export const CourseHeader = ({
             },
           }
         );
- 
-        // Handle response structure { isEnrolled: true }
+
         if (res.data?.isEnrolled === true) {
           setIsEnrolled(true);
         }
@@ -54,6 +55,51 @@ export const CourseHeader = ({
       checkEnrollment();
     }
   }, [user, course]);
+
+  // Fetch student count
+  useEffect(() => {
+    const fetchStudentCount = async () => {
+      try {
+        const res = await axios.get(`/api/courses/${course._id}/student-count`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setStudentCount(res.data.studentCount);
+      } catch (err) {
+        console.error("Failed to fetch student count", err);
+      }
+    };
+
+    if (course._id) {
+      fetchStudentCount();
+    }
+  }, [course._id, token]);
+
+  // Fetch review stats
+  useEffect(() => {
+    const fetchReviewStats = async () => {
+      try {
+        const res = await axios.get(`http://localhost:5000/api/review/${course._id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        });
+        setReviewStats(
+          res.data.reviewStats || { totalReviews: 0, avgRating: "N/A" }
+        );
+      } catch (error) {
+        console.error("Failed to fetch review stats:", error?.response?.data || error.message);
+        setReviewError("Failed to load reviews");
+        setReviewStats({ totalReviews: 0, avgRating: "N/A" });
+      }
+    };
+
+    if (course._id) {
+      fetchReviewStats();
+    }
+  }, [course._id, token]);
 
   const handleEnroll = async () => {
     setLoading(true);
@@ -91,20 +137,7 @@ export const CourseHeader = ({
       setLoading(false);
     }
   };
-  useEffect(() => {
-    const fetchStudentCount = async () => {
-      try {
-        const res = await axios.get(`/api/courses/${course._id}/student-count`);
-        setStudentCount(res.data.studentCount);
-      } catch (err) {
-        console.error("Failed to fetch student count", err);
-      }
-    };
 
-    if (course._id) {
-      fetchStudentCount();
-    }
-  }, [course._id]);
   return (
     <div className="bg-fidel-600 text-white py-12">
       <div className="container px-4 md:px-6">
@@ -129,16 +162,16 @@ export const CourseHeader = ({
               <div className="flex items-center">
                 <Star size={18} className="text-yellow-300 fill-yellow-300 mr-1" />
                 <span className="font-medium">
-                  {course.rating?.toFixed(1) || "N/A"}
+                  {reviewStats.avgRating}
                 </span>
                 <span className="text-fidel-200 ml-1">
-                  ({course.totalRatings?.toLocaleString() || 0} ratings)
+                  ({reviewStats.totalReviews.toLocaleString()} ratings)
                 </span>
               </div>
               <div className="flex items-center">
-      <Users size={18} className="mr-1" />
-      <span>{studentCount.toLocaleString()} students</span>
-    </div>
+                <Users size={18} className="mr-1" />
+                <span>{studentCount.toLocaleString()} students</span>
+              </div>
               <div className="flex items-center">
                 <Clock size={18} className="mr-1" />
                 <span>{course.totalDuration}</span>
@@ -171,15 +204,11 @@ export const CourseHeader = ({
             </div>
           </div>
 
-          {/* Updated to hide the entire section when isEnrolled is true */}
           {!isEnrolled && (
             <div className="md:w-96">
               <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-xl">
                 <img
-                  src={
-                    course.thumbnail?.url ||
-                    "https://placehold.co/800x500/34d399/ffffff.png?text=Course+Image"
-                  }
+                  src={course.thumbnail.url}
                   alt={course.title}
                   className="w-full h-52 object-cover"
                 />
