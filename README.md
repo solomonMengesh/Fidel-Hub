@@ -173,7 +173,5 @@ If you like this project, consider giving it a ⭐️ star on GitHub to help oth
   
 ---
   
-**Would you like me also to give you:**
-- a basic `LICENSE` file (MIT)?
-- a `CONTRIBUTING.md` file?
+
   
