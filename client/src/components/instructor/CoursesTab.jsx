@@ -52,7 +52,7 @@ const CourseTable = ({ courses = [], onCreate, onViewAll, showStatus, showAction
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
-                  {course.lastUpdated || "N/A"}
+                  {course.updatedAt || "N/A"}
                 </TableCell>
                 {showStatus && (
                   <TableCell className="hidden sm:table-cell">

@@ -52,3 +52,51 @@ export const getCourseReviews = async (req, res) => {
   }
 };
 
+export const getInstructorCourseRatings = async (req, res) => {
+  try {
+    const instructorId = req.user._id;
+    const courses = await Course.find({ instructor: instructorId });
+    if (!courses.length) return res.status(404).json({ message: 'No courses found' });
+
+    const courseRatings = await Promise.all(
+      courses.map(async course => {
+        const reviews = await Review
+          .find({ course: course._id })
+          .populate('student', 'name')
+          .sort({ createdAt: -1 });  
+        const totalReviews = reviews.length;
+        const avgRating = totalReviews
+          ? (reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1)
+          : '0.0';
+
+         const recentReview = reviews[0];
+        const mostRecentRating = recentReview ? recentReview.rating : 'N/A';
+        const mostRecentComment = recentReview ? recentReview.comment : 'No reviews yet';
+        const mostRecentStudentName = recentReview ? recentReview.student.name : 'N/A';
+        const mostRecentCommentDate = recentReview ? recentReview.createdAt : null;
+
+        const studentRatings = reviews.map(r => ({
+          studentName: r.student.name,
+          rating: r.rating,
+        }));
+
+        return {
+          courseId: course._id,
+          courseTitle: course.title,
+          avgRating,
+          totalReviews,
+          mostRecentRating,
+          mostRecentComment,
+          mostRecentStudentName,
+          mostRecentCommentDate,
+          studentRatings,
+        };
+      })
+    );
+
+    res.status(200).json(courseRatings);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error' });
+    console.error(error);
+  }
+};

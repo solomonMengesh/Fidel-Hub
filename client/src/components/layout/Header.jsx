@@ -25,7 +25,7 @@ const Header = ({ activeTab }) => {
           <button className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200">
             <Bell size={20} />
             <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
-Slope
+ 
           </button>
         </div>
         <div className="relative hidden sm:block">
