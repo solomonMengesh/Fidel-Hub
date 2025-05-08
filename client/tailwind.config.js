@@ -1,4 +1,4 @@
-module.exports = {
+const newLocal = module.exports = {
   darkMode: ["class"],
   content: [
     "./pages/**/*.{js,jsx}",
@@ -176,4 +176,4 @@ module.exports = {
     }
   },
   plugins: [require("tailwindcss-animate")],
-}
+};
