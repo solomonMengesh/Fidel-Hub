@@ -1,4 +1,3 @@
-// db.js or your connection file
 import mongoose from 'mongoose';
 
 const connectDB = async () => {
@@ -8,7 +7,7 @@ const connectDB = async () => {
       useUnifiedTopology: true,
     });
     
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
     
     // Check if we can use transactions
     const canUseTransactions = conn.connection.host !== 'localhost' && 

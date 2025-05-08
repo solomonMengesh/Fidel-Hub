@@ -1,4 +1,4 @@
- import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -221,9 +221,9 @@ const StudentManagement = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-  {student.enrolledAt 
-    ? format(new Date(student.enrolledAt), 'MMMM dd') 
-    : 'Invalid Date'}
+  {student.enrolledAt && !isNaN(Date.parse(student.enrolledAt))
+    ? format(new Date(student.enrolledAt), 'dd MMM yyyy')
+    : 'Not available'}
 </TableCell>
 
                       <TableCell>
@@ -273,4 +273,3 @@ const StudentManagement = () => {
 };
 
 export default StudentManagement;
- 
