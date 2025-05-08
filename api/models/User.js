@@ -41,6 +41,12 @@ const userSchema = new mongoose.Schema({
   passwordResetOtp: { type: String },
 passwordResetOtpExpiration: { type: Date },
 
+ availableBalance: { type: Number, default: 0 },
+ bankDetails: {
+  accountName: String,
+  accountNumber: String,
+  bankCode: String, // e.g., '001' for CBE
+},
 
 }, { timestamps: true });
 

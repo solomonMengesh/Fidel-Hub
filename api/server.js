@@ -19,6 +19,7 @@ import certificateRoutes from './routes/certificateRoutes/certificateRoutes.js';
 
 import paymentRoutes from './routes/PaymentRoutes/paymentRoutes.js';
 import adminGraphRoutes from './routes/admin-Routes/graphs.js';
+import withdrawalRoutes from './routes/PaymentRoutes/withdrawalRoutes.js';
 
 dotenv.config();
 await connectDB();  
@@ -98,6 +99,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/otp', otpRoutes);
 app.use('/api', routes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/withdrawals', withdrawalRoutes);
 
 
 app.use('/certificates', express.static(path.join(process.cwd(), 'certificates')));
