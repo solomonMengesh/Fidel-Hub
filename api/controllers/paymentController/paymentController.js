@@ -1,24 +1,42 @@
 import axios from 'axios';
 import Payment from '../../models/Payment.js';
 import Enrollment from '../../models/Enrollment.js';
+import Transaction from '../../models/Transaction.js';
+import Course from '../../models/Course.js';
+import User from '../../models/User.js';
 import PDFDocument from 'pdfkit';
-import QRCode from 'qrcode'; // Import QRCode library for generating QR codes
+import QRCode from 'qrcode';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 export const initiatePayment = async (req, res) => {
   const { amount, email, fullName, courseId } = req.body;
-
-  const studentId = req.user?._id; //  Grab from authenticated user
+  const studentId = req.user?._id; // Grab from authenticated user
   const tx_ref = `FIDELHUB-${Date.now()}`;
 
   if (!studentId) {
-    return res.status(401).json({ error: "Unauthorized. Student ID missing." });
+    return res.status(401).json({ error: 'Unauthorized. Student ID missing.' });
   }
 
-  // Logging email and checking for issues with invisible characters
-  console.log("Initiating payment with email:", email);
-  console.log("Email length:", email.length);
-  console.log("Email content:", email);
+  // Validate required fields
+  if (!amount || !email || !fullName || !courseId) {
+    return res.status(400).json({ error: 'Missing required fields.' });
+  }
+
+  // Validate environment variables
+  if (!process.env.BACKEND_URL || !process.env.CHAPA_SECRET_KEY) {
+    console.error('Missing required environment variables');
+    return res.status(500).json({ error: 'Server configuration error' });
+  }
+
+  // Log email for debugging
+  console.log('Initiating payment with email:', email);
+  console.log('Email length:', email.length);
+  console.log('Email content:', email);
+  console.log('Chapa callback_url:', `${process.env.BACKEND_URL}/api/payments/webhook`);
 
   try {
     // Step 1: Create a payment record in the database with 'pending' status
@@ -34,16 +52,17 @@ export const initiatePayment = async (req, res) => {
         first_name: fullName,
         tx_ref,
         callback_url: `${process.env.BACKEND_URL}/api/payments/webhook`,
-        // return_url: `${process.env.FRONTEND_URL}/payment-success?course=${courseId}&tx_ref=${tx_ref}`,
+        return_url: `${process.env.FRONTEND_URL}/payment-success?course=${courseId}&tx_ref=${tx_ref}`,
         customization: {
-          title: "FidelHub Payment",  
-          description: "Payment for Course Enrollment",
+          title: 'FidelHub Payment',
+          description: 'Payment for Course Enrollment',
         },
       },
       {
         headers: {
           Authorization: `Bearer ${process.env.CHAPA_SECRET_KEY}`,
         },
+        timeout: 10000, // 10 seconds
       }
     );
 
@@ -52,74 +71,137 @@ export const initiatePayment = async (req, res) => {
     if (chapaRes.status === 'success') {
       return res.json({ checkoutUrl: chapaRes.data.checkout_url });
     } else {
-      console.error("CHAPA Error (status not success):", chapaRes);
+      console.error('CHAPA Error (status not success):', chapaRes);
       return res.status(400).json({
-        error: "Failed to initialize payment",
+        error: 'Failed to initialize payment',
         details: chapaRes,
       });
     }
   } catch (error) {
     // Handle any unexpected errors in the request process
-    console.error("CHAPA Error Response:", error.response?.data || error.message);
+    console.error('CHAPA Error Response:', error.response?.data || error.message);
     if (error.response?.data) {
-      console.log("Full Chapa Response Data:", error.response.data);
+      console.log('Full Chapa Response Data:', error.response.data);
     }
-    res.status(500).json({ error: "Payment initiation failed" });
+    res.status(500).json({ error: 'Payment initiation failed' });
   }
 };
-
-
-
 
 export const chapaWebhook = async (req, res) => {
   const { event, data } = req.body;
 
-  if (event === "charge.completed" && data.status === "success") {
+  console.log('Webhook Received:', {
+    headers: req.headers,
+    body: JSON.stringify(req.body, null, 2),
+  });
+
+  if (event === 'charge.completed' && data.status === 'success') {
     const { tx_ref } = data;
 
     try {
+      // Update payment status
       const payment = await Payment.findOneAndUpdate(
         { tx_ref },
         { status: 'success', chapaData: data },
         { new: true }
       );
 
-      if (!payment) return res.status(404).send("Payment not found");
+      if (!payment) {
+        console.error('Payment not found for tx_ref:', tx_ref);
+        return res.status(404).send('Payment not found');
+      }
 
-      await Enrollment.create({
+      // Fetch course to get instructorId
+      const course = await Course.findById(payment.courseId);
+      if (!course) {
+        console.error('Course not found for courseId:', payment.courseId);
+        return res.status(404).send('Course not found');
+      }
+
+      const instructorId = course.instructor;
+      if (!instructorId) {
+        console.error('Instructor not found for course:', payment.courseId);
+        return res.status(404).send('Instructor not found for the course');
+      }
+
+      // Create transaction
+      const instructorShare = payment.amount * 0.8;
+      const platformShare = payment.amount * 0.2;
+      const existingTx = await Transaction.findOne({ paymentId: payment._id });
+
+      if (!existingTx) {
+        await Transaction.create({
+          studentId: payment.studentId,
+          courseId: payment.courseId,
+          instructorId,
+          paymentId: payment._id,
+          amountPaid: payment.amount,
+          instructorShare,
+          platformShare,
+          status: 'completed',
+        });
+        console.log('Transaction created for tx_ref:', tx_ref);
+
+        // Update instructor balance
+        await User.findByIdAndUpdate(
+          instructorId,
+          { $inc: { availableBalance: instructorShare } }
+        );
+        console.log('Instructor balance updated for instructorId:', instructorId);
+      } else {
+        console.log('Transaction already exists for paymentId:', payment._id);
+      }
+
+      // Create enrollment
+      const alreadyEnrolled = await Enrollment.findOne({
         studentId: payment.studentId,
         courseId: payment.courseId,
-        paymentId: payment._id,
       });
 
-      return res.status(200).send("Payment and enrollment successful");
+      if (!alreadyEnrolled) {
+        await Enrollment.create({
+          studentId: payment.studentId,
+          courseId: payment.courseId,
+          paymentId: payment._id,
+        });
+        console.log('Enrollment created for studentId:', payment.studentId);
+      } else {
+        console.log('Student already enrolled for courseId:', payment.courseId);
+      }
+
+      return res.status(200).send('Payment, transaction, and enrollment successful');
     } catch (error) {
-      console.error(error);
-      return res.status(500).send("Server error");
+      console.error('Webhook Processing Error:', error.message, error.stack);
+      if (error.response) {
+        console.error('Chapa API Error:', error.response.data);
+      } else if (error.request) {
+        console.error('No response from Chapa API:', error.request);
+      }
+      return res.status(500).send('Server error');
     }
   }
 
-  res.status(400).send("Invalid webhook");
+  console.error('Invalid webhook event or status:', { event, status: data?.status });
+  res.status(400).send('Invalid webhook');
 };
-
-
-
 
 export const verifyPayment = async (req, res) => {
   const { tx_ref } = req.params;
   const { course_id } = req.query;
 
-  // Log incoming data
-  console.log("Incoming tx_ref:", tx_ref);
-  console.log("Incoming course_id:", course_id);
+  // Log incoming data for debugging
+  console.log('Verify Payment - Incoming tx_ref:', tx_ref);
+  console.log('Verify Payment - Incoming course_id:', course_id);
 
   // Validate required data
   if (!tx_ref) {
-    return res.status(400).json({ error: "Transaction reference (tx_ref) is required" });
+    console.error('Verify Payment - Missing tx_ref');
+    return res.status(400).json({ error: 'Transaction reference (tx_ref) is required' });
   }
 
   if (!course_id) {
-    return res.status(400).json({ error: "Course ID is required" });
+    console.error('Verify Payment - Missing course_id');
+    return res.status(400).json({ error: 'Course ID is required' });
   }
 
   try {
@@ -130,117 +212,120 @@ export const verifyPayment = async (req, res) => {
         headers: {
           Authorization: `Bearer ${process.env.CHAPA_SECRET_KEY}`,
         },
+        timeout: 10000,
       }
     );
 
     const chapaData = chapaResponse.data;
+    console.log('Verify Payment - Chapa Verification Response:', chapaData);
 
-    // Check chapa verification response
-    if (chapaData.status !== 'success') {
-      console.log("Chapa payment verification failed:", chapaData);
+    // Check Chapa verification response
+    if (chapaData.status !== 'success' || chapaData.data.status !== 'success') {
+      console.error('Verify Payment - Chapa payment verification failed:', chapaData);
       return res.status(400).json({
-        error: "Payment not successful",
-        details: chapaData
+        error: 'Payment not successful',
+        details: chapaData,
       });
     }
 
-    // Debug: Find payment before update
+    // Find existing payment
     const existingPayment = await Payment.findOne({ tx_ref: tx_ref.trim() });
     if (!existingPayment) {
-      console.log(" No payment found in DB for tx_ref:", tx_ref);
+      console.error('Verify Payment - No payment found in DB for tx_ref:', tx_ref);
       const recentPayments = await Payment.find().sort({ createdAt: -1 }).limit(5);
-      console.log("📦 Recent Payment Records:", recentPayments);
-
-      return res.status(404).json({ error: "Payment record not found in database" });
+      console.log('Verify Payment - Recent Payment Records:', recentPayments);
+      return res.status(404).json({ error: 'Payment record not found in database' });
     }
 
-    // Update the payment as successful
+    // Update payment status
     const updatedPayment = await Payment.findOneAndUpdate(
       { tx_ref: tx_ref.trim() },
       {
         status: 'success',
         courseId: course_id,
         verifiedAt: new Date(),
-        chapaData: chapaData
+        chapaData: chapaData,
       },
       { new: true }
     );
 
-    // Create enrollment
-    await Enrollment.create({
-      studentId: existingPayment.studentId, 
-      courseId: course_id,
-      paymentId: updatedPayment._id
-    });
-    
+    // Fetch course to get instructorId
+    const course = await Course.findById(course_id);
+    if (!course) {
+      console.error('Verify Payment - Course not found for courseId:', course_id);
+      return res.status(404).json({ error: 'Course not found' });
+    }
 
-    console.log("  Payment verified & enrollment created.");
+    const instructorId = course.instructor;
+    if (!instructorId) {
+      console.error('Verify Payment - Instructor not found for course:', course_id);
+      return res.status(404).json({ error: 'Instructor not found for the course' });
+    }
+
+    // Create transaction if it doesn't exist
+    const instructorShare = existingPayment.amount * 0.8;
+    const platformShare = existingPayment.amount * 0.2;
+    const existingTx = await Transaction.findOne({ paymentId: updatedPayment._id });
+
+    if (!existingTx) {
+      await Transaction.create({
+        studentId: existingPayment.studentId,
+        courseId: course_id,
+        instructorId,
+        paymentId: updatedPayment._id,
+        amountPaid: existingPayment.amount,
+        instructorShare,
+        platformShare,
+        status: 'completed',
+      });
+      console.log('Verify Payment - Transaction created for tx_ref:', tx_ref);
+
+      // Update instructor balance
+      await User.findByIdAndUpdate(
+        instructorId,
+        { $inc: { availableBalance: instructorShare } }
+      );
+      console.log('Verify Payment - Instructor balance updated for instructorId:', instructorId);
+    } else {
+      console.log('Verify Payment - Transaction already exists for paymentId:', updatedPayment._id);
+    }
+
+    // Create enrollment if not already present
+    const alreadyEnrolled = await Enrollment.findOne({
+      studentId: existingPayment.studentId,
+      courseId: course_id,
+    });
+
+    if (!alreadyEnrolled) {
+      await Enrollment.create({
+        studentId: existingPayment.studentId,
+        courseId: course_id,
+        paymentId: updatedPayment._id,
+      });
+      console.log('Verify Payment - Enrollment created for studentId:', existingPayment.studentId);
+    } else {
+      console.log('Verify Payment - Student already enrolled for courseId:', course_id);
+    }
+
+    console.log('Verify Payment - Payment verified, transaction processed, and enrollment created.');
 
     return res.status(200).json({
-      message: "Payment verified and user enrolled successfully",
+      message: 'Payment verified, transaction processed, and user enrolled successfully',
       payment: updatedPayment,
-      courseId: course_id
+      courseId: course_id,
     });
-
   } catch (error) {
-    console.error(" Error verifying payment:", error.message);
+    console.error('Verify Payment - Error:', error.message, error.stack);
+    if (error.response) {
+      console.error('Verify Payment - Chapa API Error:', error.response.data);
+    } else if (error.request) {
+      console.error('Verify Payment - No response from Chapa API:', error.request);
+    }
     return res.status(500).json({
-      error: "Payment verification failed",
-      details: error.response?.data || error.message
+      error: 'Payment verification failed',
+      details: error.response?.data || error.message,
     });
   }
-};
-
-
-
-// In your payment controller
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const drawConsolidatedTable = (doc, sections, x, y) => {
-  const rowHeight = 25;
-  const colWidth = [180, 320];
-  const tableWidth = colWidth[0] + colWidth[1];
-  let currentY = y;
-
-  sections.forEach(section => {
-    // Section header
-    doc.fontSize(14)
-       .fillColor('#3498db')
-       .text(section.title.toUpperCase(), x, currentY, { underline: true });
-    currentY += 30;
-
-    // Section rows
-    section.rows.forEach((row, i) => {
-      const rowY = currentY + (i * rowHeight);
-      
-      // Alternate row colors
-      if (i % 2 === 0) {
-        doc.rect(x, rowY, tableWidth, rowHeight)
-           .fill('#f8f9fa');
-      }
-
-      doc.rect(x, rowY, tableWidth, rowHeight)
-         .stroke('#e0e0e0');
-
-      doc.font(i === 0 ? 'Helvetica-Bold' : 'Helvetica')
-         .fontSize(10)
-         .fillColor(row.highlight ? '#e74c3c' : '#2C3E50')
-         .text(row.label, x + 10, rowY + 8)
-         .text(row.value, x + colWidth[0] + 10, rowY + 8, {
-           width: colWidth[1] - 20
-         });
-    });
-
-    currentY += (section.rows.length * rowHeight) + 20;
-    
-    // Add space between sections
-    if (section !== sections[sections.length - 1]) {
-      currentY += 10;
-    }
-  });
-
-  return currentY;
 };
 
 export const generateReceipt = async (req, res) => {
@@ -250,7 +335,7 @@ export const generateReceipt = async (req, res) => {
     if (!tx_ref) {
       return res.status(400).json({ 
         success: false,
-        error: "Transaction reference is required" 
+        error: 'Transaction reference is required',
       });
     }
 
@@ -261,7 +346,7 @@ export const generateReceipt = async (req, res) => {
     if (!payment) {
       return res.status(404).json({
         success: false,
-        error: "Payment record not found"
+        error: 'Payment record not found',
       });
     }
 
@@ -279,8 +364,8 @@ export const generateReceipt = async (req, res) => {
       margin: 40,
       info: {
         Title: `Payment Receipt - ${tx_ref}`,
-        Author: 'Your Institution Name'
-      }
+        Author: 'Your Institution Name',
+      },
     });
 
     doc.on('error', (err) => {
@@ -288,7 +373,7 @@ export const generateReceipt = async (req, res) => {
       if (!res.headersSent) {
         res.status(500).json({
           success: false,
-          error: "Error generating PDF"
+          error: 'Error generating PDF',
         });
       }
     });
@@ -328,16 +413,16 @@ export const generateReceipt = async (req, res) => {
           { label: 'Date', value: new Date(payment.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) },
           { label: 'Amount Paid', value: `${payment.amount.toLocaleString()} ETB`, highlight: true },
           { label: 'Payment Method', value: payment.chapaData?.data?.method || 'Online Payment' },
-          { label: 'Status', value: payment.status.toUpperCase() }
-        ]
+          { label: 'Status', value: payment.status.toUpperCase() },
+        ],
       },
       {
         title: 'Student Information',
         rows: [
           { label: 'Full Name', value: payment.studentId?.name || 'N/A' },
           { label: 'Email Address', value: payment.studentId?.email || 'N/A' },
-          { label: 'Phone Number', value: payment.studentId?.phone || 'N/A' }
-        ]
+          { label: 'Phone Number', value: payment.studentId?.phone || 'N/A' },
+        ],
       },
       {
         title: 'Course Information',
@@ -345,9 +430,9 @@ export const generateReceipt = async (req, res) => {
           { label: 'Course Title', value: payment.courseId?.title || 'N/A' },
           { label: 'Instructor', value: payment.courseId?.instructor || 'N/A' },
           { label: 'Duration', value: payment.courseId?.duration || 'N/A' },
-          { label: 'Course Price', value: `${payment.courseId?.price?.toLocaleString() || '0'} ETB` }
-        ]
-      }
+          { label: 'Course Price', value: `${payment.courseId?.price?.toLocaleString() || '0'} ETB` },
+        ],
+      },
     ];
 
     let currentY = drawConsolidatedTable(doc, tableSections, 50, 130);
@@ -359,7 +444,7 @@ export const generateReceipt = async (req, res) => {
          .fillColor('#7f8c8d')
          .text('Scan to verify payment', 400, currentY + 110, {
            width: 100,
-           align: 'center'
+           align: 'center',
          });
       currentY += 130;
     }
@@ -376,15 +461,14 @@ export const generateReceipt = async (req, res) => {
        .text('For any inquiries, please contact support@fidelhub.com', 50, currentY + 35)
        .text(`Generated on ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`, 50, currentY + 50);
 
-
     doc.end();
   } catch (error) {
     console.error('Receipt generation failed:', error);
     if (!res.headersSent) {
       res.status(500).json({
         success: false,
-        error: "Internal server error while generating receipt",
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        error: 'Internal server error while generating receipt',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
       });
     }
   }

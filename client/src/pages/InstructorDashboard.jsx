@@ -9,6 +9,7 @@ import StatsGrid from "../components/instructor-dashboard/StatsGrid";
 import CourseBuilder from "../components/instructor/CourseBuilder";
 import InstructorStudentChat from "@/components/chat/InstructorStudentChat";
 import PlatformSettings from "../components/admin/PlatformSettings";
+import PaymentComponent from "../components/instructor-dashboard/PaymentComponent";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import axios from "axios";
@@ -281,14 +282,40 @@ const InstructorDashboard = () => {
                   <PlatformSettings />
                 </motion.div>
               )}
-              {activeTab === "payments" && (
+{activeTab === "payments" && (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ duration: 0.3 }}
+    className="space-y-6"
+  >
+    {/* <div className="flex justify-between items-center mb-6">
+      <h2 className="text-2xl font-bold">Payments</h2>
+      <div className="bg-primary/10 px-4 py-2 rounded-lg">
+        <span className="font-medium">Balance:</span> 
+        <span className="ml-2 font-bold">
+          {user?.balance?.toLocaleString() || 0} ETB
+        </span>
+      </div>
+    </div> */}
+    
+    <PaymentComponent 
+      user={user}
+      onWithdrawSuccess={(newWithdrawal) => {
+        setWithdrawals(prev => [newWithdrawal, ...prev]);
+        toast.success(`Withdrawal of ${newWithdrawal.amount} ETB initiated`);
+      }}
+    />
+  </motion.div>
+)}
+              {/* {activeTab === "payments" && (
                 <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
                   <h3 className="font-semibold mb-4">Payments</h3>
                   <p className="text-muted-foreground">
                     Payment information will be displayed here.
                   </p>
                 </div>
-              )}
+              )} */}
               {activeTab === "certificates" && (
                 <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
                   <h3 className="font-semibold mb-4">Certificates</h3>

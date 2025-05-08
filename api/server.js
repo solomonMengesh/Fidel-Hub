@@ -1,3 +1,9 @@
+
+
+
+
+import withdrawalRoutes from './routes/PaymentRoutes/withdrawalRoutes.js';
+
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
@@ -21,6 +27,7 @@ import paymentRoutes from "./routes/PaymentRoutes/paymentRoutes.js";
 import adminGraphRoutes from "./routes/admin-Routes/graphs.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import { fileURLToPath } from "url";
+
 
 dotenv.config();
 await connectDB();
@@ -130,7 +137,19 @@ app.get("/download/:filename", (req, res) => {
   });
 });
 
-app.use("/uploads", cors(), express.static("uploads"));
+
+app.use('/uploads', cors(), express.static('uploads'));
+
+
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/users', adminRoutes); 
+app.use('/api/users', userRoutes);
+app.use('/api/otp', otpRoutes);
+app.use('/api', routes);
+app.use('/api/payment', paymentRoutes);
+app.use('/api/withdrawals', withdrawalRoutes);
+
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
