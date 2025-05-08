@@ -20,6 +20,7 @@ import Logo from "../components/layout/Logo";
 import { useAuth } from "../context/AuthContext"; 
 import PlatformSettings from "../components/admin/PlatformSettings";
 
+
 const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -156,7 +157,7 @@ const StudentDashboard = () => {
             {activeTab === "overview" && <OverviewTab />}
             {activeTab === "courses" && <CoursesTab />}
             {activeTab === "schedule" && <ScheduleTab />}
-            {activeTab === "messages" && <MessagesTab />}
+            {activeTab === "messages" && <MessagesTab  />}
             {activeTab === "instructors" && <InstructorsTab />}
             {activeTab === "settings" && <PlatformSettings />}
           </motion.div>
