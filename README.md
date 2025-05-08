@@ -5,7 +5,7 @@
 > **Fidel-Hub** is a modern, scalable Learning Management System (LMS) built for educational institutions, instructors, and students.  
 > It provides seamless course creation, enrollment, video lessons, quizzes, real-time messaging, and secure online payments.
 
-![Fidel-Hub LMS Banner](https://res.cloudinary.com/daabibwh2/image/upload/v1745870190/git/y53muvsbey7nyuwuqcse.png)
+![Fidel-Hub LMS Banner](https://your-image-link-if-you-have-one.com)
 
 ---
 
@@ -71,7 +71,7 @@ cd fidel-hub
 
 ```bash
 # For backend
-cd api
+cd server
 npm install
 
 # For frontend
@@ -101,7 +101,7 @@ VITE_BACKEND_URL=http://localhost:5000
 
 ```bash
 # Start backend
-cd api
+cd server
 npm run dev
 
 # Start frontend
@@ -115,7 +115,7 @@ npm run dev
 
 | Dashboard | Course Details | Payment |
 |-----------|----------------|---------|
-| ![Dashboard](https://res.cloudinary.com/daabibwh2/image/upload/v1745869599/git/ocqkwmbw0g9bklcxdzav.png)) | ![Course Detail](https://res.cloudinary.com/daabibwh2/image/upload/v1745869598/git/prevnymbgebf7ibyum6s.png)) | ![Payment](https://res.cloudinary.com/daabibwh2/image/upload/v1745869598/git/npbwvlm5wso7ygcvyg2k.png)) |
+| ![Dashboard](https://your-image-link.com) | ![Course Detail](https://your-image-link.com) | ![Payment](https://your-image-link.com) |
 
 ---
 
@@ -152,10 +152,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 ## 📬 Contact
-If you have any questions, suggestions, or feedback, feel free to reach out:
 
-- **Email:** smengesha838@gmail.com
--  **Email:** ermiasazanw13@gmail.com
 
 
 ---
@@ -173,5 +170,7 @@ If you like this project, consider giving it a ⭐️ star on GitHub to help oth
   
 ---
   
-
+**Would you like me also to give you:**
+- a basic `LICENSE` file (MIT)?
+- a `CONTRIBUTING.md` file?
   

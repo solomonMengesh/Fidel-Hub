@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import axios from "axios";
 import InstructorAnalyticsDashboard from "../components/instructor/analytics/InstructorAnalyticsDashboard";
+import { MessagesTab } from "@/components/student-dashboard/MessagesTab";
 
 const InstructorDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -268,7 +269,7 @@ const InstructorDashboard = () => {
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <InstructorStudentChat />
+                  <MessagesTab />
                 </motion.div>
               )}
               {activeTab === "settings" && (
