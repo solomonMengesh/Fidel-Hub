@@ -46,7 +46,7 @@ const userSocketMap = new Map(); // userId -> socketId
 const onlineUsers = new Set();
 
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+  // console.log("User connected:", socket.id);
 
   // When a user logs in
   socket.on("userOnline", (userId) => {
@@ -175,7 +175,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: "Server error", error: err.message });
 });
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+  // console.log("User connected:", socket.id);
 });
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
