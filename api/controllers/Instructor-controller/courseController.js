@@ -6,12 +6,16 @@ import Enrollment from '../../models/Enrollment.js';
 import mongoose from 'mongoose';  // <-- Add this import
 import Progress from '../../models/Progress.js'; 
  
-// @desc    Create a new course
-// @route   POST /api/courses
-// @access  Private/Instructor
+ 
+const bannedWords = ['porn', 'xxx', 'sex', 'nude', 'adult'];
+function containsBannedContent(text) {
+  return bannedWords.some(word => text.toLowerCase().includes(word));
+}
 export const createCourse = asyncHandler(async (req, res) => {
   const { title, description, category, level, price, requirements } = req.body;
-  
+  if (containsBannedContent(title) || containsBannedContent(description)) {
+    return res.status(400).json({ message: "Inappropriate content is not allowed." });
+  }
   const course = new Course({
     title,
     description,
@@ -33,9 +37,7 @@ export const createCourse = asyncHandler(async (req, res) => {
   res.status(201).json(createdCourse);
 });
 
-// @desc    Get all courses
-// @route   GET /api/courses
-// @access  Public
+ 
 export const getCourses = asyncHandler(async (req, res) => {
   const courses = await Course.find({ published: true })
     .populate('instructor', 'name email')
@@ -50,9 +52,7 @@ export const getCourses = asyncHandler(async (req, res) => {
   res.json(courses);
 });
 
-// @desc    Get instructor's courses
-// @route   GET /api/courses/instructor
-// @access  Private/Instructor
+ 
 export const getInstructorCourses = async (req, res) => {
   try {
     const { instructorId } = req.params;
@@ -76,9 +76,7 @@ export const getInstructorCourses = async (req, res) => {
 };
 
 
-// @desc    Get course by ID
-// @route   GET /api/courses/:id
-// @access  Public
+ 
 export const getCourseById = asyncHandler(async (req, res) => {
   const course = await Course.findById(req.params.id)
     .populate('instructor', 'name email')
@@ -138,10 +136,7 @@ function formatTime(seconds) {
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
-
-// @desc    Update course
-// @route   PUT /api/courses/:id
-// @access  Private/Instructor
+ 
 export const updateCourse = asyncHandler(async (req, res) => {
   const course = await Course.findById(req.params.id);
 
@@ -180,9 +175,38 @@ export const updateCourse = asyncHandler(async (req, res) => {
   res.json(updatedCourse);
 });
 
-// @desc    Delete course
-// @route   DELETE /api/courses/:id
-// @access  Private/Instructor
+export const setCourseStatus = asyncHandler(async (req, res) => {
+  const course = await Course.findById(req.params.courseId);
+
+
+  if (!course) {
+    res.status(404);
+    throw new Error("Course not found");
+  }
+
+  if (course.instructor.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error("Not authorized to update this course");
+  }
+
+  // Expecting a boolean
+  const { published } = req.body;
+
+  if (typeof published !== "boolean") {
+    res.status(400);
+    throw new Error("Published status must be a boolean value");
+  }
+
+  course.published = published;
+  const updatedCourse = await course.save();
+
+  res.status(200).json({
+    message: `Course ${published ? "published" : "saved as draft"} successfully`,
+    course: updatedCourse,
+  });
+});
+
+ 
 export const deleteCourse = asyncHandler(async (req, res) => {
   const course = await Course.findById(req.params.id);
 

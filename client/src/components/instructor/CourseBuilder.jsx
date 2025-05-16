@@ -1009,10 +1009,10 @@ const CourseBuilder = ({ onSave }) => {
                 <BookOpen size={16} />
                 <span>Curriculum</span>
               </TabsTrigger>
-              <TabsTrigger value="pricing" className="flex items-center gap-2">
+              {/* <TabsTrigger value="pricing" className="flex items-center gap-2">
                 <FileText size={16} />
                 <span>Requirements</span>
-              </TabsTrigger>
+              </TabsTrigger> */}
               <TabsTrigger value="publish" className="flex items-center gap-2">
                 <UploadCloud size={16} />
                 <span>Publish</span>

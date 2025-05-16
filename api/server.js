@@ -90,7 +90,7 @@ io.on("connection", (socket) => {
 
   // Disconnection
   socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
+    // console.log("User disconnected:", socket.id);
 
     // Find user associated with this socket
     for (const [userId, socketId] of userSocketMap.entries()) {

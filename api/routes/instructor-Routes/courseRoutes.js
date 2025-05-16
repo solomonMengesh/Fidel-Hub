@@ -8,7 +8,8 @@ import {
   deleteCourse,
   getStudentCountForCourse,
   getInstructorCoursesWithProgress,
-  getCourseAverageProgress
+  getCourseAverageProgress,
+  setCourseStatus,
 } from '../../controllers/Instructor-controller/courseController.js';
 import { protect, instructor } from '../../middleware/authMiddleware.js';
 import { upload } from '../../middleware/uploadToCloudinary.js';
@@ -19,6 +20,7 @@ router.route('/')
   .get(getCourses)
   .post(protect, instructor, upload.single('thumbnail'), createCourse);
   router.get('/:courseId/student-count', getStudentCountForCourse);
+  router.patch("/:courseId/status", protect, setCourseStatus);
 
 // router.route('/instructor')
 //   .get(protect, instructor, getInstructorCourses);
