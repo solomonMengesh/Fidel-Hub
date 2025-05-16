@@ -5,12 +5,45 @@ import { deleteFromCloudinary } from '../../services/cloudStorage.js';
 import Enrollment from '../../models/Enrollment.js';
 import mongoose from 'mongoose';  // <-- Add this import
 import Progress from '../../models/Progress.js'; 
+ import axios from 'axios';
  
- 
-const bannedWords = ['porn', 'xxx', 'sex', 'nude', 'adult'];
+const bannedWords = [
+  'porn', 'sex', 'nude', 'xxx', 'blowjob', 'anal', 'fuck', 'shit', 'bitch', 'dick',
+  'kill', 'suicide', 'die', 'murder', 'terrorist', 'cocaine', 'weed', 'vodka', 'gun', 'knife'
+];
 function containsBannedContent(text) {
   return bannedWords.some(word => text.toLowerCase().includes(word));
 }
+
+export const checkImageForNSFW = async (imageUrl) => {
+  try {
+    const response = await axios.get('https://api.sightengine.com/1.0/check.json', {
+      params: {
+        models: 'nudity,wad',
+        url: imageUrl,
+        api_user: process.env.SIGHTENGINE_USER,
+        api_secret: process.env.SIGHTENGINE_SECRET,
+      },
+    });
+
+    const { nudity, weapon, alcohol, drugs } = response.data;
+
+    const isNudity = nudity.raw > 0.5 || nudity.partial > 0.5;
+    const isWeapon = weapon > 0.5;
+    const isAlcohol = alcohol > 0.5;
+    const isDrugs = drugs > 0.5;
+
+    return {
+      isInappropriate: isNudity || isWeapon || isAlcohol || isDrugs,
+      details: { isNudity, isWeapon, isAlcohol, isDrugs }
+    };
+  } catch (error) {
+    console.error('Sightengine error:', error.message);
+    return { isInappropriate: false, details: null }; // Fail-safe
+  }
+};
+
+
 export const createCourse = asyncHandler(async (req, res) => {
   const { title, description, category, level, price, requirements } = req.body;
   if (containsBannedContent(title) || containsBannedContent(description)) {
@@ -27,8 +60,19 @@ export const createCourse = asyncHandler(async (req, res) => {
   });
 
   if (req.file) {
+    const imageUrl = req.file.path;
+
+    const { isInappropriate, details } = await checkImageForNSFW(imageUrl);
+
+    if (isInappropriate) {
+      return res.status(400).json({
+        message: 'Inappropriate image content detected.',
+        details
+      });
+    }
+
     course.thumbnail = {
-      url: req.file.path,
+      url: imageUrl,
       publicId: req.file.filename
     };
   }
