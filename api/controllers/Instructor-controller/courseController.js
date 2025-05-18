@@ -6,7 +6,9 @@ import Enrollment from '../../models/Enrollment.js';
 import mongoose from 'mongoose';  // <-- Add this import
 import Progress from '../../models/Progress.js'; 
  import axios from 'axios';
- 
+ import { getEmbedding } from '../../utils/aiClient.js';
+ import cosineSimilarity from '../../utils/cosineSimilarity.js';
+
 const bannedWords = [
   'porn', 'sex', 'nude', 'xxx', 'blowjob', 'anal', 'fuck', 'shit', 'bitch', 'dick',
   'kill', 'suicide', 'die', 'murder', 'terrorist', 'cocaine', 'weed', 'vodka', 'gun', 'knife'
@@ -33,10 +35,23 @@ export const checkImageForNSFW = async (imageUrl) => {
     const isAlcohol = alcohol > 0.5;
     const isDrugs = drugs > 0.5;
 
+    const contentTypes = [];
+    if (isNudity) contentTypes.push('nudity');
+    if (isWeapon) contentTypes.push('weapon');
+    if (isAlcohol) contentTypes.push('alcohol');
+    if (isDrugs) contentTypes.push('drugs');
+
     return {
-      isInappropriate: isNudity || isWeapon || isAlcohol || isDrugs,
-      details: { isNudity, isWeapon, isAlcohol, isDrugs }
+      isInappropriate: contentTypes.length > 0,
+      details: {
+        contentTypes,
+        isNudity,
+        isWeapon,
+        isAlcohol,
+        isDrugs
+      }
     };
+
   } catch (error) {
     console.error('Sightengine error:', error.message);
     return { isInappropriate: false, details: null }; // Fail-safe
@@ -66,7 +81,8 @@ export const createCourse = asyncHandler(async (req, res) => {
 
     if (isInappropriate) {
       return res.status(400).json({
-        message: 'Inappropriate image content detected.',
+        message: `Inappropriate image content detected: ${details.contentTypes.join(', ')}.`,
+        contentTypes: details.contentTypes,
         details
       });
     }
@@ -77,9 +93,61 @@ export const createCourse = asyncHandler(async (req, res) => {
     };
   }
 
+
+  const embeddingInput = `${title} ${description}`;
+  const embedding = await getEmbedding(embeddingInput);
+
+  course.embedding = embedding;
+
   const createdCourse = await course.save();
+
+
+
   res.status(201).json(createdCourse);
 });
+
+
+export const getRelatedCourses = async (req, res) => {
+  const { courseId } = req.params;
+
+  try {
+    const baseCourse = await Course.findById(courseId);
+    if (!baseCourse || !baseCourse.embedding?.length) {
+      return res.status(404).json({ message: 'Course not found or not processed yet.' });
+    }
+
+    const allCourses = await Course.find({ _id: { $ne: courseId }, embedding: { $exists: true } });
+
+    const scored = allCourses.map(course => {
+      const score = cosineSimilarity(baseCourse.embedding, course.embedding);
+      return { course, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+
+    const threshold = 0.6;
+    const topRelated = scored
+      .filter(s => s.score >= threshold)
+      .slice(0, 5)
+      .map(s => ({
+        _id: s.course._id,
+        title: s.course.title,
+        description: s.course.description,
+        similarity: s.score.toFixed(3),
+      }));
+
+
+    
+
+
+    res.json({ baseCourse: baseCourse.title, related: topRelated });
+
+  } catch (error) {
+    console.error('Error finding related courses:', error);
+    res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
 
  
 export const getCourses = asyncHandler(async (req, res) => {

@@ -47,6 +47,11 @@ const courseSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  embedding: {
+    type: [Number],
+    default: [],
+  },
+  
   createdAt: {
     type: Date,
     default: Date.now

@@ -8,6 +8,7 @@ import enrollmentRoutes from './enrollmentRoutes.js';
 import progressRoutes from './progressRoutes.js';
 import reviewRoutes from './reviewRoutes.js';
 import graphRoutes from './graphs.js';
+import recommendationsRoutes from './recommendationRoutes.js';
 const router = express.Router();
 
 // Route for courses
@@ -31,5 +32,7 @@ router.use('/review', reviewRoutes);
 // Route for graphs
 router.use('/graphs', graphRoutes);
 
+// Route for recommendations
+router.use('/recommendations', recommendationsRoutes);
 
 export default router;
