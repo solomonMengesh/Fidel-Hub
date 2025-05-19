@@ -222,7 +222,7 @@ export const CourseDetails = () => {
               />
             </div>
             <div className="mt-12">
-    <RelatedCourses currentCourseId={courseId} category={course?.category} />
+    <RelatedCourses courseId={courseId} course={course}  />
   </div>
           </TabsContent>
 

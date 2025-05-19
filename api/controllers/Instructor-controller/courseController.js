@@ -116,7 +116,10 @@ export const getRelatedCourses = async (req, res) => {
       return res.status(404).json({ message: 'Course not found or not processed yet.' });
     }
 
-    const allCourses = await Course.find({ _id: { $ne: courseId }, embedding: { $exists: true } });
+    const allCourses = await Course.find({ 
+      _id: { $ne: courseId }, 
+      embedding: { $exists: true } 
+    });
 
     const scored = allCourses.map(course => {
       const score = cosineSimilarity(baseCourse.embedding, course.embedding);
@@ -133,12 +136,17 @@ export const getRelatedCourses = async (req, res) => {
         _id: s.course._id,
         title: s.course.title,
         description: s.course.description,
+        price: s.course.price,
+        rating: s.course.rating || 0,
+        students: s.course.students || 0,
+        thumbnail: {
+          url: s.course.thumbnail?.url,
+          publicId: s.course.thumbnail?.publicId
+        }
+,        
+        updatedAt: s.course.updatedAt,
         similarity: s.score.toFixed(3),
       }));
-
-
-    
-
 
     res.json({ baseCourse: baseCourse.title, related: topRelated });
 
@@ -147,6 +155,7 @@ export const getRelatedCourses = async (req, res) => {
     res.status(500).json({ message: 'Internal server error.' });
   }
 };
+
 
 
  
