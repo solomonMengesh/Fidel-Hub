@@ -53,7 +53,7 @@ export const registerUser = async (req, res) => {
 
 
 export const loginUser = async (req, res) => {
-  const { email, password, otp } = req.body; // Include OTP in the body for verification
+  const { email, password, otp } = req.body;  
 
    
 

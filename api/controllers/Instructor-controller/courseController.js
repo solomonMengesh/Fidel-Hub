@@ -3,7 +3,7 @@ import Module from '../../models/Module.js';
 import asyncHandler from 'express-async-handler';
 import { deleteFromCloudinary } from '../../services/cloudStorage.js';
 import Enrollment from '../../models/Enrollment.js';
-import mongoose from 'mongoose';  // <-- Add this import
+import mongoose from 'mongoose';
 import Progress from '../../models/Progress.js'; 
  import axios from 'axios';
  import { getEmbedding } from '../../utils/aiClient.js';
