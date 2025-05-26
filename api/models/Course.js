@@ -24,8 +24,8 @@ const courseSchema = new mongoose.Schema({
     enum: [
       'computer-science', 'programming', 'web-development', 
       'business', 'marketing', 'data-science', 'psychology',
-      'finance', 'design', 'languages', 'health-fitness',
-      'mathematics', 'photography', 'music', 'other','Machine Learning'
+      'finance', 'design', 'languages', 'Health & Fitness',
+      'mathematics', 'photography', 'music', 'other','Machine Learning',
     ]
   },
   level: {
