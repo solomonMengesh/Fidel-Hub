@@ -71,7 +71,7 @@ cd fidel-hub
 
 ```bash
 # For backend
-cd server
+cd api
 npm install
 
 # For frontend
@@ -81,7 +81,7 @@ npm install
 
 ### 3. Create Environment Variables
 
-In both `/server/.env` and `/client/.env`, add:
+In both `/api/.env` and `/client/.env`, add:
 
 ```env
 # Server .env
