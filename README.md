@@ -50,7 +50,7 @@
 ```bash
 fidel-hub/
 ├── client/          # Frontend (React)
-├── server/          # Backend (Node.js + Express)
+├── api/          # Backend (Node.js + Express)
 ├── .env             # Environment variables
 ├── README.md        # Project documentation
 └── package.json     # Project metadata
