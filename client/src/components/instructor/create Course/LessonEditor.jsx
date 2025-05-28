@@ -1,5 +1,4 @@
-
-import { useState } from "react"; // Added useState import
+import { useState, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -25,6 +24,7 @@ import {
   Unlock,
   Lock,
   CheckCircle,
+  X,
 } from "lucide-react";
 import {
   Dialog,
@@ -36,6 +36,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { Progress } from "@/components/ui/progress";
 
 const MultipleChoiceQuiz = ({ initialQuestions = [], onChange, lessonId }) => {
   const [questions, setQuestions] = useState(
@@ -149,6 +150,11 @@ const LessonEditor = ({
   onReplaceLessonClick,
   handleVideoUpload,
 }) => {
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+  const fileInputRef = useRef(null);
+
   if (!modules || !selectedModule) {
     return (
       <div className="p-4 text-center">
@@ -183,6 +189,54 @@ const LessonEditor = ({
   const assignedVideo = lesson.videoId
     ? videoUploads.find((v) => v.id === lesson.videoId)
     : null;
+
+  const handleFileUpload = async (file) => {
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadProgress(0);
+    setUploadError(null);
+
+    try {
+      // Create a mock progress for demonstration
+      // In a real app, you would use the actual progress from your upload handler
+      const interval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 95) {
+            clearInterval(interval);
+            return prev;
+          }
+          return prev + 5;
+        });
+      }, 300);
+
+      // Call the provided handleVideoUpload function
+      await handleVideoUpload(file, selectedModule, selectedLesson, (progress) => {
+        setUploadProgress(progress);
+      });
+
+      clearInterval(interval);
+      setUploadProgress(100);
+      toast.success("Video uploaded successfully!");
+    } catch (error) {
+      setUploadError(error.message || "Failed to upload video");
+      toast.error("Video upload failed");
+    } finally {
+      setIsUploading(false);
+      // Reset progress after a short delay
+      setTimeout(() => setUploadProgress(0), 2000);
+    }
+  };
+
+  const cancelUpload = () => {
+    // In a real app, you would abort the upload request here
+    setIsUploading(false);
+    setUploadProgress(0);
+    setUploadError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   return (
     <Card>
@@ -369,25 +423,54 @@ const LessonEditor = ({
               </div>
             ) : (
               <div className="mt-2 border border-dashed rounded-md p-6 text-center">
-                <UploadCloud className="mx-auto h-12 w-12 text-slate-400 mb-2" />
-                <Button
-                  variant="outline"
-                  onClick={() => document.getElementById(`video-upload-${lesson._id}`).click()}
-                >
-                  <Upload size={14} className="mr-1" />
-                  Upload Video
-                </Button>
-                <input
-                  id={`video-upload-${lesson._id}`}
-                  type="file"
-                  accept="video/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    if (e.target.files[0]) {
-                      handleVideoUpload(e.target.files[0], selectedModule, selectedLesson);
-                    }
-                  }}
-                />
+                {isUploading ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">
+                        Uploading video...
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-700"
+                        onClick={cancelUpload}
+                      >
+                        <X size={14} className="mr-1" />
+                        Cancel
+                      </Button>
+                    </div>
+                    <Progress value={uploadProgress} className="h-2" />
+                    <span className="text-xs text-muted-foreground block">
+                      {uploadProgress}% complete
+                    </span>
+                    {uploadError && (
+                      <div className="text-red-500 text-sm">{uploadError}</div>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <UploadCloud className="mx-auto h-12 w-12 text-slate-400 mb-2" />
+                    <Button
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload size={14} className="mr-1" />
+                      Upload Video
+                    </Button>
+                    <input
+                      ref={fileInputRef}
+                      id={`video-upload-${lesson._id}`}
+                      type="file"
+                      accept="video/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files[0]) {
+                          handleFileUpload(e.target.files[0]);
+                        }
+                      }}
+                    />
+                  </>
+                )}
               </div>
             )}
             <div className="mt-4">

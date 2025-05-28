@@ -1,5 +1,5 @@
 import Course from '../../models/Course.js';
-import Module from '../../models/Module.js';
+import User from "../../models/User.js";
 import asyncHandler from 'express-async-handler';
 import { deleteFromCloudinary } from '../../services/cloudStorage.js';
 import Enrollment from '../../models/Enrollment.js';
@@ -497,5 +497,61 @@ export const getCourseAverageProgress = async (req, res) => {
   } catch (error) {
     console.error("Error fetching course average progress:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+
+
+export const setCourseVisibility = async (req, res) => {
+  const { id } = req.params;
+  const { isActive } = req.body;
+
+  try {
+    const course = await Course.findByIdAndUpdate(
+      id,
+      { isActive },
+      { new: true }
+    );
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    const status = isActive ? "activated" : "deactivated";
+    res.status(200).json({ message: `Course successfully ${status}`, course });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getActiveCourses = async (req, res) => {
+  try {
+    const courses = await Course.find({ isActive: true })
+      .populate("instructor", "name email")
+      .exec();
+
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error("Error fetching active courses:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+export const getAllCourses = async (req, res) => {
+  try {
+    const { publish } = req.query;
+
+    let filter = {};
+    if (publish === 'true') {
+      filter.publish = true;
+    }
+
+    const courses = await Course.find(filter).sort({ createdAt: -1 });
+
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error("Error fetching courses:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

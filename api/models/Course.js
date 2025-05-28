@@ -51,7 +51,11 @@ const courseSchema = new mongoose.Schema({
     type: [Number],
     default: [],
   },
-  
+  isActive: {
+  type: Boolean,
+  default: true  
+}
+,
   createdAt: {
     type: Date,
     default: Date.now
@@ -66,8 +70,7 @@ const courseSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Virtual populate modules
-courseSchema.virtual('modules', {
+ courseSchema.virtual('modules', {
   ref: 'Module',
   localField: '_id',
   foreignField: 'course',
