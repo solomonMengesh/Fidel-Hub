@@ -165,12 +165,6 @@ If you like this project, consider giving it a ⭐️ star on GitHub to help oth
 
 # 🚀 Fidel-Hub — Transforming Education, Empowering the Future!
 
----
 
-  
----
-  
-**Would you like me also to give you:**
-- a basic `LICENSE` file (MIT)?
-- a `CONTRIBUTING.md` file?
+
   
