@@ -51,7 +51,7 @@ export const initiatePayment = async (req, res) => {
         email,
         first_name: fullName,
         tx_ref,
-        callback_url: `${process.env.BACKEND_URL}/api/payments/webhook`,
+        // callback_url: `${process.env.BACKEND_URL}/api/payments/webhook`,
         return_url: `${process.env.FRONTEND_URL}/payment-success?course=${courseId}&tx_ref=${tx_ref}`,
         customization: {
           title: 'FidelHub Payment',
@@ -111,8 +111,7 @@ export const chapaWebhook = async (req, res) => {
         return res.status(404).send('Payment not found');
       }
 
-      // Fetch course to get instructorId
-      const course = await Course.findById(payment.courseId);
+       const course = await Course.findById(payment.courseId);
       if (!course) {
         console.error('Course not found for courseId:', payment.courseId);
         return res.status(404).send('Course not found');
@@ -124,8 +123,7 @@ export const chapaWebhook = async (req, res) => {
         return res.status(404).send('Instructor not found for the course');
       }
 
-      // Create transaction
-      const instructorShare = payment.amount * 0.8;
+       const instructorShare = payment.amount * 0.8;
       const platformShare = payment.amount * 0.2;
       const existingTx = await Transaction.findOne({ paymentId: payment._id });
 
@@ -140,7 +138,7 @@ export const chapaWebhook = async (req, res) => {
           platformShare,
           status: 'completed',
         });
-        console.log('Transaction created for tx_ref:', tx_ref);
+        
 
         // Update instructor balance
         await User.findByIdAndUpdate(
