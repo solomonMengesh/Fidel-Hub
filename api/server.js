@@ -22,7 +22,7 @@ import userRoutes from "./routes/userRoutes/userRoutes.js";
 import otpRoutes from "./routes/otp-Routes/otpRoutes.js";
 import routes from "./routes/instructor-Routes/index.js";
 import certificateRoutes from "./routes/certificateRoutes/certificateRoutes.js";
-
+import anlyticsRoutes from "./routes/admin-Routes/analyticsRoutes.js";
 import paymentRoutes from "./routes/PaymentRoutes/paymentRoutes.js";
 import adminGraphRoutes from "./routes/admin-Routes/graphs.js";
 import chatRoutes from "./routes/chatRoutes.js";
@@ -169,7 +169,7 @@ app.use("/api/admin/graphs", adminGraphRoutes);
 
 app.use("/uploads", express.static(path.join(path.resolve(), "uploads")));
 app.use("/api/chat", chatRoutes);
-
+app.use("/api/admin/analytics", anlyticsRoutes);
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: "Server error", error: err.message });

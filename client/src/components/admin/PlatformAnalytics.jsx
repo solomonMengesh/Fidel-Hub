@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -6,30 +6,11 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Users,
-  BookOpen,
-  Layers,
-  DollarSign,
-  Calendar,
-  TrendingUp,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-
+import { TrendingUp, Users, BookOpen, Layers } from "lucide-react";
 import {
   ResponsiveContainer,
   AreaChart,
   Area,
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
 } from "recharts";
 import CourseEarnings from "./analytics/CourseEarnings";
 import CourseRatingsFeedback from "./analytics/CourseRatingsFeedback";
@@ -37,61 +18,72 @@ import StudentProgressCompletion from "./analytics/StudentProgressCompletion";
 import StudentEnrollmentsPerCourse from "./analytics/StudentEnrollmentsPerCourse";
 
 const PlatformAnalytics = () => {
-  const [timePeriod, setTimePeriod] = useState("30days");
-  const [paymentMethod, setPaymentMethod] = useState("chapa");
-  const [startDate, setStartDate] = useState(undefined);
-  const [endDate, setEndDate] = useState(undefined);
+  const [userGrowthData, setUserGrowthData] = useState([]);
+  const [platformStats, setPlatformStats] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data for user growth
-  const userGrowthData = [
-    { name: "Jan", students: 120, instructors: 8 },
-    { name: "Feb", students: 165, instructors: 12 },
-    { name: "Mar", students: 210, instructors: 15 },
-    { name: "Apr", students: 305, instructors: 20 },
-    { name: "May", students: 390, instructors: 24 },
-    { name: "Jun", students: 480, instructors: 30 },
-  ];
-
-  // Mock data for platform statistics
-  const platformStats = [
-    {
-      title: "Total Users",
-      value: "1,245",
-      icon: Users,
-      change: "+12.5%",
-      chart: "up",
-      dataKey: "students",
-    },
-    {
-      title: "Total Instructors",
-      value: "36",
-      icon: BookOpen,
-      change: "+4.3%",
-      chart: "up",
-      dataKey: "instructors",
-    },
-    {
-      title: "Total Courses",
-      value: "89",
-      icon: Layers,
-      change: "+7.8%",
-      chart: "up",
-      dataKey: "students",
-    },
-    {
-      title: "Total Revenue",
-      value: "ETB 240,000",
-      icon: DollarSign,
-      change: "+18.2%",
-      chart: "up",
-      dataKey: "students",
-    },
-  ];
-
-  const resetDateFilter = () => {
-    setStartDate(undefined);
-    setEndDate(undefined);
+  const iconMap = {
+    users: Users,
+    instructors: BookOpen,
+    courses: Layers,
   };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [statsRes, growthRes] = await Promise.all([
+          fetch("http://localhost:5000/api/admin/analytics/platform-stats"),
+          fetch("http://localhost:5000/api/admin/analytics/user-growth"),
+        ]);
+
+        const statsData = await statsRes.json();
+        const growthData = await growthRes.json();
+
+        const formattedStats = [
+          {
+            title: "Total Users",
+            value: statsData.totalUsers || 0,
+            icon: Users,
+            change: "+12.5%",
+            chart: "up",
+            dataKey: "students",
+          },
+          {
+            title: "Total Instructors",
+            value: statsData.totalInstructors || 0,
+            icon: BookOpen,
+            change: "+4.3%",
+            chart: "up",
+            dataKey: "instructors",
+          },
+          {
+            title: "Total Students",
+            value: statsData.totalStudents || 0,
+            icon: Users,
+            change: "+5.7%",
+            chart: "up",
+            dataKey: "students",
+          },
+          {
+            title: "Total Courses",
+            value: statsData.totalCourses || 0,
+            icon: Layers,
+            change: "+7.8%",
+            chart: "up",
+            dataKey: "students",
+          },
+        ];
+
+        setPlatformStats(formattedStats);
+        setUserGrowthData(growthData);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error loading analytics:", err);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -104,10 +96,9 @@ const PlatformAnalytics = () => {
                 Comprehensive insights into platform performance
               </CardDescription>
             </div>
-
-       
           </div>
-        </CardHeader>  
+        </CardHeader>
+
         <CardContent>
           {/* Stats Overview */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -154,16 +145,8 @@ const PlatformAnalytics = () => {
                             x2="0"
                             y2="1"
                           >
-                            <stop
-                              offset="5%"
-                              stopColor="#0d8df4"
-                              stopOpacity={0.8}
-                            />
-                            <stop
-                              offset="95%"
-                              stopColor="#0d8df4"
-                              stopOpacity={0.1}
-                            />
+                            <stop offset="5%" stopColor="#0d8df4" stopOpacity={0.8} />
+                            <stop offset="95%" stopColor="#0d8df4" stopOpacity={0.1} />
                           </linearGradient>
                         </defs>
                         <Area
@@ -188,7 +171,7 @@ const PlatformAnalytics = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <CourseEarnings paymentMethod={paymentMethod} />
+            <CourseEarnings />
             <CourseRatingsFeedback />
           </div>
         </CardContent>
