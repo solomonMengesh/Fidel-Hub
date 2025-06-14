@@ -9,12 +9,10 @@ import {
   MoveUp,
   BookOpen,
   ListPlus,
-  FileText,
   Upload,
   PlayCircle,
   BarChart,
   Video,
-  X,
   Check,
   Upload as UploadIcon,
   CheckCircle,
@@ -27,8 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Switch } from "@/components/ui/switch"; // adjust path if needed
-
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -40,7 +37,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -100,25 +96,41 @@ const categories = [
 
 // Axios instance for API calls
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_UL || "http://localhost:5000/api",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
   withCredentials: true,
 });
 
 // Course form schema
 const courseFormSchema = z.object({
   title: z.string().min(5, { message: "Title must be at least 5 characters." }),
-  description: z.string().min(20, { message: "Description must be at least 20 characters." }),
+  description: z
+    .string()
+    .min(20, { message: "Description must be at least 20 characters." }),
   level: z.string().nonempty({ message: "Please select a level." }),
   category: z.string().nonempty({ message: "Please select a category." }),
-  price: z.string().regex(/^\d+(\.\d{1,2})?$/, { message: "Price must be a valid number." }),
-  requirements: z.string().min(10, { message: "Requirements must be at least 10 characters." }).optional(),
-  thumbnail: z.any().optional().refine((file) => !file || file instanceof File, {
-    message: "Please upload a valid image file.",
-  }).refine((file) => !file || ["image/png", "image/jpeg", "image/gif"].includes(file.type), {
-    message: "Only PNG, JPG, or GIF files are allowed.",
-  }).refine((file) => !file || file.size <= 10 * 1024 * 1024, {
-    message: "File size must be less than 10MB.",
-  }),
+  price: z
+    .string()
+    .regex(/^\d+(\.\d{1,2})?$/, { message: "Price must be a valid number." }),
+  requirements: z
+    .string()
+    .min(10, { message: "Requirements must be at least 10 characters." })
+    .optional(),
+  thumbnail: z
+    .any()
+    .optional()
+    .refine((file) => !file || file instanceof File, {
+      message: "Please upload a valid image file.",
+    })
+    .refine(
+      (file) =>
+        !file || ["image/png", "image/jpeg", "image/gif"].includes(file.type),
+      {
+        message: "Only PNG, JPG, or GIF files are allowed.",
+      }
+    )
+    .refine((file) => !file || file.size <= 10 * 1024 * 1024, {
+      message: "File size must be less than 10MB.",
+    }),
 });
 
 // MultipleChoiceQuiz component
@@ -136,26 +148,39 @@ const MultipleChoiceQuiz = ({ initialQuestions = [], onChange, lessonId }) => {
               { text: "", isCorrect: false },
             ],
             type: "single",
+            lesson: lessonId,
           },
         ]
   );
 
-  const addQuestion = () => {
-    const newQuestions = [
-      ...questions,
-      {
-        question: "",
-        options: [
-          { text: "", isCorrect: false },
-          { text: "", isCorrect: false },
-          { text: "", isCorrect: false },
-          { text: "", isCorrect: false },
-        ],
-        type: "single",
-      },
-    ];
-    setQuestions(newQuestions);
-    onChange(newQuestions);
+  const addQuestion = async () => {
+    if (!lessonId) {
+      toast.error("No lesson selected. Please select a lesson first.");
+      return;
+    }
+
+    const newQuestion = {
+      question: "",
+      options: [
+        { text: "", isCorrect: false },
+        { text: "", isCorrect: false },
+        { text: "", isCorrect: false },
+        { text: "", isCorrect: false },
+      ],
+      type: "single",
+      lesson: lessonId,
+    };
+
+    try {
+      const response = await api.post(`http://localhost:5000/quizzes/${lessonId}/questions`, newQuestion);
+      const savedQuestion = response.data;
+      const newQuestions = [...questions, savedQuestion];
+      setQuestions(newQuestions);
+      onChange(newQuestions);
+      toast.success("Question added successfully");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to add question");
+    }
   };
 
   const updateQuestion = (index, field, value) => {
@@ -233,7 +258,7 @@ const LessonEditor = ({
   quizQuestions,
   onQuizQuestionsChange,
   onReplaceLessonClick,
-  handleVideoUpload, // Added prop
+  handleVideoUpload,
 }) => {
   if (!modules || !selectedModule) {
     return (
@@ -262,9 +287,7 @@ const LessonEditor = ({
   }
 
   const moduleIndex = modules.findIndex((m) => m._id === selectedModule);
-  const lessonIndex = (module.lessons ?? []).findIndex(
-    (l) => l._id === selectedLesson
-  );
+  const lessonIndex = module.lessons.findIndex((l) => l._id === selectedLesson);
 
   const assignedVideo = lesson.videoId
     ? videoUploads.find((v) => v.id === lesson.videoId)
@@ -277,9 +300,9 @@ const LessonEditor = ({
           <CardTitle>
             <div className="flex items-center gap-2">
               {lesson.type === "video" ? (
-                <Video size={18} className="text-fidel-500" />
+                <Video size={18} className="text-blue-500" />
               ) : (
-                <BarChart size={18} className="text-fidel-500" />
+                <BarChart size={18} className="text-blue-500" />
               )}
               <span>{lesson.type === "video" ? "Video Lesson" : "Quiz"}</span>
             </div>
@@ -319,7 +342,7 @@ const LessonEditor = ({
               variant="ghost"
               size="sm"
               onClick={() => moveLesson(selectedModule, selectedLesson, "down")}
-              disabled={lessonIndex === (module.lessons ?? []).length - 1}
+              disabled={lessonIndex === module.lessons.length - 1}
             >
               <MoveDown size={16} />
             </Button>
@@ -394,9 +417,9 @@ const LessonEditor = ({
                               .map((video) => (
                                 <div
                                   key={video.id}
-                                  className={`border rounded-md p-2 cursor-pointer hover:border-fidel-500 transition-colors ${
+                                  className={`border rounded-md p-2 cursor-pointer hover:border-blue-500 transition-colors ${
                                     video.id === lesson.videoId
-                                      ? "border-fidel-500 bg-fidel-50 dark:bg-fidel-900/20"
+                                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
                                       : ""
                                   }`}
                                   onClick={() =>
@@ -415,7 +438,7 @@ const LessonEditor = ({
                                       className="w-full h-full object-cover rounded"
                                     />
                                     {video.id === lesson.videoId && (
-                                      <div className="absolute top-1 right-1 bg-fidel-500 text-white rounded-full p-1">
+                                      <div className="absolute top-1 right-1 bg-blue-500 text-white rounded-full p-1">
                                         <Check size={12} />
                                       </div>
                                     )}
@@ -571,13 +594,11 @@ const CourseBuilder = ({ onSave }) => {
     // Step 1: Create Course
     const onSubmit = async (values) => {
       if (courseId) {
-        console.log("Course already exists with ID:", courseId);
         toast.info("Course already created. Proceeding to curriculum.");
         setActiveTab("curriculum");
         return;
       }
       if (activeTab !== "details") {
-        console.log("Form submission blocked: Not in details tab");
         return;
       }
       try {
@@ -590,36 +611,23 @@ const CourseBuilder = ({ onSave }) => {
           }
         });
 
-        console.log("Submitting course form data:", formData);
-
         const response = await api.post("/courses", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
 
         const newCourseId = response.data._id;
-        console.log("Course created successfully. Course ID:", newCourseId);
-
         setCourseId(newCourseId);
         setModules([]);
-        form.reset(); // Reset form after successful submission
+        form.reset();
         toast.success("Course created successfully");
         setActiveTab("curriculum");
       } catch (error) {
-        console.error("Error creating course:", error);
         toast.error(error.response?.data?.message || "Failed to create course");
       }
     };
 
     // Step 2: Create Module
     const addModule = async () => {
-      console.log("Trying to add module. Current courseId:", courseId);
-
-      if (!courseId) {
-        toast.error("Please create a course first.");
-        console.warn("No course ID found. Aborting module creation.");
-        return;
-      }
-
       try {
         const moduleData = {
           title: `Module ${modules.length + 1}`,
@@ -627,21 +635,13 @@ const CourseBuilder = ({ onSave }) => {
           courseId,
         };
 
-        console.log("Sending module data to backend:", moduleData);
-
-        const response = await api.post("/modules", moduleData, {
-          headers: { "Content-Type": "application/json" },
-        });
-
-        const newModule = { ...response.data, lessons: [] };
-        console.log("Module created successfully:", newModule);
-
-        setModules([...modules, newModule]);
+        const { data } = await api.post("/modules", moduleData);
+        const newModule = { ...data, lessons: [] };
+        setModules((prev) => [...prev, newModule]);
         setModuleId(newModule._id);
         setSelectedModule(newModule._id);
         toast.success("Module added successfully");
       } catch (error) {
-        console.error("Error adding module:", error);
         toast.error(error.response?.data?.message || "Failed to add module");
       }
     };
@@ -649,8 +649,8 @@ const CourseBuilder = ({ onSave }) => {
     const updateModule = async (moduleId, field, value) => {
       try {
         await api.put(`/modules/${moduleId}`, { [field]: value });
-        setModules(
-          modules.map((module) =>
+        setModules((prev) =>
+          prev.map((module) =>
             module._id === moduleId ? { ...module, [field]: value } : module
           )
         );
@@ -679,23 +679,19 @@ const CourseBuilder = ({ onSave }) => {
     const deleteModule = async (moduleId) => {
       try {
         await api.delete(`/modules/${moduleId}`);
-        setModules(modules.filter((module) => module._id !== moduleId));
+        setModules((prev) => prev.filter((module) => module._id !== moduleId));
         if (selectedModule === moduleId) {
           setSelectedModule(null);
           setSelectedLesson(null);
         }
         toast.success("Module deleted");
       } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to update module");
+        toast.error(error.response?.data?.message || "Failed to delete module");
       }
     };
 
     // Step 3: Create Lessons
     const addLesson = async (moduleId, type = "video") => {
-      if (!courseId) {
-        toast.error("Please create a course first.");
-        return;
-      }
       try {
         const response = await api.post("/lessons", {
           title: `${type === "video" ? "Video" : "Quiz"} Lesson`,
@@ -704,14 +700,12 @@ const CourseBuilder = ({ onSave }) => {
           duration: type === "video" ? "0:00" : "15:00",
           content: "",
           free: false,
-        }, {
-          headers: { "Content-Type": "application/json" },
         });
         const newLesson = response.data;
-        setModules(
-          modules.map((module) =>
+        setModules((prev) =>
+          prev.map((module) =>
             module._id === moduleId
-              ? { ...module, lessons: [...(module.lessons ?? []), newLesson] }
+              ? { ...module, lessons: [...(module.lessons || []), newLesson] }
               : module
           )
         );
@@ -731,15 +725,13 @@ const CourseBuilder = ({ onSave }) => {
     const updateLesson = async (moduleId, lessonId, field, value) => {
       try {
         await api.put(`/lessons/${lessonId}`, { [field]: value });
-        setModules(
-          modules.map((module) =>
+        setModules((prev) =>
+          prev.map((module) =>
             module._id === moduleId
               ? {
                   ...module,
-                  lessons: (module.lessons ?? []).map((lesson) =>
-                    lesson._id === lessonId
-                      ? { ...lesson, [field]: value }
-                      : lesson
+                  lessons: (module.lessons || []).map((lesson) =>
+                    lesson._id === lessonId ? { ...lesson, [field]: value } : lesson
                   ),
                 }
               : module
@@ -755,7 +747,7 @@ const CourseBuilder = ({ onSave }) => {
       setModules((prevModules) =>
         prevModules.map((module) => {
           if (module._id !== moduleId) return module;
-          const lessons = [...(module.lessons ?? [])];
+          const lessons = [...(module.lessons || [])];
           const idx = lessons.findIndex((l) => l._id === lessonId);
           if (idx === -1) return module;
           if (
@@ -771,22 +763,28 @@ const CourseBuilder = ({ onSave }) => {
       );
     };
 
-    const deleteLesson = (moduleId, lessonId) => {
-      setModules((prevModules) =>
-        prevModules.map((module) => {
-          if (module._id !== moduleId) return module;
-          return {
-            ...module,
-            lessons: (module.lessons ?? []).filter(
-              (lesson) => lesson._id !== lessonId
-            ),
-          };
-        })
-      );
-      if (selectedModule === moduleId && selectedLesson === lessonId) {
-        setSelectedLesson(null);
+    const deleteLesson = async (moduleId, lessonId) => {
+      try {
+        await api.delete(`/lessons/${lessonId}`);
+        setModules((prev) =>
+          prev.map((module) =>
+            module._id !== moduleId
+              ? module
+              : {
+                  ...module,
+                  lessons: (module.lessons || []).filter(
+                    (lesson) => lesson._id !== lessonId
+                  ),
+                }
+          )
+        );
+        if (selectedModule === moduleId && selectedLesson === lessonId) {
+          setSelectedLesson(null);
+        }
+        toast.success("Lesson deleted");
+      } catch (error) {
+        toast.error(error.response?.data?.message || "Failed to delete lesson");
       }
-      toast.success("Lesson deleted");
     };
 
     // Step 4 & 5: Upload and Assign Video
@@ -814,28 +812,25 @@ const CourseBuilder = ({ onSave }) => {
           videoUrl: videoData.url,
           thumbnailUrl: videoData.thumbnail,
           duration: videoData.duration,
-          videoPublicId: videoData.id,
           thumbnailPublicId: videoData.thumbnail
             .split("/")
             .slice(-2)
             .join("/")
-            .replace(/\.[^/.]+$/, ""),
-        }, {
-          headers: { "Content-Type": "application/json" },
+            .replace(/\..+$/, ""),
         });
 
-        setModules((prevModules) =>
-          prevModules.map((module) => {
+        setModules((prev) =>
+          prev.map((module) => {
             if (module._id !== moduleId) return module;
             return {
               ...module,
-              lessons: (module.lessons ?? []).map((lesson) =>
+              lessons: (module.lessons || []).map((lesson) =>
                 lesson._id === lessonId
                   ? {
                       ...lesson,
                       videoId: videoData.id,
-                      videoUrl: assignRes.data.lesson.video.url,
-                      thumbnailUrl: assignRes.data.lesson.video.thumbnailUrl,
+                      videoUrl: assignRes.data.lesson.videoUrl,
+                      thumbnailUrl: assignRes.data.lesson.thumbnailUrl,
                       duration: assignRes.data.lesson.duration,
                       status: "complete",
                     }
@@ -868,34 +863,28 @@ const CourseBuilder = ({ onSave }) => {
     const saveQuizQuestions = async (lessonId, questions) => {
       try {
         const formattedQuestions = questions.map((q) => ({
-          question: q.question,
+          question: q.question || "",
           options: q.options.map((opt) => ({
-            text: opt.text,
-            isCorrect: opt.isCorrect,
+            text: opt.text || "",
+            isCorrect: opt.isCorrect || false,
           })),
           type: q.type || "single",
           lesson: lessonId,
         }));
 
-        await api.post(`/media/assign/${lessonId}`, {
+        await api.post(`/quizzes/${lessonId}/questions`, {
           quizQuestions: formattedQuestions,
-        }, {
-          headers: { "Content-Type": "application/json" },
         });
 
-        setModules((prevModules) =>
-          prevModules.map((module) =>
-            module.lessons?.some((lesson) => lesson._id === lessonId)
-              ? {
-                  ...module,
-                  lessons: module.lessons.map((lesson) =>
-                    lesson._id === lessonId
-                      ? { ...lesson, quizQuestions: formattedQuestions }
-                      : lesson
-                  ),
-                }
-              : module
-          )
+        setModules((prev) =>
+          prev.map((module) => ({
+            ...module,
+            lessons: (module.lessons || []).map((lesson) =>
+              lesson._id === lessonId
+                ? { ...lesson, quizQuestions: formattedQuestions }
+                : lesson
+            ),
+          }))
         );
 
         toast.success("Quiz questions saved successfully");
@@ -922,31 +911,50 @@ const CourseBuilder = ({ onSave }) => {
       toast.success("Replace with video triggered");
     };
 
-    const handleReplaceWithQuiz = () => {
+    const handleReplaceWithQuiz = async () => {
       if (!lessonToReplace) return;
-      updateLesson(lessonToReplace.moduleId, lessonToReplace.lessonId, "type", "quiz");
-      updateLesson(lessonToReplace.moduleId, lessonToReplace.lessonId, "videoId", undefined);
-      updateLesson(lessonToReplace.moduleId, lessonToReplace.lessonId, "duration", "15:00");
-      updateLesson(lessonToReplace.moduleId, lessonToReplace.lessonId, "quizQuestions", []);
-      setSelectedModule(lessonToReplace.moduleId);
-      setSelectedLesson(lessonToReplace.lessonId);
-      setCurrentQuizQuestions([]);
-      setShowReplaceDialog(false);
-      toast.success("Lesson converted to quiz");
+      try {
+        await updateLesson(
+          lessonToReplace.moduleId,
+          lessonToReplace.lessonId,
+          "type",
+          "quiz"
+        );
+        await updateLesson(lessonToReplace.moduleId, lessonToReplace.lessonId, "videoId", "");
+        await updateLesson(
+          lessonToReplace.moduleId,
+          lessonToReplace.lessonId,
+          "duration",
+          "15:00"
+        );
+        await updateLesson(
+          lessonToReplace.moduleId,
+          lessonToReplace.lessonId,
+          "quizQuestions",
+          []
+        );
+        setSelectedModule(lessonToReplace.moduleId);
+        setSelectedLesson(lessonToReplace.lessonId);
+        setCurrentQuizQuestions([]);
+        setShowReplaceDialog(false);
+        toast.success("Lesson converted to quiz");
+      } catch (error) {
+        toast.error(error.response?.data?.message || "Failed to convert lesson to quiz");
+      }
     };
 
     const handleReplaceLessonFileUpload = async (event) => {
-      if (!event.target.files || event.target.files.length === 0) return;
-      const replaceData = event.target.dataset.replace;
+      if (!event.target?.files || event.target.files.length === 0) return;
+      const replaceData = event.target.dataset?.replace;
       if (!replaceData) return;
       try {
         const { moduleId, lessonId } = JSON.parse(replaceData);
         const file = event.target.files[0];
-        if (!file.type.startsWith("video/")) {
-          toast.error("Please select a valid video file");
-          return;
+        if (!file.type?.startsWith("video/")) {
+          throw new Error("Invalid file type. Please select a valid video file.");
         }
         await handleVideoUpload(file, moduleId, lessonId);
+        toast.success("Video replaced successfully");
       } catch (error) {
         toast.error(error.response?.data?.message || "Failed to replace lesson");
       }
@@ -956,19 +964,19 @@ const CourseBuilder = ({ onSave }) => {
     };
 
     const handleModuleFileUpload = async (event) => {
-      const files = event.target.files;
-      if (!files || files.length === 0) return;
+      const files = event.target.files || [];
+      if (files.length === 0) return;
 
       const sortedFiles = Array.from(files).sort((a, b) => a.name.localeCompare(b.name));
       const videoFiles = sortedFiles.filter((file) =>
-        file.type.startsWith("video/") || /\.(mp4|webm|mov|avi|mkv)$/i.test(file.name)
+        file.type.startsWith("video/") || /\.(?:mp4|webm|mov|avi|mkv)$/i.test(file.name)
       );
 
       if (videoFiles.length !== sortedFiles.length) {
         toast.warning(`${sortedFiles.length - videoFiles.length} non-video files were skipped`);
       }
       if (videoFiles.length === 0) {
-        toast.error("No valid video files selected");
+        toast.error("No valid video files selected.");
         return;
       }
 
@@ -997,22 +1005,18 @@ const CourseBuilder = ({ onSave }) => {
     };
 
     return (
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-            <TabsList className="grid grid-cols-4 mb-1">
+          <div className="container p-4 mx-auto border-b border-gray-200">
+            <TabsList className="grid grid-cols-2 gap-2 mb-1 sm:grid-cols-4">
               <TabsTrigger value="details" className="flex items-center gap-2">
                 <Book size={16} />
                 <span>Basic Details</span>
               </TabsTrigger>
               <TabsTrigger value="curriculum" className="flex items-center gap-2">
                 <BookOpen size={16} />
-                <span>Curriculum</span>
+                <span>Course Curriculum</span>
               </TabsTrigger>
-              {/* <TabsTrigger value="pricing" className="flex items-center gap-2">
-                <FileText size={16} />
-                <span>Requirements</span>
-              </TabsTrigger> */}
               <TabsTrigger value="publish" className="flex items-center gap-2">
                 <UploadCloud size={16} />
                 <span>Publish</span>
@@ -1025,7 +1029,7 @@ const CourseBuilder = ({ onSave }) => {
               <TabsContent value="details" className="p-6">
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-lg font-medium mb-4">Course Information</h3>
+                    <h3 className="text-2xl font-medium mb-4">Course Information</h3>
                     <div className="space-y-4">
                       <FormField
                         control={form.control}
@@ -1035,13 +1039,14 @@ const CourseBuilder = ({ onSave }) => {
                             <FormLabel>Course Title</FormLabel>
                             <FormControl>
                               <Input
-                                placeholder="e.g. Advanced React Development"
+                                type="text"
+                                placeholder="e.g., Advanced React Development"
                                 {...field}
                               />
                             </FormControl>
-                            <FormDescription>
-                              A clear, specific title that describes what you'll teach
-                            </FormDescription>
+                            <p className="mt-1 text-sm text-gray-400">
+                              A clear, specific title that describes what you'll teach.
+                            </p>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -1051,22 +1056,22 @@ const CourseBuilder = ({ onSave }) => {
                         name="description"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Course Description</FormLabel>
+                            <FormLabel>Description</FormLabel>
                             <FormControl>
                               <Textarea
-                                placeholder="Describe your course in detail..."
-                                className="min-h-32"
+                                placeholder="Describe your course here..."
+                                className="min-h-[200px]"
                                 {...field}
                               />
                             </FormControl>
-                            <FormDescription>
-                              Provide a detailed description of what students will learn
-                            </FormDescription>
+                            <p className="mt-1 text-sm text-gray-400">
+                              Provide a detailed description of what students will learn.
+                            </p>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <FormField
                           control={form.control}
                           name="level"
@@ -1088,9 +1093,9 @@ const CourseBuilder = ({ onSave }) => {
                                   <SelectItem value="advanced">Advanced</SelectItem>
                                 </SelectContent>
                               </Select>
-                              <FormDescription>
-                                Select the appropriate level for your course
-                              </FormDescription>
+                              <p className="mt-1 text-sm text-gray-400">
+                                Select the appropriate level for your course.
+                              </p>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -1121,9 +1126,9 @@ const CourseBuilder = ({ onSave }) => {
                                   ))}
                                 </SelectContent>
                               </Select>
-                              <FormDescription>
-                                Choose the category that best fits your course
-                              </FormDescription>
+                              <p className="mt-1 text-sm text-gray-400">
+                                Choose the category that best fits your course.
+                              </p>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -1137,14 +1142,14 @@ const CourseBuilder = ({ onSave }) => {
                             <FormLabel>Course Requirements</FormLabel>
                             <FormControl>
                               <Textarea
-                                placeholder="List the requirements or prerequisites for your course..."
-                                className="min-h-32"
+                                placeholder="List the requirements or prerequisites..."
+                                className="min-h-[200px]"
                                 {...field}
                               />
                             </FormControl>
-                            <FormDescription>
-                              Specify what students need to know or have before taking this course
-                            </FormDescription>
+                            <p className="mt-1 text-sm text-gray-400">
+                              Specify what students need to know or have before taking this course.
+                            </p>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -1156,13 +1161,13 @@ const CourseBuilder = ({ onSave }) => {
                           <FormItem>
                             <FormLabel>Course Thumbnail</FormLabel>
                             <FormControl>
-                              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-md">
+                              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed border-gray-300 rounded-md">
                                 <div className="space-y-1 text-center">
-                                  <UploadCloud className="mx-auto h-12 w-12 text-slate-400" />
-                                  <div className="flex text-sm">
+                                  <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
+                                  <div className="flex text-sm text-gray-600">
                                     <label
                                       htmlFor="thumbnail-upload"
-                                      className="relative cursor-pointer rounded-md font-medium text-fidel-600 hover:text-fidel-500 focus-within:outline-none"
+                                      className="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500"
                                     >
                                       <span>Upload a file</span>
                                       <input
@@ -1174,24 +1179,22 @@ const CourseBuilder = ({ onSave }) => {
                                         onChange={(e) => field.onChange(e.target.files[0])}
                                       />
                                     </label>
-                                    <p className="pl-1 text-slate-500 dark:text-slate-400">
-                                      or drag and drop
-                                    </p>
+                                    <p className="pl-1">or drag and drop</p>
                                   </div>
-                                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                                  <p className="text-xs text-gray-400">
                                     PNG, JPG, GIF up to 10MB
                                   </p>
                                 </div>
                               </div>
                             </FormControl>
                             {field.value && (
-                              <p className="text-sm text-muted-foreground mt-2">
+                              <p className="mt-2 text-sm text-gray-400">
                                 Selected: {field.value.name}
                               </p>
                             )}
-                            <FormDescription>
-                              Upload a thumbnail image for your course
-                            </FormDescription>
+                            <p className="mt-1 text-sm text-gray-400">
+                              Upload a thumbnail image for your course.
+                            </p>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -1205,22 +1208,19 @@ const CourseBuilder = ({ onSave }) => {
                             <FormControl>
                               <Input
                                 type="text"
-                                placeholder="e.g. 49.99"
+                                placeholder="e.g., 49.99"
                                 {...field}
                               />
                             </FormControl>
-                            <FormDescription>
-                              Set a price for your course
-                            </FormDescription>
+                            <p className="mt-1 text-sm text-gray-400">
+                              Set a price for your course.
+                            </p>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                       <div className="flex justify-end mt-8">
-                        <Button
-                          type="submit"
-                          size="lg"
-                        >
+                        <Button type="submit" size="lg">
                           Continue
                         </Button>
                       </div>
@@ -1232,22 +1232,22 @@ const CourseBuilder = ({ onSave }) => {
               <TabsContent value="curriculum" className="p-6">
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-lg font-medium mb-4">Course Curriculum</h3>
-                    <p className="text-sm text-muted-foreground mb-6">
-                      Organize your course content into modules and lessons
+                    <h3 className="text-2xl font-medium mb-4">Course Curriculum</h3>
+                    <p className="text-sm text-gray-400 mb-6">
+                      Organize your course content into modules and lessons.
                     </p>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
                       <div className="lg:col-span-4 space-y-4">
                         {modules.map((module, moduleIndex) => (
                           <div
                             key={module._id}
-                            className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-800"
+                            className="p-4 bg-gray-50 rounded-lg border border-gray-200"
                           >
                             <div className="flex justify-between items-start mb-4">
                               <div className="w-full space-y-2">
-                                <div className="font-medium text-slate-900 dark:text-white flex items-center gap-2">
-                                  <span className="bg-fidel-100 dark:bg-fidel-950 text-fidel-800 dark:text-fidel-300 font-medium px-3 py-1 rounded-full text-xs">
+                                <div className="font-medium text-gray-900 flex items-center gap-2">
+                                  <span className="bg-blue-100 text-blue-800 font-medium px-3 py-1 rounded-full text-xs">
                                     Module {moduleIndex + 1}
                                   </span>
                                 </div>
@@ -1300,7 +1300,7 @@ const CourseBuilder = ({ onSave }) => {
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => deleteModule(module._id)}
-                                  className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
                                 >
                                   <Trash2 size={18} />
                                 </Button>
@@ -1308,32 +1308,32 @@ const CourseBuilder = ({ onSave }) => {
                             </div>
 
                             <div className="space-y-3 pl-0 mt-4">
-                              {(module.lessons ?? []).map((lesson, lessonIndex) => (
+                              {(module.lessons || []).map((lesson, lessonIndex) => (
                                 <div
                                   key={lesson._id}
                                   className={`flex items-start p-3 rounded-md border ${
                                     selectedLesson === lesson._id
-                                      ? "bg-fidel-50 dark:bg-fidel-900/20 border-fidel-200 dark:border-fidel-800"
-                                      : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                                      ? "bg-blue-50 border-blue-200"
+                                      : "bg-white border-gray-200"
                                   } cursor-pointer`}
                                   onClick={() => selectLesson(module._id, lesson._id)}
                                 >
                                   <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
                                       {lesson.type === "video" ? (
-                                        <Video size={16} className="text-fidel-500" />
+                                        <Video size={16} className="text-blue-500" />
                                       ) : (
-                                        <BarChart size={16} className="text-fidel-500" />
+                                        <BarChart size={16} className="text-blue-500" />
                                       )}
-                                      <span className="text-xs font-medium bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">
+                                      <span className="text-xs font-medium bg-gray-100 px-2 py-0.5 rounded">
                                         {lesson.type === "video" ? "Video" : "Quiz"}
                                       </span>
                                       {lesson.free && (
-                                        <span className="text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-0.5 rounded">
+                                        <span className="text-xs font-medium bg-green-100 text-green-800 px-2 py-0.5 rounded">
                                           Free
                                         </span>
                                       )}
-                                      <span className="text-xs text-muted-foreground ml-auto">
+                                      <span className="text-xs text-gray-400 ml-auto">
                                         {lesson.duration}
                                       </span>
                                     </div>
@@ -1396,7 +1396,7 @@ const CourseBuilder = ({ onSave }) => {
                       </div>
 
                       <div className="lg:col-span-8">
-                        {selectedModule !== null && selectedLesson !== null ? (
+                        {selectedModule && selectedLesson ? (
                           <LessonEditor
                             modules={modules}
                             selectedModule={selectedModule}
@@ -1411,17 +1411,17 @@ const CourseBuilder = ({ onSave }) => {
                               setLessonToReplace({ moduleId, lessonId });
                               setShowReplaceDialog(true);
                             }}
-                            handleVideoUpload={handleVideoUpload} // Pass prop
+                            handleVideoUpload={handleVideoUpload}
                           />
                         ) : (
                           <div className="p-8 text-center border border-dashed rounded-lg">
                             <BookOpen
                               size={40}
-                              className="mx-auto mb-4 text-muted-foreground"
+                              className="mx-auto mb-4 text-gray-400"
                             />
                             <h3 className="font-medium mb-2">No Lesson Selected</h3>
-                            <p className="text-sm text-muted-foreground mb-6">
-                              Select a lesson from the module list or create a new one
+                            <p className="text-sm text-gray-400 mb-6">
+                              Select a lesson from the module list or create a new one.
                             </p>
                           </div>
                         )}
@@ -1431,83 +1431,77 @@ const CourseBuilder = ({ onSave }) => {
                 </div>
               </TabsContent>
 
-              <TabsContent value="pricing" className="p-6">
+              <TabsContent value="publish" className="p-6">
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-lg font-medium mb-4">
-                      Prerequisites & Requirements
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Review and confirm the prerequisites and requirements for your course
+                    <h3 className="text-2xl font-medium mb-4">Ready to Publish?</h3>
+                    <p className="text-sm text-gray-400 mb-6">
+                      Review your course information and curriculum before publishing.
                     </p>
+
+                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 mb-6">
+                      <h4 className="font-medium mb-2">Publishing Checklist</h4>
+                      <ul className="space-y-1">
+                        <li className="flex items-center text-sm">
+                          <div className="h-4 w-4 rounded-full mr-2 bg-green-500"></div>
+                          Course title and description are complete
+                        </li>
+                        <li className="flex items-center text-sm">
+                          <div className="h-4 w-4 rounded-full mr-2 bg-green-500"></div>
+                          At least one module with content is created
+                        </li>
+                        <li className="flex items-center text-sm">
+                          <div className="h-4 w-4 rounded-full mr-2 bg-green-500"></div>
+                          Pricing information is set
+                        </li>
+                      </ul>
+                    </div>
+
+                    <div className="flex items-center space-x-4 mb-6">
+                      <Label htmlFor="publish-switch" className="text-sm font-medium">
+                        Publish
+                      </Label>
+                      <Switch
+                        id="publish-switch"
+                        checked={isPublished}
+                        onCheckedChange={(checked) => setIsPublished(checked)}
+                      />
+                      <span className="text-sm text-gray-400">
+                        {isPublished
+                          ? "This course will be published"
+                          : "This course will remain a draft"}
+                      </span>
+                    </div>
+
+                    <Button
+                      type="button"
+                      size="lg"
+                      onClick={() => {
+                        if (!courseId || modules.length === 0) {
+                          toast.error(
+                            "Please create a course and at least one module before publishing."
+                          );
+                          return;
+                        }
+
+                        onSave({
+                          courseId,
+                          modules,
+                          status: isPublished ? "published" : "draft",
+                        });
+
+                        toast.success(
+                          isPublished
+                            ? "Course published successfully"
+                            : "Course saved as draft"
+                        );
+                      }}
+                    >
+                      {isPublished ? "Publish Course" : "Save as Draft"}
+                    </Button>
                   </div>
                 </div>
               </TabsContent>
-
-              <TabsContent value="publish" className="p-6">
-  <div className="space-y-6">
-    <div>
-      <h3 className="text-lg font-medium mb-4">Ready to Publish?</h3>
-      <p className="text-sm text-muted-foreground mb-6">
-        Review your course information and curriculum before publishing
-      </p>
-
-      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-800 p-4 mb-6">
-        <h4 className="font-medium mb-2">Publishing Checklist</h4>
-        <ul className="space-y-1">
-          <li className="flex items-center text-sm">
-            <div className="h-4 w-4 rounded-full mr-2 bg-green-500"></div>
-            Course title and description are complete
-          </li>
-          <li className="flex items-center text-sm">
-            <div className="h-4 w-4 rounded-full mr-2 bg-green-500"></div>
-            At least one module with content is created
-          </li>
-          <li className="flex items-center text-sm">
-            <div className="h-4 w-4 rounded-full mr-2 bg-green-500"></div>
-            Pricing information is set
-          </li>
-        </ul>
-      </div>
-
-      {/* Switch for Draft/Publish */}
-      <div className="flex items-center space-x-4 mb-6">
-        <Label htmlFor="publish-switch">Publish</Label>
-        <Switch
-          id="publish-switch"
-          checked={isPublished}
-          onCheckedChange={(checked) => setIsPublished(checked)}
-        />
-        <span className="text-sm text-muted-foreground">
-          {isPublished ? "This course will be published" : "This course will remain a draft"}
-        </span>
-      </div>
-
-      {/* Publish/Draft Action */}
-      <Button
-        type="button"
-        size="lg"
-        onClick={() => {
-          if (!courseId || modules.length === 0) {
-            toast.error("Please create a course and at least one module before publishing.");
-            return;
-          }
-
-          onSave({ courseId, modules, status: isPublished ? "published" : "draft" });
-
-          toast.success(
-            isPublished
-              ? "Course published successfully"
-              : "Course saved as draft"
-          );
-        }}
-      >
-        {isPublished ? "Publish Course" : "Save as Draft"}
-      </Button>
-    </div>
-  </div>
-</TabsContent>
-
             </form>
           </Form>
         </Tabs>
@@ -1517,28 +1511,28 @@ const CourseBuilder = ({ onSave }) => {
             <DialogHeader>
               <DialogTitle>Replace Lesson</DialogTitle>
               <DialogDescription>
-                Choose how you want to replace this lesson
+                Choose how you want to replace this lesson.
               </DialogDescription>
             </DialogHeader>
             <div className="grid grid-cols-2 gap-4 mt-4">
               <div
-                className="border rounded-md p-4 hover:border-fidel-500 cursor-pointer transition-all"
+                className="border rounded-md p-4 hover:border-blue-500 cursor-pointer transition-all"
                 onClick={handleReplaceLessonWithVideo}
               >
-                <Video size={24} className="mx-auto mb-2 text-fidel-500" />
+                <Video size={24} className="mx-auto mb-2 text-blue-500" />
                 <h4 className="font-medium text-center">Replace with Video</h4>
-                <p className="text-sm text-center text-muted-foreground mt-1">
-                  Upload a new video for this lesson
+                <p className="text-sm text-center text-gray-400 mt-1">
+                  Upload a new video for this lesson.
                 </p>
               </div>
               <div
-                className="border rounded-md p-4 hover:border-fidel-500 cursor-pointer transition-all"
+                className="border rounded-md p-4 hover:border-blue-500 cursor-pointer transition-all"
                 onClick={handleReplaceWithQuiz}
               >
-                <BarChart size={24} className="mx-auto mb-2 text-fidel-500" />
+                <BarChart size={24} className="mx-auto mb-2 text-blue-500" />
                 <h4 className="font-medium text-center">Replace with Quiz</h4>
-                <p className="text-sm text-center text-muted-foreground mt-1">
-                  Create a new quiz for this lesson
+                <p className="text-sm text-center text-gray-400 mt-1">
+                  Create a new quiz for this lesson.
                 </p>
               </div>
             </div>

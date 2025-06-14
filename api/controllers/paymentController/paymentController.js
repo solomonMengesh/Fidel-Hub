@@ -325,6 +325,29 @@ export const verifyPayment = async (req, res) => {
     });
   }
 };
+function drawConsolidatedTable(doc, sections, x = 50, startY = 130) {
+  let y = startY;
+
+  sections.forEach(section => {
+    doc.fontSize(12)
+       .fillColor('#2c3e50')
+       .text(section.title, x, y);
+    y += 20;
+
+    section.rows.forEach(row => {
+      doc.fontSize(10)
+         .fillColor('#34495e')
+         .text(`${row.label}:`, x, y)
+         .fillColor(row.highlight ? '#27ae60' : '#000000')
+         .text(row.value, x + 150, y);
+      y += 18;
+    });
+
+    y += 15; // Add space after each section
+  });
+
+  return y;
+}
 
 export const generateReceipt = async (req, res) => {
   try {
