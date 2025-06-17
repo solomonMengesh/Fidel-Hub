@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
@@ -6,7 +7,6 @@ import {
   Book,
   Users,
   MessageSquare,
-  Bell,
   Settings,
   Menu,
 } from "lucide-react";
@@ -20,10 +20,12 @@ import Logo from "../components/layout/Logo";
 import { useAuth } from "../context/AuthContext"; 
 import PlatformSettings from "../components/admin/PlatformSettings";
 
-
 const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const navItems = [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
@@ -34,8 +36,19 @@ const StudentDashboard = () => {
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
+  // Handle URL tab parameter on load
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get("tab");
+
+    if (tabParam && navItems.some((item) => item.id === tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [location.search]);
+
   const handleNavItemClick = (id) => {
     setActiveTab(id);
+    navigate(`/student-dashboard?tab=${id}`);
     if (window.innerWidth < 768) {
       setIsSidebarOpen(false);
     }
@@ -59,8 +72,6 @@ const StudentDashboard = () => {
         return "Dashboard";
     }
   };
-
-    const { user } = useAuth();
 
   return (
     <div className="flex h-[100vh] dark:bg-slate-950">
@@ -90,7 +101,7 @@ const StudentDashboard = () => {
             </button>
           ))}
         </nav>
- 
+
         <div className="absolute bottom-5 left-5 right-5">
           <div className="flex items-center space-x-2 p-2 rounded-lg bg-slate-100 dark:bg-slate-800">
             <div className="h-8 w-8 rounded-full bg-fidel-100 dark:bg-fidel-900/30 flex items-center justify-center text-fidel-600 dark:text-fidel-400 font-medium">
@@ -130,14 +141,6 @@ const StudentDashboard = () => {
           </h1>
 
           <div className="flex items-center space-x-3">
-            {/* <button className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200 relative">
-              <Bell size={20} />
-              <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
-            </button>
-            <button className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200 relative">
-              <MessageSquare size={20} />
-              <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-fidel-500"></span>
-            </button> */}
             <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2"></div>
             <ThemeToggle />
             <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2"></div>
@@ -157,7 +160,7 @@ const StudentDashboard = () => {
             {activeTab === "overview" && <OverviewTab />}
             {activeTab === "courses" && <CoursesTab />}
             {activeTab === "schedule" && <ScheduleTab />}
-            {activeTab === "messages" && <MessagesTab  />}
+            {activeTab === "messages" && <MessagesTab />}
             {activeTab === "instructors" && <InstructorsTab />}
             {activeTab === "settings" && <PlatformSettings />}
           </motion.div>

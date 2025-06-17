@@ -233,7 +233,10 @@ export const CourseDetails = () => {
         </TabsContent>
 
         <TabsContent value="instructor">
-          <InstructorTab course={course} />
+          <InstructorTab 
+          courseId={courseId}
+          studentId={studentId}
+          />
         </TabsContent>
           {/* Other tabs would go here */}
         </Tabs>
