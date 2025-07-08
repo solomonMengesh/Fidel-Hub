@@ -1,7 +1,6 @@
 import LessonAccess from '../../models/LessonAccess.js';
 
-// Grant access to a lesson
-export const grantLessonAccess = async (req, res) => {
+ export const grantLessonAccess = async (req, res) => {
   try {
     const { studentId, lessonId } = req.body;
     const access = await LessonAccess.findOne({ studentId, lessonId });
@@ -19,8 +18,7 @@ export const grantLessonAccess = async (req, res) => {
   }
 };
 
-// Check lesson access
-export const checkLessonAccess = async (req, res) => {
+ export const checkLessonAccess = async (req, res) => {
   const { studentId, lessonId } = req.params;
   const access = await LessonAccess.findOne({ studentId, lessonId });
   

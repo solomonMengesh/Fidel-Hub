@@ -6,7 +6,7 @@ import Header from "../components/layout/Header";
 import CourseTable from "../components/instructor-dashboard/CourseTable";
 import StudentManagement from "../components/instructor/StudentManagement";
 import StatsGrid from "../components/instructor-dashboard/StatsGrid";
-import CourseBuilder from "../components/instructor/CourseBuilder";
+import CourseBuilder from "../components/instructor/create Course/CourseBuilder";
 import InstructorStudentChat from "@/components/chat/InstructorStudentChat";
 import PlatformSettings from "../components/admin/PlatformSettings";
 import PaymentComponent from "../components/instructor-dashboard/PaymentComponent";

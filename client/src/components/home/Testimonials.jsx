@@ -1,4 +1,4 @@
-// components/home/Testimonials.jsx
+
 import TestimonialCard from "./TestimonialCard";
 
 const Testimonials = () => {

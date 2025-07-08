@@ -14,6 +14,7 @@ import { OverviewTab } from "../components/course details/OverviewTab";
 import { RatingsTab } from "../components/course details/RatingsTab";
 import { InstructorTab } from "../components/course details/InstructorTab";
 import { useAuth } from "../context/AuthContext";
+import RelatedCourses from "../components/course details/relatedCourses";
 
 export const CourseDetails = () => {
   const { user } = useAuth();
@@ -220,6 +221,9 @@ export const CourseDetails = () => {
                 studentId={studentId}
               />
             </div>
+            <div className="mt-12">
+    <RelatedCourses courseId={courseId} course={course}  />
+  </div>
           </TabsContent>
 
           <TabsContent value="overview">

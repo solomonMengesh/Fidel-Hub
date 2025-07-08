@@ -66,8 +66,7 @@ export const protect = async (req, res, next) => {
       return res.status(401).json({ message: 'User not found' });
     }
 
-    // ✅ **Block Check: Prevent blocked users from accessing any route**
-    if (user.blocked) {
+     if (user.blocked) {
       return res.status(403).json({ message: "Your account has been blocked." });
     }
 

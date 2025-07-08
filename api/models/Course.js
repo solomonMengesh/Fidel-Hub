@@ -24,8 +24,8 @@ const courseSchema = new mongoose.Schema({
     enum: [
       'computer-science', 'programming', 'web-development', 
       'business', 'marketing', 'data-science', 'psychology',
-      'finance', 'design', 'languages', 'health-fitness',
-      'mathematics', 'photography', 'music', 'other','Machine Learning'
+      'finance', 'design', 'languages', 'Health & Fitness',
+      'mathematics', 'photography', 'music', 'other','Machine Learning',
     ]
   },
   level: {
@@ -47,6 +47,15 @@ const courseSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  embedding: {
+    type: [Number],
+    default: [],
+  },
+  isActive: {
+  type: Boolean,
+  default: true  
+}
+,
   createdAt: {
     type: Date,
     default: Date.now
@@ -61,8 +70,7 @@ const courseSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Virtual populate modules
-courseSchema.virtual('modules', {
+ courseSchema.virtual('modules', {
   ref: 'Module',
   localField: '_id',
   foreignField: 'course',

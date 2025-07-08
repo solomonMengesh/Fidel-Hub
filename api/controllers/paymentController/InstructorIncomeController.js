@@ -17,8 +17,7 @@ export const getInstructorDashboard = async (req, res) => {
         };
       }
   
-      // Summary Aggregation
-      const summaryResult = await Payment.aggregate([
+       const summaryResult = await Payment.aggregate([
         { $match: matchStage },
         {
           $group: {

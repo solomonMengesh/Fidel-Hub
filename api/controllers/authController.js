@@ -4,12 +4,10 @@ import { uploadImage, uploadPDF } from '../middleware/uploadMiddleware.js';
 import jwt from 'jsonwebtoken';
 import { sendEmail } from '../Email Service/emailService.js';
 
-// Register a new user
-export const registerUser = async (req, res) => {
+ export const registerUser = async (req, res) => {
   const { name, email, phone, role, expertise, password, confirmPassword } = req.body;
 
-  // Validation checks
-  if (password !== confirmPassword) {
+   if (password !== confirmPassword) {
     return res.status(400).json({ message: 'Passwords do not match' });
   }
 
@@ -17,8 +15,7 @@ export const registerUser = async (req, res) => {
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ message: 'User already exists' });
 
-    // Only instructors should have expertise, and CV is required for instructors
-    if (role === 'instructor') {
+     if (role === 'instructor') {
       if (!expertise) {
         return res.status(400).json({ message: 'Expertise is required for instructors' });
       }
@@ -27,22 +24,20 @@ export const registerUser = async (req, res) => {
       }
     }
 
-    // Create user
-    const user = new User({
+     const user = new User({
       name,
       email,
       phone,
       role,
-      expertise: role === 'instructor' ? expertise : null, // Add expertise only if role is instructor
-      cv: role === 'instructor' ? req.file.path : null, // Store the file path of CV if role is instructor
-      password, // Password will be hashed by the schema pre-save hook
+      expertise: role === 'instructor' ? expertise : null, 
+      cv: role === 'instructor' ? req.file.path : null,  
+      password, 
     });
 
     await user.save();
 
-    // Generate OTP and send it via email
-    const otp = user.generateOTP(); // Generates OTP and stores it in user model
-    await user.save(); // Save OTP in the user model
+     const otp = user.generateOTP();  
+    await user.save(); 
     await sendEmail(email, 'Your OTP Code', `Your OTP code is: ${otp}`);
 
     res.status(201).json({ message: 'Registration successful! Please verify your email with the OTP sent.' });
@@ -53,7 +48,7 @@ export const registerUser = async (req, res) => {
 
 
 export const loginUser = async (req, res) => {
-  const { email, password, otp } = req.body; // Include OTP in the body for verification
+  const { email, password, otp } = req.body;  
 
    
 
@@ -76,25 +71,21 @@ export const loginUser = async (req, res) => {
       return res.status(403).json({ message: "Your account has been blocked by the admin." });
     }
 
-    // Check if the user has verified their OTP
-    if (!user.isVerified) {
+     if (!user.isVerified) {
       if (!otp) {
-        // If OTP is not provided, send it to the user's email
-        const generatedOtp = user.generateOTP();
+         const generatedOtp = user.generateOTP();
         await user.save();
         await sendEmail(user.email, 'Your OTP Code', `Your OTP code is: ${generatedOtp}`);
         
         return res.status(400).json({ message: "OTP required to verify your account. Check your email." });
       }
 
-      // If OTP is provided, verify it
-      const isOtpValid = user.verifyOTP(otp);
+       const isOtpValid = user.verifyOTP(otp);
       if (!isOtpValid) {
         return res.status(400).json({ message: "Invalid or expired OTP" });
       }
 
-      // OTP is valid, mark user as verified
-      user.isVerified = true;
+       user.isVerified = true;
       await user.save();
     }
 
@@ -106,12 +97,11 @@ export const loginUser = async (req, res) => {
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
      
 
-    // ✅ Set the token as an HTTP-only cookie
-    res.cookie("token", token, {
+     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Only secure in production
-      sameSite: "strict", // Prevent CSRF attacks
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      secure: process.env.NODE_ENV === "production",  
+      sameSite: "strict", 
+      maxAge: 1 * 24 * 60 * 60 * 1000,  
     });
 
     res.status(200).json({ message: "Login successful", user, token });
@@ -123,11 +113,10 @@ export const loginUser = async (req, res) => {
 };
 
 
-// User logout
+ 
 export const logoutUser = (req, res) => {
   try {
-    // Invalidate JWT token (client-side action needed as well)
-    res.clearCookie("token"); // Optionally clear cookie if using it to store the token
+     res.clearCookie("token"); 
     res.status(200).json({ message: "Logout successful" });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -135,18 +124,16 @@ export const logoutUser = (req, res) => {
 };
 
 
-// In your authController.js
-
+ 
 export const getMe = async (req, res) => {
   try {
     
 
-    // If you are storing the user ID in the JWT token, you can get it from req.user
-    const user = await User.findById(req.user.id); // Find the user by ID from the decoded JWT
+     const user = await User.findById(req.user.id);  
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.json(user); // Return the user data as the response
+    res.json(user);  
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }

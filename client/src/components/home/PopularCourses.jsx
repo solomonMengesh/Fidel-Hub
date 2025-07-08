@@ -30,8 +30,8 @@ const PopularCourses = () => {
       setLoading(true);
       setError(null);
       try {
-        // Fetch course list
-        const response = await fetch("http://localhost:5000/api/courses");
+        // Fetch active courses only
+        const response = await fetch("http://localhost:5000/api/courses/active");
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -62,7 +62,7 @@ const PopularCourses = () => {
               console.error(`Failed to fetch review stats for course ${courseId}:`, error);
             }
 
-            // Fetch student count
+            
             try {
               const studentResponse = await axios.get(
                 `http://localhost:5000/api/courses/${courseId}/student-count`,

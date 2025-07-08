@@ -1,17 +1,69 @@
 import Course from '../../models/Course.js';
-import Module from '../../models/Module.js';
+import User from "../../models/User.js";
 import asyncHandler from 'express-async-handler';
 import { deleteFromCloudinary } from '../../services/cloudStorage.js';
 import Enrollment from '../../models/Enrollment.js';
-import mongoose from 'mongoose';  // <-- Add this import
+import mongoose from 'mongoose';
 import Progress from '../../models/Progress.js'; 
- 
-// @desc    Create a new course
-// @route   POST /api/courses
-// @access  Private/Instructor
+ import axios from 'axios';
+ import { getEmbedding } from '../../utils/aiClient.js';
+ import cosineSimilarity from '../../utils/cosineSimilarity.js';
+
+const bannedWords = [
+  'porn', 'sex', 'nude', 'xxx', 'blowjob', 'anal', 'fuck', 'shit', 'bitch', 'dick',
+  'kill', 'suicide', 'die', 'murder', 'terrorist', 'cocaine', 'weed', 'vodka', 'gun', 'knife'
+];
+function containsBannedContent(text) {
+  return bannedWords.some(word => text.toLowerCase().includes(word));
+}
+
+export const checkImageForNSFW = async (imageUrl) => {
+  try {
+    const response = await axios.get('https://api.sightengine.com/1.0/check.json', {
+      params: {
+        models: 'nudity,wad',
+        url: imageUrl,
+        api_user: process.env.SIGHTENGINE_USER,
+        api_secret: process.env.SIGHTENGINE_SECRET,
+      },
+    });
+
+    const { nudity, weapon, alcohol, drugs } = response.data;
+
+    const isNudity = nudity.raw > 0.5 || nudity.partial > 0.5;
+    const isWeapon = weapon > 0.5;
+    const isAlcohol = alcohol > 0.5;
+    const isDrugs = drugs > 0.5;
+
+    const contentTypes = [];
+    if (isNudity) contentTypes.push('nudity');
+    if (isWeapon) contentTypes.push('weapon');
+    if (isAlcohol) contentTypes.push('alcohol');
+    if (isDrugs) contentTypes.push('drugs');
+
+    return {
+      isInappropriate: contentTypes.length > 0,
+      details: {
+        contentTypes,
+        isNudity,
+        isWeapon,
+        isAlcohol,
+        isDrugs
+      }
+    };
+
+  } catch (error) {
+    console.error('Sightengine error:', error.message);
+    return { isInappropriate: false, details: null }; // Fail-safe
+  }
+};
+
+
 export const createCourse = asyncHandler(async (req, res) => {
   const { title, description, category, level, price, requirements } = req.body;
-  
+  if (containsBannedContent(title) || containsBannedContent(description)) {
+    return res.status(400).json({ message: "Inappropriate content is not allowed." });
+  }
   const course = new Course({
     title,
     description,
@@ -23,19 +75,90 @@ export const createCourse = asyncHandler(async (req, res) => {
   });
 
   if (req.file) {
+    const imageUrl = req.file.path;
+
+    const { isInappropriate, details } = await checkImageForNSFW(imageUrl);
+
+    if (isInappropriate) {
+      return res.status(400).json({
+        message: `Inappropriate image content detected: ${details.contentTypes.join(', ')}.`,
+        contentTypes: details.contentTypes,
+        details
+      });
+    }
+
     course.thumbnail = {
-      url: req.file.path,
+      url: imageUrl,
       publicId: req.file.filename
     };
   }
 
+
+  const embeddingInput = `${title} ${description}`;
+  const embedding = await getEmbedding(embeddingInput);
+
+  course.embedding = embedding;
+
   const createdCourse = await course.save();
+
+
+
   res.status(201).json(createdCourse);
 });
 
-// @desc    Get all courses
-// @route   GET /api/courses
-// @access  Public
+
+export const getRelatedCourses = async (req, res) => {
+  const { courseId } = req.params;
+
+  try {
+    const baseCourse = await Course.findById(courseId);
+    if (!baseCourse || !baseCourse.embedding?.length) {
+      return res.status(404).json({ message: 'Course not found or not processed yet.' });
+    }
+
+    const allCourses = await Course.find({ 
+      _id: { $ne: courseId }, 
+      embedding: { $exists: true } 
+    });
+
+    const scored = allCourses.map(course => {
+      const score = cosineSimilarity(baseCourse.embedding, course.embedding);
+      return { course, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+
+    const threshold = 0.6;
+    const topRelated = scored
+      .filter(s => s.score >= threshold)
+      .slice(0, 5)
+      .map(s => ({
+        _id: s.course._id,
+        title: s.course.title,
+        description: s.course.description,
+        price: s.course.price,
+        rating: s.course.rating || 0,
+        students: s.course.students || 0,
+        thumbnail: {
+          url: s.course.thumbnail?.url,
+          publicId: s.course.thumbnail?.publicId
+        }
+,        
+        updatedAt: s.course.updatedAt,
+        similarity: s.score.toFixed(3),
+      }));
+
+    res.json({ baseCourse: baseCourse.title, related: topRelated });
+
+  } catch (error) {
+    console.error('Error finding related courses:', error);
+    res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
+
+
+ 
 export const getCourses = asyncHandler(async (req, res) => {
   const courses = await Course.find({ published: true })
     .populate('instructor', 'name email')
@@ -50,9 +173,7 @@ export const getCourses = asyncHandler(async (req, res) => {
   res.json(courses);
 });
 
-// @desc    Get instructor's courses
-// @route   GET /api/courses/instructor
-// @access  Private/Instructor
+ 
 export const getInstructorCourses = async (req, res) => {
   try {
     const { instructorId } = req.params;
@@ -76,9 +197,7 @@ export const getInstructorCourses = async (req, res) => {
 };
 
 
-// @desc    Get course by ID
-// @route   GET /api/courses/:id
-// @access  Public
+ 
 export const getCourseById = asyncHandler(async (req, res) => {
   const course = await Course.findById(req.params.id)
     .populate('instructor', 'name email')
@@ -138,10 +257,7 @@ function formatTime(seconds) {
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
-
-// @desc    Update course
-// @route   PUT /api/courses/:id
-// @access  Private/Instructor
+ 
 export const updateCourse = asyncHandler(async (req, res) => {
   const course = await Course.findById(req.params.id);
 
@@ -180,9 +296,38 @@ export const updateCourse = asyncHandler(async (req, res) => {
   res.json(updatedCourse);
 });
 
-// @desc    Delete course
-// @route   DELETE /api/courses/:id
-// @access  Private/Instructor
+export const setCourseStatus = asyncHandler(async (req, res) => {
+  const course = await Course.findById(req.params.courseId);
+
+
+  if (!course) {
+    res.status(404);
+    throw new Error("Course not found");
+  }
+
+  if (course.instructor.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error("Not authorized to update this course");
+  }
+
+  // Expecting a boolean
+  const { published } = req.body;
+
+  if (typeof published !== "boolean") {
+    res.status(400);
+    throw new Error("Published status must be a boolean value");
+  }
+
+  course.published = published;
+  const updatedCourse = await course.save();
+
+  res.status(200).json({
+    message: `Course ${published ? "published" : "saved as draft"} successfully`,
+    course: updatedCourse,
+  });
+});
+
+ 
 export const deleteCourse = asyncHandler(async (req, res) => {
   const course = await Course.findById(req.params.id);
 
@@ -352,5 +497,61 @@ export const getCourseAverageProgress = async (req, res) => {
   } catch (error) {
     console.error("Error fetching course average progress:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+
+
+export const setCourseVisibility = async (req, res) => {
+  const { id } = req.params;
+  const { isActive } = req.body;
+
+  try {
+    const course = await Course.findByIdAndUpdate(
+      id,
+      { isActive },
+      { new: true }
+    );
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    const status = isActive ? "activated" : "deactivated";
+    res.status(200).json({ message: `Course successfully ${status}`, course });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getActiveCourses = async (req, res) => {
+  try {
+    const courses = await Course.find({ isActive: true })
+      .populate("instructor", "name email")
+      .exec();
+
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error("Error fetching active courses:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+export const getAllCourses = async (req, res) => {
+  try {
+    const { publish } = req.query;
+
+    let filter = {};
+    if (publish === 'true') {
+      filter.publish = true;
+    }
+
+    const courses = await Course.find(filter).sort({ createdAt: -1 });
+
+    res.status(200).json(courses);
+  } catch (error) {
+    console.error("Error fetching courses:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
