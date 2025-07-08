@@ -50,7 +50,7 @@
 ```bash
 fidel-hub/
 ├── client/          # Frontend (React)
-├── server/          # Backend (Node.js + Express)
+├── api/          # Backend (Node.js + Express)
 ├── .env             # Environment variables
 ├── README.md        # Project documentation
 └── package.json     # Project metadata
@@ -71,7 +71,7 @@ cd fidel-hub
 
 ```bash
 # For backend
-cd server
+cd api
 npm install
 
 # For frontend
@@ -81,7 +81,7 @@ npm install
 
 ### 3. Create Environment Variables
 
-In both `/server/.env` and `/client/.env`, add:
+In both `/api/.env` and `/client/.env`, add:
 
 ```env
 # Server .env
@@ -165,12 +165,6 @@ If you like this project, consider giving it a ⭐️ star on GitHub to help oth
 
 # 🚀 Fidel-Hub — Transforming Education, Empowering the Future!
 
----
 
-  
----
-  
-**Would you like me also to give you:**
-- a basic `LICENSE` file (MIT)?
-- a `CONTRIBUTING.md` file?
+
   
